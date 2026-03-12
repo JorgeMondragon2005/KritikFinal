@@ -36,7 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     
     if (mounted) {
       setState(() => _isLoading = false);
-      if (result != null && result.contains('registrado')) {
+      if (result != null && result.contains('Usuario registrado')) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(result)),
         );
