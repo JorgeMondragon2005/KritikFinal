@@ -54,16 +54,19 @@ public class EmailService
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogInformation("✅ Correo de verificación enviado a {Email}", toEmail);
+                Console.WriteLine($"✅ Correo de verificación enviado a {toEmail}");
             }
             else
             {
                 var error = await response.Content.ReadAsStringAsync();
                 _logger.LogError("❌ Error enviando correo a {Email}: {Error}", toEmail, error);
+                Console.WriteLine($"❌ Error enviando correo a {toEmail}: {error}");
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "❌ Excepción al enviar correo a {Email}", toEmail);
+            Console.WriteLine($"❌ Excepción al enviar correo a {toEmail}: {ex.Message}");
         }
     }
 }
