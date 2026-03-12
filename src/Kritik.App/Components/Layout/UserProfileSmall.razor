@@ -1,0 +1,70 @@
+@using Kritik.Shared.Models
+@inject NavigationManager NavigationManager
+
+<div class="user-profile-small" @onclick="NavigateToProfile">
+    <div class="avatar-small">
+        @(UserInitials)
+    </div>
+    <div class="user-info-small">
+        <span class="user-name">@UserName</span>
+        <span class="user-role">@UserRole</span>
+    </div>
+</div>
+
+<style>
+    .user-profile-small {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        padding: 5px 10px;
+        border-radius: 20px;
+        transition: background-color 0.2s;
+    }
+
+    .user-profile-small:hover {
+        background-color: rgba(0,0,0,0.05);
+    }
+
+    .avatar-small {
+        width: 35px;
+        height: 35px;
+        background-color: var(--primary-blue);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+
+    .user-info-small {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.1;
+    }
+
+    .user-name {
+        font-weight: bold;
+        font-size: 0.85rem;
+        color: var(--text-color);
+    }
+
+    .user-role {
+        font-size: 0.7rem;
+        color: #666;
+    }
+</style>
+
+@code {
+    // Simulación - En producción vendría de un StateContainer
+    private string UserName = "Marlene Chablé";
+    private string UserRole = "Profesor";
+    private string UserInitials => "M";
+
+    private void NavigateToProfile()
+    {
+        NavigationManager.NavigateTo("/profile");
+    }
+}

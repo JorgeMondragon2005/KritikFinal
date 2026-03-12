@@ -1,0 +1,154 @@
+﻿@inherits LayoutComponentBase
+@inject IJSRuntime JS
+
+<div class="page-container @(isDarkMode ? "dark-theme" : "")" style="max-width: 480px; margin: 0 auto; min-height: 100vh; background: var(--bg-light); position: relative; overflow-x: hidden;">
+    
+    <!-- Top Bar -->
+    <header class="d-flex justify-content-between align-items-center p-3" style="background: var(--white); border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 1000;">
+        <button class="btn btn-link text-dark p-0 m-0" @onclick="ToggleSidebar">
+            <i class="bi bi-list fs-2"></i>
+        </button>
+        <h5 class="m-0 fw-bold">Kritik</h5>
+        <button class="btn btn-link text-dark p-0 m-0" @onclick="ToggleTheme">
+            <i class="bi @(isDarkMode ? "bi-sun-fill" : "bi-moon-fill") fs-4"></i>
+        </button>
+    </header>
+
+    <!-- Sidebar Overlay -->
+    @if (isSidebarOpen)
+    {
+        <div class="sidebar-overlay" @onclick="ToggleSidebar" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1040;"></div>
+    }
+
+    <!-- Sidebar -->
+    <div class="sidebar @(isSidebarOpen ? "open" : "")" style="position: absolute; top: 0; left: -250px; width: 250px; height: 100%; background: var(--white); z-index: 1050; transition: left 0.3s ease; box-shadow: 2px 0 5px rgba(0,0,0,0.1);">
+        <NavMenu />
+    </div>
+
+    <!-- Main Content -->
+    <main style="padding-bottom: 60px;">
+        <ErrorBoundary @ref="errorBoundary">
+            <ChildContent>
+                @Body
+            </ChildContent>
+            <ErrorContent>
+                <div class="alert alert-danger m-3">
+                    Oops, something went wrong. We are looking into it.
+                    <button class="btn btn-outline-danger mt-2" @onclick="() => errorBoundary?.Recover()">Try Again</button>
+                </div>
+            </ErrorContent>
+        </ErrorBoundary>
+    </main>
+</div>
+
+<style>
+    /* Ensure the app behaves like a mobile app even on desktop browser for testing */
+    body {
+        background-color: #f0f2f5; 
+        display: flex;
+        justify-content: center;
+    }
+    
+    .page-container {
+        box-shadow: 0 0 20px rgba(0,0,0,0.05);
+        color: var(--text-dark);
+    }
+    
+    .sidebar.open {
+        left: 0 !important;
+    }
+
+    @@media (max-width: 576px) {
+        body {
+            background-color: var(--bg-light);
+            display: block;
+        }
+        .page-container {
+            max-width: 100%;
+            box-shadow: none;
+        }
+    }
+</style>
+
+@inject Services.NotificationService NotificationService
+@inject Services.ToastService Toast
+
+@code {
+    private bool isSidebarOpen = false;
+    private bool isDarkMode = false;
+    private ErrorBoundary? errorBoundary;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            NotificationService.OnNotificationReceived += HandleNotificationWrapper;
+            NotificationService.StartListening();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Notification Init Error: " + ex.Message);
+        }
+        
+        try
+        {
+            isSidebarOpen = false;
+            // Sync initial state from preferences
+            isDarkMode = Microsoft.Maui.Storage.Preferences.Default.Get("IsDarkMode", false);
+        }
+        catch { }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try 
+            {
+                await ApplyTheme();
+                errorBoundary?.Recover();
+            }
+            catch { }
+        }
+    }
+
+    private async void HandleNotificationWrapper(string title, string message)
+    {
+        await InvokeAsync(() => 
+        {
+            HandleNotification(title, message);
+        });
+    }
+
+    private async Task ApplyTheme()
+    {
+        try
+        {
+            var themeClassName = isDarkMode ? "dark" : "light";
+            await JS.InvokeVoidAsync("setTheme", themeClassName);
+        }
+        catch { }
+    }
+
+    private void HandleNotification(string title, string message)
+    {
+        try 
+        {
+            Toast.Show($"{title}: {message}", "info");
+            StateHasChanged();
+        } catch { }
+    }
+
+    private void ToggleSidebar()
+    {
+        isSidebarOpen = !isSidebarOpen;
+    }
+
+    private async Task ToggleTheme()
+    {
+        isDarkMode = !isDarkMode;
+        Microsoft.Maui.Storage.Preferences.Default.Set("IsDarkMode", isDarkMode);
+        await ApplyTheme();
+        StateHasChanged();
+    }
+}

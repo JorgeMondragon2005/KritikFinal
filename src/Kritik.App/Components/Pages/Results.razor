@@ -1,0 +1,174 @@
+@page "/resultados"
+@using Kritik.Shared.Models
+@using Kritik.App.Services
+@inject ProjectService ProjectService
+@inject ToastService Toast
+@implements IDisposable
+
+<div class="results-container p-4">
+    <div class="header-section text-center mb-4">
+        <h3 class="tech-gradient-text fw-bold">Ranking Kritik Live</h3>
+        <div class="d-flex justify-content-center gap-3 align-items-center">
+            <p class="stats-overview text-muted mb-0">Integridad: <span class="badge bg-success">@integrityRate.ToString("P1")</span></p>
+            @if (isEventClosed)
+            {
+                <span class="badge bg-danger p-2"><i class="bi bi-lock-fill me-1"></i> Votación Cerrada</span>
+            }
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="category-filters d-flex gap-2 overflow-auto pb-3 mb-4 no-scrollbar">
+        <button class="btn btn-sm rounded-pill px-4 @(selectedCategory == null ? "btn-warning text-white" : "btn-light border")" @onclick="() => FilterByCategory(null)">Todos</button>
+        @if (categories != null)
+        {
+            @foreach (var cat in categories)
+            {
+                <button class="btn btn-sm rounded-pill px-4 @(selectedCategory == cat ? "btn-warning text-white" : "btn-light border")" @onclick="() => FilterByCategory(cat)">@cat</button>
+            }
+        }
+    </div>
+
+    @if (filteredProjects == null)
+    {
+        <div class="loading-state text-center p-5">
+            <div class="spinner-border text-warning" role="status"></div>
+            <p class="mt-3 text-muted">Sincronizando con el servidor...</p>
+        </div>
+    }
+    else if (!filteredProjects.Any())
+    {
+        <div class="text-center p-5 bg-light rounded-4">
+            <i class="bi bi-search fs-1 text-muted"></i>
+            <p class="mt-2">No hay proyectos en esta categoría aún.</p>
+        </div>
+    }
+    else
+    {
+        <div class="ranking-list">
+            @foreach (var (project, index) in filteredProjects.Select((p, i) => (p, i)))
+            {
+                <div class="ranking-item p-3 mb-3 rounded-4 border-0 shadow-sm d-flex align-items-center animate-slide-up" 
+                     style="background: white; border-left: 5px solid @(index == 0 ? "#FFC107" : index == 1 ? "#BDBDBD" : index == 2 ? "#CD7F32" : "#F8F9FA") !important;">
+                    <div class="rank-badge me-4 d-flex align-items-center justify-content-center fw-bold" 
+                         style="width: 40px; height: 40px; border-radius: 12px; background: @(index < 3 ? "#FFFDE7" : "#F8F9FA"); color: @(index == 0 ? "#FFC107" : "#6c757d")">
+                        #@(index + 1)
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="fw-bold mb-1">@project.TeamName</h6>
+                        <div class="progress" style="height: 6px; background-color: #f0f0f0; border-radius: 10px;">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: @(project.AverageScore * 10)%;" aria-valuenow="@(project.AverageScore * 10)" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    <div class="ms-4 text-end">
+                        <span class="fs-4 fw-bold">@project.AverageScore.ToString("F1")</span>
+                        <div class="text-muted-small text-uppercase">Score</div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Admin Actions -->
+    <div class="mt-5 pt-4 border-top d-flex gap-3">
+        <button class="btn btn-warning flex-grow-1 rounded-pill py-3 fw-bold shadow-sm" @onclick="ExportData">
+            <i class="bi bi-download me-2"></i> Exportar Ranking
+        </button>
+        <button class="btn btn-outline-dark flex-grow-1 rounded-pill py-3 fw-bold shadow-sm" @onclick="ToggleEventClosure">
+            <i class="bi @(isEventClosed ? "bi-unlock" : "bi-lock") me-2"></i>
+        </button>
+    </div>
+</div>
+
+@inject ExportService ExportService
+
+@code {
+    private List<ProjectRankingDTO>? rankedProjects;
+    private List<ProjectRankingDTO>? filteredProjects;
+    private HashSet<string>? categories;
+    private string? selectedCategory;
+    private bool isEventClosed = false;
+    private double integrityRate = 0;
+    private PeriodicTimer? timer;
+    private CancellationTokenSource? cts;
+
+    protected override void OnInitialized()
+    {
+        isEventClosed = Preferences.Default.Get("EventClosed", false);
+        cts = new CancellationTokenSource();
+        timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+        _ = RunPeriodicRefresh();
+    }
+
+    private async Task RunPeriodicRefresh()
+    {
+        try
+        {
+            await LoadResults();
+            while (await timer!.WaitForNextTickAsync(cts!.Token))
+            {
+                if (!isEventClosed)
+                {
+                    await LoadResults();
+                    StateHasChanged();
+                }
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task LoadResults()
+    {
+        try 
+        {
+            var results = await ProjectService.GetRankingsAsync();
+            rankedProjects = results.OrderByDescending(p => p.AverageScore).ToList();
+            
+            categories = new HashSet<string>(rankedProjects.Select(p => p.Category));
+            integrityRate = rankedProjects.Any() ? rankedProjects.Average(p => p.IntegrityRate) : 0.985;
+            
+            ApplyFilter();
+        }
+        catch (Exception ex) 
+        {
+            Console.WriteLine("Sync error: " + ex.Message);
+        }
+    }
+
+    private void FilterByCategory(string? category)
+    {
+        selectedCategory = category;
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        if (selectedCategory == null)
+            filteredProjects = rankedProjects;
+        else
+            filteredProjects = rankedProjects?.Where(p => p.Category == selectedCategory).ToList();
+    }
+
+    private async Task ExportData()
+    {
+        if (rankedProjects != null)
+        {
+            await ExportService.ExportRankingToCsvAsync(rankedProjects);
+            Toast.Show("Ranking exportado como CSV", "success");
+        }
+    }
+
+    private void ToggleEventClosure()
+    {
+        isEventClosed = !isEventClosed;
+        Preferences.Default.Set("EventClosed", isEventClosed);
+        Toast.Show(isEventClosed ? "Evento cerrado: Resultados congelados" : "Evento reabierto", isEventClosed ? "warning" : "success");
+    }
+
+    public void Dispose()
+    {
+        cts?.Cancel();
+        timer?.Dispose();
+        cts?.Dispose();
+    }
+}

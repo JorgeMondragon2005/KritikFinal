@@ -1,0 +1,62 @@
+@host = http://localhost:5229
+
+### 1. Poblar Base de Datos (Seed)
+POST {{host}}/api/Seed
+
+### 2. Login (Evaluador)
+# Username: evaluador, Password: password123
+POST {{host}}/api/Auth/login
+Content-Type: application/json
+
+{
+    "username": "evaluador",
+    "password": "password123"
+}
+
+### 3. Obtener Proyectos (Todos)
+GET {{host}}/api/Projects
+
+### 4. Buscar Proyecto por Nombre
+GET {{host}}/api/Projects?search=CodeCrafters
+
+### 5. Filtrar por Categoría
+GET {{host}}/api/Projects?category=IoT
+
+### 6. Subir Imagen (Simulado - usar Form-Data en Postman para real)
+# Nota: La carga de archivos requiere Postman o curl con -F
+# POST {{host}}/api/Upload
+
+### 7. Evaluar Proyecto
+POST {{host}}/api/Evaluations
+Content-Type: application/json
+
+{
+  "evaluatorId": "65c3f8f1e4b0c1a2d3e4f5a6", 
+  "projectId": "65c3f8f1e4b0c1a2d3e4f5a7",
+  "rubricScores": {
+    "innovation": 5,
+    "usability": 4,
+    "technicalComplexity": 5
+  },
+  "feedback": "Excelente trabajo, muy completo.",
+  "evidenceUrl": "/uploads/evidence1.jpg"
+}
+
+### 8. Sincronizar Evaluaciones (Offline Batch)
+POST {{host}}/api/Evaluations/Sync
+Content-Type: application/json
+
+[
+  {
+    "evaluatorId": "65c3f8f1e4b0c1a2d3e4f5a6",
+    "projectId": "65c3f8f1e4b0c1a2d3e4f5a8",
+    "rubricScores": { "innovation": 4, "usability": 5, "technicalComplexity": 3 },
+    "feedback": "Sync test 1"
+  },
+  {
+    "evaluatorId": "65c3f8f1e4b0c1a2d3e4f5a6",
+    "projectId": "65c3f8f1e4b0c1a2d3e4f5a9",
+    "rubricScores": { "innovation": 3, "usability": 3, "technicalComplexity": 4 },
+    "feedback": "Sync test 2"
+  }
+]

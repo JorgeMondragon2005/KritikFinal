@@ -1,0 +1,74 @@
+@page "/login"
+@inject Kritik.App.Services.AuthService AuthService
+@inject NavigationManager NavigationManager
+@inject Kritik.App.Services.ToastService ToastService
+
+<h3>Iniciar Sesión</h3>
+
+<div class="card p-4 mx-auto" style="max-width: 400px;">
+    <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-3">
+            <label for="username" class="form-label">Correo / Usuario</label>
+            <InputText id="username" class="form-control" @bind-Value="loginModel.Username" />
+        </div>
+        
+        <div class="mb-3">
+            <label for="password" class="form-label">Contraseña</label>
+            <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" />
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-bold">Ingresar como:</label>
+            <div class="d-flex gap-2">
+                <div class="flex-grow-1 p-3 border rounded-3 text-center @(selectedRole == "Student" ? "border-warning bg-warning bg-opacity-10" : "")" style="cursor: pointer;" @onclick='() => selectedRole = "Student"'>
+                    <i class="bi bi-mortarboard fs-3 @(selectedRole == "Student" ? "text-warning" : "text-muted")"></i>
+                    <div class="fw-bold mt-2">Estudiante</div>
+                </div>
+                <div class="flex-grow-1 p-3 border rounded-3 text-center @(selectedRole == "Evaluator" ? "border-warning bg-warning bg-opacity-10" : "")" style="cursor: pointer;" @onclick='() => selectedRole = "Evaluator"'>
+                    <i class="bi bi-briefcase fs-3 @(selectedRole == "Evaluator" ? "text-warning" : "text-muted")"></i>
+                    <div class="fw-bold mt-2">Evaluador</div>
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" style="border-radius: 12px; background-color: var(--primary-yellow); border: none; color: black;">
+            Entrar al Evento
+        </button>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger mt-3 mb-0">@errorMessage</div>
+        }
+    </EditForm>
+</div>
+<div class="mt-3 text-center">
+    ¿No tienes cuenta? <a href="/register">Regístrate aquí</a>
+</div>
+
+@code {
+    private Kritik.Shared.Models.LoginRequest loginModel = new();
+    private string selectedRole = "Student";
+    private string? errorMessage;
+
+    private async Task HandleLogin()
+    {
+        errorMessage = null;
+        var user = await AuthService.LoginAsync(loginModel.Username, loginModel.Password);
+        if (user != null)
+        {
+            // Sync the chosen role with preferences used by CustomAuthStateProvider
+            Microsoft.Maui.Storage.Preferences.Default.Set("user_role", selectedRole);
+            Microsoft.Maui.Storage.Preferences.Default.Set("user_name", loginModel.Username);
+            
+            ToastService.Show("¡Bienvenido al evento!", "success");
+            NavigationManager.NavigateTo("/", forceLoad: true);
+        }
+        else
+        {
+            errorMessage = "Credenciales incorrectas.";
+            ToastService.Show("Error de acceso", "error");
+        }
+    }
+}

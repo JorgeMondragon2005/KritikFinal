@@ -1,0 +1,43 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+
+<div class="d-flex flex-column align-items-center justify-content-center vh-100 px-4">
+    <div class="mb-5 text-center">
+        <!-- Logo Text -->
+        <h1 style="font-size: 3rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0;">Kritik</h1>
+    </div>
+
+    <div class="w-100" style="max-width: 340px;">
+        <!-- Input -->
+        <div class="mb-4">
+            <input type="text" class="input-modern" placeholder="ID Institucional" />
+        </div>
+
+        <!-- Primary Button -->
+        <button class="btn-primary-yellow mb-4" @onclick="Login">
+            Iniciar Sesión
+        </button>
+
+        <!-- Divider -->
+        <div class="d-flex align-items-center mb-4">
+            <div style="flex: 1; height: 1px; background-color: #E0E0E0;"></div>
+            <span class="mx-3 text-muted text-small" style="font-size: 0.9rem;">o</span>
+            <div style="flex: 1; height: 1px; background-color: #E0E0E0;"></div>
+        </div>
+
+        <!-- Secondary Button -->
+        <button class="btn-outline-custom mb-4" @onclick="LoginAsGuest">
+            Acceso como Invitado / Sinodal
+        </button>
+
+        <!-- Forgot Link -->
+        <div class="text-center">
+            <a href="#" class="text-muted" style="text-decoration: none; font-size: 0.9rem;">¿Olvidaste tu ID?</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private void Login() => NavigationManager.NavigateTo("/projects");
+    private void LoginAsGuest() => NavigationManager.NavigateTo("/projects"); 
+}

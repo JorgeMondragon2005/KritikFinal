@@ -1,0 +1,91 @@
+﻿@using Kritik.App.Services
+@inject NavigationManager Navigation
+@inject AuthService AuthService
+
+<div class="nav-container">
+    <div class="nav-logo">
+        <h2 class="tech-gradient-text">Kritik</h2>
+    </div>
+
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill" aria-hidden="true"></span> Inicio
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="projects">
+                <span class="bi bi-list-ul" aria-hidden="true"></span> Proyectos
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3 mb-4">
+            <div class="p-3 rounded-4 bg-light border d-flex align-items-center gap-3">
+                <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="bi @(currentRole == "Evaluator" ? "bi-briefcase" : "bi-mortarboard")"></i>
+                </div>
+                <div>
+                    <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.6rem;">Modo de Uso</div>
+                    <div class="fw-bold text-dark">@(currentRole == "Evaluator" ? "Evaluador / Juez" : "Estudiante")</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="resultados">
+                <span class="bi bi-graph-up" aria-hidden="true"></span> Tablero
+            </NavLink>
+        </div>
+
+        <AuthorizeView Roles="Evaluator,Admin">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="admin">
+                    <span class="bi bi-gear-fill" aria-hidden="true"></span> Admin
+                </NavLink>
+            </div>
+        </AuthorizeView>
+
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="profile">
+                        <span class="bi bi-person-fill" aria-hidden="true"></span> Mi Perfil
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3 mt-3">
+                    <a class="nav-link text-danger" style="cursor: pointer;" @onclick="Logout">
+                        <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Cerrar Sesión
+                    </a>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3 mt-3">
+                    <NavLink class="nav-link" href="login">
+                        <span class="bi bi-box-arrow-in-right" aria-hidden="true"></span> Iniciar Sesión
+                    </NavLink>
+                </div>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="register">
+                        <span class="bi bi-person-plus-fill" aria-hidden="true"></span> Registrarse
+                    </NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
+    </nav>
+</div>
+
+@code {
+    private string currentRole = "Student";
+
+    protected override void OnInitialized()
+    {
+        currentRole = Microsoft.Maui.Storage.Preferences.Default.Get("user_role", "Student");
+    }
+
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+}

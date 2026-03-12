@@ -1,0 +1,6 @@
+@Kritik.Backend_HostAddress = http://localhost:5229
+
+GET {{Kritik.Backend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

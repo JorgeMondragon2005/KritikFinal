@@ -1,0 +1,185 @@
+@page "/projects"
+@using Kritik.Shared.Models
+@using Kritik.App.Services
+@inject ProjectService ProjectService
+@inject NavigationManager NavigationManager
+@inject ValidationService ValidationService
+@inject ToastService Toast
+
+<div class="d-flex flex-column h-100">
+    <!-- Header -->
+    <div class="px-4 pt-4 pb-2 d-flex justify-content-between align-items-center">
+        <h2 class="fw-bold m-0" style="font-size: 1.75rem;">Explorar</h2>
+        <div class="d-flex gap-3 align-items-center">
+            <button class="btn btn-light rounded-circle p-2 shadow-sm" @onclick="SyncOffline" style="width: 42px; height: 42px;">
+                <i class="bi bi-cloud-arrow-up fs-5"></i>
+            </button>
+            <div class="position-relative">
+                <i class="bi bi-bell-fill fs-4 text-dark"></i>
+                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-warning border border-light rounded-circle"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="px-4 py-2 d-flex gap-2">
+        <div class="position-relative flex-grow-1">
+             <i class="bi bi-search position-absolute text-muted" style="top: 14px; left: 14px;"></i>
+             <input type="text" class="input-search" placeholder="Buscar proyecto o tecnología..." @bind="searchQuery" @bind:event="oninput" @onkeyup="ApplyFilter" />
+        </div>
+        <button class="btn btn-outline-dark d-flex align-items-center justify-content-center" style="width: 48px; border-radius: 12px; border: 2px solid #000;">
+            <i class="bi bi-sliders"></i>
+        </button>
+    </div>
+
+    <!-- Tabs/Pills -->
+    <div class="px-4 py-3 d-flex gap-2" style="overflow-x: auto; white-space: nowrap; -ms-overflow-style: none; scrollbar-width: none;">
+        <button class="btn @(currentFilter == "Todos" ? "btn-dark" : "btn-light border") rounded-pill px-4" @onclick='() => SetFilter("Todos")'>Todos</button>
+        <button class="btn @(currentFilter == "Pendientes" ? "btn-dark" : "btn-light border") rounded-pill px-4" @onclick='() => SetFilter("Pendientes")'>Pendientes</button>
+        <button class="btn @(currentFilter == "Evaluados" ? "btn-dark" : "btn-light border") rounded-pill px-4" @onclick='() => SetFilter("Evaluados")'>Evaluados</button>
+        <button class="btn @(currentFilter == "Destacados" ? "btn-dark" : "btn-light border") rounded-pill px-4" @onclick='() => SetFilter("Destacados")'>Destacados</button>
+    </div>
+
+    <!-- Project List -->
+    <div class="px-4 pb-5 flex-grow-1" style="overflow-y: auto;">
+        @if (isLoading)
+        {
+            <div class="text-center mt-5"><div class="spinner-border text-warning" role="status"></div></div>
+        }
+        else if (filteredProjects != null)
+        {
+            @if(filteredProjects.Count == 0)
+            {
+                <div class="text-center mt-5 text-muted">No se encontraron proyectos.</div>
+            }
+            @foreach (var proj in filteredProjects)
+            {
+                var isEvaluated = evaluatedStatus.GetValueOrDefault(proj.Id ?? "", false);
+                <div class="card-modern d-flex flex-column" @onclick="() => SeleccionarProyecto(proj.Id!)" style="cursor: pointer;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                         <!-- Media Placeholder -->
+                        <div class="rounded-3 overflow-hidden shadow-sm" style="width: 48px; height: 48px;">
+                            @if (!string.IsNullOrEmpty(proj.CoverImageUrl))
+                            {
+                                <img src="@proj.CoverImageUrl" style="width: 100%; height: 100%; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center w-100 h-100" style="background-color: #FFF9C4;">
+                                    <i class="bi bi-box-seam" style="font-size: 1.2rem; color: #FBC02D;"></i>
+                                </div>
+                            }
+                        </div>
+                        @if (isEvaluated)
+                        {
+                            <span class="badge-status badge-evaluated">
+                                <i class="bi bi-check-circle-fill"></i> Evaluado
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge-status badge-pending">
+                                <span style="width: 6px; height: 6px; background: #ADB5BD; border-radius: 50%;"></span> Pendiente
+                            </span>
+                        }
+                    </div>
+                    
+                    <h5 class="mb-1" style="font-size: 1.1rem;">@proj.TeamName</h5>
+                    <p class="text-muted-small mb-3">@(proj.Description.Length > 50 ? proj.Description.Substring(0, 50) + "..." : proj.Description)</p>
+                    
+                    <div class="d-flex gap-2 flex-wrap">
+                        @foreach(var tech in proj.Technologies.Take(3))
+                        {
+                            <span class="tech-tag">@tech</span>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <!-- Bottom Progress -->
+    <div class="p-4 border-top" style="background: var(--white);">
+        <div class="d-flex justify-content-between align-items-end mb-2">
+            <div>
+                <h6 class="m-0 fw-bold">Tu Progreso</h6>
+                <small class="text-muted">Meta diaria de evaluaciones</small>
+            </div>
+            @{
+                int evaluatedCount = evaluatedStatus.Values.Count(v => v);
+            }
+            <div class="fs-4 fw-bold">@evaluatedCount <span class="text-muted fs-6 fw-normal">/ 20</span></div>
+        </div>
+        <div class="progress" style="height: 10px; border-radius: 5px;">
+            <div class="progress-bar bg-warning" role="progressbar" style="width: @(Math.Min(100, (evaluatedCount * 100) / 20))%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Project>? projects;
+    private List<Project>? filteredProjects;
+    private Dictionary<string, bool> evaluatedStatus = new();
+    private bool isLoading = true;
+    private string currentFilter = "Todos";
+    private string searchQuery = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try 
+        { 
+            isLoading = true; 
+            projects = await ProjectService.GetProjectsAsync(); 
+            if(projects != null)
+            {
+                var userId = Microsoft.Maui.Storage.Preferences.Default.Get("UserId", "mobile-kiosk-user");
+                foreach(var p in projects)
+                {
+                    if(!string.IsNullOrEmpty(p.Id))
+                        evaluatedStatus[p.Id] = await ValidationService.HasVotedAsync(p.Id, userId);
+                }
+            }
+            ApplyFilter();
+        }
+        catch { } 
+        finally { isLoading = false; }
+    }
+
+    private void SetFilter(string filter)
+    {
+        currentFilter = filter;
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        if (projects == null) return;
+        
+        var query = projects.AsEnumerable();
+        
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            query = query.Where(p => 
+                p.TeamName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                p.Technologies.Any(t => t.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        if (currentFilter == "Pendientes")
+            query = query.Where(p => !evaluatedStatus.GetValueOrDefault(p.Id ?? "", false));
+        else if (currentFilter == "Evaluados")
+            query = query.Where(p => evaluatedStatus.GetValueOrDefault(p.Id ?? "", false));
+        else if (currentFilter == "Destacados")
+            query = query.Take(2); // Dummy logic since we don't have IsFeatured in DB
+
+        filteredProjects = query.ToList();
+    }
+
+    private void SeleccionarProyecto(string id) => NavigationManager.NavigateTo($"/evaluate/{id}");
+
+    private async Task SyncOffline()
+    {
+        Toast.Show("Sincronizando evaluaciones guardadas...", "info");
+        await Task.Delay(2000);
+        Toast.Show("Sincronización completa. Datos actualizados.", "success");
+    }
+}

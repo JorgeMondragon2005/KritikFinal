@@ -1,0 +1,26 @@
+[
+  {
+    "id": "1",
+    "name": "Equipo Alfa",
+    "description": "Detección de incendios con sensores IoT.",
+    "category": "IoT",
+    "teamName": "Alfa Developers",
+    "coverImageUrl": "https://via.placeholder.com/150"
+  },
+  {
+    "id": "2",
+    "name": "Eco-Friendly App",
+    "description": "Gamificación para reciclaje urbano.",
+    "category": "Mobile",
+    "teamName": "Green Team",
+    "coverImageUrl": "https://via.placeholder.com/150"
+  },
+  {
+    "id": "3",
+    "name": "Portal Médico",
+    "description": "Gestión de citas con Blockchain.",
+    "category": "Web",
+    "teamName": "HealthTech",
+    "coverImageUrl": "https://via.placeholder.com/150"
+  }
+]

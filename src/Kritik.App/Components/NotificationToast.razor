@@ -1,0 +1,57 @@
+@using Kritik.App.Services
+@inject ToastService ToastService
+@implements IDisposable
+
+@if (isVisible)
+{
+    <div class="toast-container @typeClass">
+        <div class="toast-icon">@icon</div>
+        <div class="toast-content">
+            <p class="toast-message">@Message</p>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isVisible = false;
+    private string typeClass = "";
+    private string icon = "";
+    public string Message { get; set; } = "";
+    private System.Timers.Timer? timer;
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnShow += ShowToast;
+    }
+
+    private void ShowToast(string message, string type)
+    {
+        Message = message;
+        isVisible = true;
+
+        if (type == "success") {
+            typeClass = "toast-success";
+            icon = "✓";
+        } else {
+            typeClass = "toast-error";
+            icon = "!";
+        }
+
+        InvokeAsync(StateHasChanged);
+
+        timer?.Stop();
+        timer = new System.Timers.Timer(3000);
+        timer.Elapsed += (s, e) => { 
+            isVisible = false; 
+            InvokeAsync(StateHasChanged);
+            timer.Stop();
+        };
+        timer.Start();
+    }
+
+    public void Dispose()
+    {
+        ToastService.OnShow -= ShowToast;
+        timer?.Dispose();
+    }
+}

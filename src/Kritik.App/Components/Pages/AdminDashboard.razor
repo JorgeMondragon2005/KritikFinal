@@ -1,0 +1,253 @@
+@page "/admin"
+@using Kritik.Shared.Models
+@using Kritik.App.Services
+@using Kritik.App.Utilities
+@using Microsoft.AspNetCore.Authorization
+@inject ProjectService ProjectService
+@inject NavigationManager NavigationManager
+@inject ToastService Toast
+@inject ExportService ExportService
+@attribute [Authorize(Roles = "Evaluator,Admin")]
+
+<div class="p-4">
+    <!-- Header stays same -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold m-0 text-dark">Panel Administrativo</h2>
+        <button class="btn btn-outline-dark rounded-circle shadow-sm" @onclick='() => NavigationManager.NavigateTo("/")' style="width: 45px; height: 45px;">
+            <i class="bi bi-house fs-5"></i>
+        </button>
+    </div>
+
+    <div class="row g-4">
+        <!-- Import Section -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm p-4 overflow-hidden animate-slide-up" style="border-radius: 20px; background: linear-gradient(135deg, #FFFDE7 0%, #FFF9C4 100%);">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 bg-warning text-white p-3 me-3 shadow-sm">
+                            <i class="bi bi-file-earmark-arrow-up fs-4"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold m-0">Importación de Datos</h4>
+                            <p class="text-muted m-0">Carga el catálogo de proyectos del evento.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <InputFile OnChange="HandleImport" accept=".json" class="d-none" id="importInput" />
+                        <label for="importInput" class="btn btn-warning px-5 py-3 rounded-pill fw-bold shadow-sm text-dark">
+                            <i class="bi bi-cloud-upload me-2"></i> Seleccionar JSON
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Media Manager -->
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm p-4 h-100" style="border-radius: 20px;">
+                <h5 class="fw-bold mb-4 d-flex align-items-center">
+                    <i class="bi bi-images me-2 text-warning"></i> Proyectos y Portadas
+                </h5>
+                @if (projects == null)
+                {
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-warning" role="status"></div>
+                    </div>
+                }
+                else if (!projects.Any())
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox fs-1 text-muted d-block mb-3"></i>
+                        <h6 class="text-muted">No hay proyectos cargados.</h6>
+                        <p class="text-secondary small">Usa el panel de importación para comenzar.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="project-list-admin" style="max-height: 500px; overflow-y: auto;">
+                        @foreach (var proj in projects)
+                        {
+                            <div class="admin-project-item p-3 mb-2 rounded-4 border d-flex align-items-center justify-content-between hover-shadow-sm transition-all">
+                                <div class="d-flex align-items-center">
+                                    <div class="media-preview rounded-3 overflow-hidden me-3 shadow-sm" style="width: 60px; height: 60px; background: #f8f9fa;">
+                                        @if (!string.IsNullOrEmpty(proj.CoverImageUrl))
+                                        {
+                                            <img src="@proj.CoverImageUrl" style="width: 100%; height: 100%; object-fit: cover;" />
+                                        }
+                                        else
+                                        {
+                                            <div class="d-flex align-items-center justify-content-center w-100 h-100 text-muted">
+                                                <i class="bi bi-image"></i>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div>
+                                        <h6 class="m-0 fw-bold">@proj.TeamName</h6>
+                                        <div class="badge bg-light text-dark fw-normal border">@proj.Category</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <InputFile OnChange="@(e => HandleCoverUpload(e, proj))" accept="image/*" class="d-none" id="@($"cover-{proj.Id}")" />
+                                    <label for="@($"cover-{proj.Id}")" class="btn btn-warning btn-sm rounded-pill px-3 shadow-sm text-white fw-bold">
+                                        Subir Portada
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Criteria & Stats -->
+        <div class="col-md-4">
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm p-4" style="border-radius: 20px; background: #1a1a1a; color: white;">
+                        <h6 class="text-warning text-uppercase small fw-bold mb-4">Criterios de Evaluación</h6>
+                        <div class="criteria-list mb-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Innovación</span>
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Factibilidad</span>
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Impacto</span>
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-warning btn-sm w-100 rounded-pill">Gestionar Criterios</button>
+                    </div>
+                </div>
+                
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
+                        <h6 class="text-muted text-uppercase small fw-bold mb-3">Estadísticas</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>Participantes</span>
+                            <span class="fw-bold fs-5">@projectCount</span>
+                        </div>
+                        <button class="btn btn-dark w-100 rounded-pill mt-3 py-2" @onclick="ExportResults">
+                            <i class="bi bi-file-earmark-excel me-2"></i> Exportar Todo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<Project>? projects;
+    private int projectCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProjects();
+    }
+
+    private async Task LoadProjects()
+    {
+        projects = await ProjectService.GetProjectsAsync();
+        projectCount = projects?.Count ?? 0;
+    }
+
+    private async Task HandleCoverUpload(InputFileChangeEventArgs e, Project project)
+    {
+        try
+        {
+            var file = e.File;
+            if (file != null)
+            {
+                Toast.Show("Sincronizando imagen...", "info");
+                
+                using var content = new MultipartFormDataContent();
+                var fileContent = new StreamContent(file.OpenReadStream(maxAllowedSize: 5120000)); // 5MB limit
+                fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                content.Add(fileContent, "file", file.Name);
+
+                using var http = new HttpClient { BaseAddress = new Uri(DeviceUtility.GetBaseAddress()) };
+                var response = await http.PostAsync("api/upload", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<UploadResult>();
+                    if (result != null)
+                    {
+                        project.CoverImageUrl = DeviceUtility.GetBaseAddress() + result.url;
+                        // Actualizamos en la base de datos
+                        await ProjectService.UpdateProjectAsync(project.Id!, project);
+                        Toast.Show("Media actualizada satisfactoriamente", "success");
+                        StateHasChanged();
+                    }
+                }
+                else
+                {
+                    Toast.Show("Fallo tecnológico al subir imagen", "error");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Toast.Show("Error sistémico: " + ex.Message, "error");
+        }
+    }
+
+    private class UploadResult { public string url { get; set; } = ""; }
+
+    private async Task HandleImport(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file != null)
+            {
+                Toast.Show($"Explorando {file.Name}...", "info");
+                
+                using var stream = file.OpenReadStream();
+                using var reader = new System.IO.StreamReader(stream);
+                var json = await reader.ReadToEndAsync();
+                
+                var imported = System.Text.Json.JsonSerializer.Deserialize<List<Project>>(json, 
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (imported != null && imported.Any())
+                {
+                    var success = await ProjectService.UpsertProjectsAsync(imported);
+                    if (success)
+                    {
+                        Toast.Show("Catálogo sincronizado globalmente", "success");
+                        await LoadProjects();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Toast.Show("Fallo en la importación: " + ex.Message, "error");
+        }
+    }
+
+    private async Task ExportResults()
+    {
+        try
+        {
+            var rankings = await ProjectService.GetRankingsAsync();
+            if (rankings != null && rankings.Any())
+            {
+                Toast.Show("Generando reporte de alta gerencia...", "info");
+                await ExportService.ExportRankingToCsvAsync(rankings);
+                Toast.Show("Reporte descargado correctamente", "success");
+            }
+        }
+        catch (Exception ex)
+        {
+            Toast.Show("Error al exportar: " + ex.Message, "error");
+        }
+    }
+
+    private void ExportResultsFallback() => Toast.Show("Generando reporte...", "success");
+}

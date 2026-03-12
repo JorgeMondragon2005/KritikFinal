@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Windows Machine": {
+      "commandName": "MsixPackage",
+      "nativeDebugging": false
+    },
+    "Kritik.App": {
+      "commandName": "Project",
+      "nativeDebugging": false
+    }
+  }
+}

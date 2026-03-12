@@ -1,0 +1,62 @@
+# Visual Studio
+.vs/
+[Oo]bj/
+[Bb]in/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+
+# Flutter/Dart/Pub related (Root level)
+**/build/
+**/.dart_tool/
+**/.pub/
+**/.pub-cache/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+
+# Node.js
+**/node_modules/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.log
+*.txt
+error.txt
+build_*.txt
+
+# Sensitive config - real values go in Render environment variables
+appsettings.*.local.json
+secrets.json
+
+# Flutter generated
+frontend_flutter/.dart_tool/
+frontend_flutter/build/
+frontend_flutter/.flutter-plugins
+frontend_flutter/.flutter-plugins-dependencies
+frontend_flutter/pubspec.lock
+
+# Brain/AI assistant files
+.gemini/
+.antigravity/
+task.md

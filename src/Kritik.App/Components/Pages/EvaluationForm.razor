@@ -1,0 +1,196 @@
+@page "/evaluate/{ProjectId}"
+@using Kritik.Shared.Models
+@using Kritik.App.Services
+@inject ProjectService ProjectService
+@inject EvaluationService EvaluationService
+@inject CriteriaService CriteriaService
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+@inject ValidationService ValidationService
+
+<div class="d-flex flex-column h-100 bg-white">
+    <!-- Header stays same -->
+    <div class="d-flex align-items-center p-4 border-bottom">
+        <button class="btn btn-link text-dark p-0 me-3" @onclick="GoBack" style="text-decoration: none;">
+            <i class="bi bi-arrow-left fs-4"></i>
+        </button>
+        <h5 class="m-0 flex-grow-1 text-center pe-4 fw-bold">Rúbrica de Evaluación</h5>
+    </div>
+
+    @if (hasVoted) 
+    {
+        <!-- Success State stays same -->
+        <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1 p-4 text-center">
+             <div class="rounded-circle d-flex align-items-center justify-content-center mb-4 shadow-sm" style="width: 80px; height: 80px; background-color: #e6fcf5;">
+                 <i class="bi bi-check-circle-fill fs-1 text-success"></i>
+             </div>
+             <h3 class="fw-bold mb-3">Evaluación enviada</h3>
+             <p class="text-muted mb-5">Gracias por tu valiosa contribución al evento.</p>
+             <button class="btn-primary-yellow w-100" @onclick="GoBack">Volver al Catálogo</button>
+        </div>
+    }
+    else if (project != null && criteria != null)
+    {
+        <EditForm Model="@evaluation" OnValidSubmit="HandleSubmit" class="d-flex flex-column flex-grow-1">
+            <div class="p-4 flex-grow-1" style="overflow-y: auto;">
+                <div class="mb-4">
+                    <span class="badge bg-warning text-dark mb-1">PROYECTO</span>
+                    <h2 class="fw-bold m-0">@project.TeamName</h2>
+                </div>
+
+                <!-- Dynamic Criteria List -->
+                <div class="mb-4">
+                    @foreach (var criterion in criteria)
+                    {
+                        var name = criterion.Name;
+                        if (!evaluation.Scores.Values.ContainsKey(name)) evaluation.Scores.Values[name] = 5;
+
+                        <div class="mb-4 animate-fade-in">
+                            <div class="d-flex justify-content-between mb-2">
+                                <div>
+                                    <label class="fw-bold d-block">@name</label>
+                                    <small class="text-muted">@criterion.Description</small>
+                                </div>
+                                <span class="fw-bold fs-4 text-warning">@evaluation.Scores.Values[name]</span>
+                            </div>
+                            <input type="range" class="custom-range" min="@criterion.MinValue" max="@criterion.MaxValue" 
+                                   value="@evaluation.Scores.Values[name]" 
+                                   @oninput="@(e => UpdateScore(name, e))"
+                                   style="background: linear-gradient(to right, #FFC107 0%, #FFC107 @(evaluation.Scores.Values[name] * 10)%, #F1F3F5 @(evaluation.Scores.Values[name] * 10)%, #F1F3F5 100%);"/>
+                            <div class="d-flex justify-content-between text-muted-small mt-1 px-1">
+                                <span>@criterion.MinValue</span><span>@criterion.MaxValue</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Evidence -->
+                <div class="mb-4">
+                    <label class="fw-bold mb-3 d-block">Evidencia de Campo</label>
+                    <label class="btn btn-outline-dark w-100 py-3 d-flex align-items-center justify-content-center gap-2 m-0 border-dashed" style="border-radius: 16px; cursor: pointer;">
+                        <i class="bi bi-camera"></i> @(uploadedFileName ?? "Capturar Evidencia")
+                        <InputFile OnChange="HandlePictureUpload" accept="image/*" class="d-none" />
+                    </label>
+                </div>
+
+                <!-- Comments -->
+                <div class="mb-4">
+                    <label class="fw-bold mb-3 d-block">Observaciones del Juez</label>
+                    <InputTextArea @bind-Value="evaluation.Feedback" class="form-control bg-light border-0 p-3" rows="3" placeholder="Anotaciones extra sobre el desempeño..." style="border-radius: 16px;"></InputTextArea>
+                </div>
+
+                <!-- Digital Signature -->
+                <div class="mb-4">
+                    <label class="fw-bold mb-3 d-block">Firma Digital</label>
+                    <div class="border rounded-4 p-4 text-center cursor-pointer transition-all @(isSigned ? "bg-light-success border-success" : "bg-light border-dashed")" 
+                         @onclick="() => isSigned = true" style="height: 120px; cursor: pointer;">
+                        @if (isSigned)
+                        {
+                            <div class="d-flex flex-column align-items-center">
+                                <i class="bi bi-patch-check-fill text-success fs-1"></i>
+                                <span class="text-success small fw-bold">Firmado Digitalmente</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <i class="bi bi-pencil-square text-muted fs-2"></i>
+                            <p class="text-muted small mt-2">Toca para firmar como Juez Oficial</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Action -->
+            <div class="p-4 bg-white border-top shadow-lg">
+                <div class="d-flex gap-3">
+                    <button type="button" class="btn btn-light flex-grow-1 py-3 border rounded-pill fw-bold" @onclick="SaveDraft">
+                        <i class="bi bi-save me-1"></i> Borrador
+                    </button>
+                    <button type="submit" class="btn-primary-yellow flex-grow-1 rounded-pill" disabled="@(!CanSubmit || isSubmitting)">
+                        @if (isSubmitting) { <span class="spinner-border spinner-border-sm me-2"></span> } 
+                        <span>Enviar Evaluación</span>
+                    </button>
+                </div>
+            </div>
+        </EditForm>
+    }
+    else
+    {
+         <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1">
+             <div class="spinner-border text-warning" role="status"></div>
+             <p class="mt-3 text-muted">Cargando criterios del evento...</p>
+         </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string ProjectId { get; set; } = null!;
+    private Project? project;
+    private List<Criterion>? criteria;
+    private Evaluation evaluation = new();
+    private bool isSubmitting = false;
+    private bool hasVoted = false;
+    private bool isSigned = false;
+    private string? uploadedFileName;
+
+    private bool CanSubmit => isSigned && evaluation.Scores.Values.Count >= (criteria?.Count ?? 0);
+
+    protected override async Task OnInitializedAsync() {
+        evaluation.ProjectId = ProjectId;
+        evaluation.EvaluatorId = Preferences.Default.Get("UserId", "mobile-kiosk-user");
+        
+        criteria = await CriteriaService.GetCriteriaAsync();
+        
+        // Load Draft if exists
+        var draftJson = Preferences.Default.Get($"Draft_{ProjectId}_{evaluation.EvaluatorId}", "");
+        if (!string.IsNullOrEmpty(draftJson))
+        {
+            try { 
+                evaluation = System.Text.Json.JsonSerializer.Deserialize<Evaluation>(draftJson) ?? new Evaluation(); 
+                isSigned = true; // Assume if they were in draft with signature they want to keep it or simple flag
+            } catch { }
+        }
+        
+        hasVoted = await ValidationService.HasVotedAsync(ProjectId, evaluation.EvaluatorId);
+        
+        if(!hasVoted) {
+             project = await ProjectService.GetProjectByIdAsync(ProjectId);
+        }
+    }
+    
+    private void UpdateScore(string name, ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int val))
+        {
+            evaluation.Scores.Values[name] = val;
+        }
+    }
+
+    private void SaveDraft()
+    {
+        var draftJson = System.Text.Json.JsonSerializer.Serialize(evaluation);
+        Preferences.Default.Set($"Draft_{ProjectId}_{evaluation.EvaluatorId}", draftJson);
+        ToastService.Show("Borrador listo para continuar luego", "success");
+    }
+
+    private void HandlePictureUpload(InputFileChangeEventArgs e)
+    {
+        uploadedFileName = e.File.Name;
+        ToastService.Show("Imagen cargada como evidencia", "info");
+    }
+
+    private async Task HandleSubmit() {
+        if (hasVoted || !isSigned) return;
+        isSubmitting = true;
+        var success = await EvaluationService.SubmitEvaluationAsync(evaluation);
+        if (success) {
+            ValidationService.RegisterVote(ProjectId);
+            Preferences.Default.Remove($"Draft_{ProjectId}_{evaluation.EvaluatorId}");
+            hasVoted = true; 
+            ToastService.Show("¡Evaluación enviada con éxito!", "success");
+        }
+        isSubmitting = false;
+    }
+
+    private void GoBack() => NavigationManager.NavigateTo("/projects");
+}
