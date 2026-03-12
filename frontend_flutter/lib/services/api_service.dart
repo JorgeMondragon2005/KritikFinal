@@ -16,7 +16,7 @@ class ApiService {
 
   static String get _baseUrl {
     // URL de producción en Render
-    return 'https://kiosko-render.onrender.com';
+    return 'https://kritikfinal.onrender.com';
   }
 
   ApiService()
