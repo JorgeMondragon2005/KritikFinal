@@ -23,7 +23,7 @@ public class EmailService
         try
         {
             var client = _httpClientFactory.CreateClient();
-            client.DefaultRequestHeaders.Add("api-key", _brevoSettings.ApiKey);
+            client.DefaultRequestHeaders.Add("api-key", _brevoSettings.ApiKey?.Trim());
             client.DefaultRequestHeaders.Add("accept", "application/json");
 
             var body = new
