@@ -220,6 +220,22 @@ class ApiService {
     }
   }
 
+  Future<List<Evaluation>> getEvaluationsByEvaluator(String evaluatorId) async {
+    try {
+      final response = await _dio.get('evaluations');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        // The backend returns all evaluations, we filter locally for the specific evaluator
+        // since we haven't deployed the evaluator-specific endpoint to the Render server yet.
+        return data.map((json) => Evaluation.fromJson(json)).where((e) => e.evaluatorId == evaluatorId).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Get evaluations by evaluator error: $e');
+      return [];
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getRankings() async {
     try {
       final response = await _dio.get('projects/rankings');

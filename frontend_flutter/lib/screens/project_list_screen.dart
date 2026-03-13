@@ -44,6 +44,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   String _selectedFilter = 'Todos';
   String _studentStatusFilter = 'Pendientes'; // For student dashboard
 
+  Set<String> _evaluatedProjectIds = {}; // Track which projects the current evaluator has already graded
+
   @override
   void initState() {
     super.initState();
@@ -102,6 +104,13 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       } else {
         final teacherId = role == 'evaluator' ? userId : null;
         final projects = await _apiService.getProjects(teacherId: teacherId);
+
+        // If Evaluator, fetch their submitted evaluations
+        if (widget.role.toLowerCase() == 'evaluator' && widget.userId != null) {
+          final evals = await _apiService.getEvaluationsByEvaluator(widget.userId!);
+          _evaluatedProjectIds = evals.map((e) => e.projectId ?? '').toSet();
+        }
+        
         setState(() {
           _allProjects = projects;
           _isLoading = false;
@@ -676,7 +685,9 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   Widget _buildProjectItem(BuildContext context, Project p) {
     final title = p.title ?? p.teamName ?? 'Sin Título';
     final category = p.category ?? 'General';
-    final isEvaluated = p.status?.toLowerCase() == 'evaluado';
+    final isEvaluated = widget.role.toLowerCase() == 'evaluator' 
+        ? _evaluatedProjectIds.contains(p.id) 
+        : p.status?.toLowerCase() == 'evaluado';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),

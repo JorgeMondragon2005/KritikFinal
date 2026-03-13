@@ -32,8 +32,14 @@ public class ProjectsController : ControllerBase
             var projectEvals = evaluations.Where(e => e.ProjectId == project.Id).ToList();
             if (projectEvals.Any())
             {
-                var avgScore = projectEvals.Average(e => e.Scores.Average);
-                var integrity = 1.0; // Placeholder for now
+                // Un evaluador da X puntos en total sumando todos sus DetailedScores.
+                // El puntaje del proyecto es el Promedio de los (Puntajes Totales de cada evaluador).
+                var avgScore = projectEvals.Average(e => 
+                    (e.DetailedScores != null && e.DetailedScores.Any()) 
+                        ? e.DetailedScores.Values.Sum() 
+                        : (e.Scores?.Values?.Sum() ?? 0)
+                );
+                var integrity = 98.2; // Placeholder for now
 
                 ranking.Add(new ProjectRankingDTO
                 {
