@@ -8,6 +8,7 @@ import '../models/rubric_model.dart';
 import '../models/evaluation_model.dart';
 import '../theme/app_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'native_media_viewer.dart';
 
 class StudentUploadScreen extends StatefulWidget {
   final String studentId;
@@ -549,39 +550,41 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                       ),
                       const SizedBox(height: 24),
                     ] else ...[
-                      Text(
-                        'Selecciona una convocatoria o únete con un código.',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _accessCodeController,
-                              decoration: const InputDecoration(
-                                labelText: 'Código de Clase/Tarea',
-                                hintText: 'Ej: AB1234',
-                                prefixIcon: Icon(Icons.vpn_key),
+                      if (widget.initialAssignmentId == null) ...[
+                        Text(
+                          'Selecciona una convocatoria o únete con un código.',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _accessCodeController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Código de Clase/Tarea',
+                                  hintText: 'Ej: AB1234',
+                                  prefixIcon: Icon(Icons.vpn_key),
+                                ),
+                                textCapitalization: TextCapitalization.characters,
                               ),
-                              textCapitalization: TextCapitalization.characters,
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          SizedBox(
-                            height: 56,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(minimumSize: const Size(100, 56)),
-                              onPressed: _isSearchingCode ? null : _searchByCode,
-                              child: _isSearchingCode 
-                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Text('Buscar'),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              height: 56,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(minimumSize: const Size(100, 56)),
+                                onPressed: _isSearchingCode ? null : _searchByCode,
+                                child: _isSearchingCode 
+                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                  : const Text('Buscar'),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                      ],
                       
                       // Assignment Dropdown
                       DropdownButtonFormField<String>(
@@ -685,14 +688,14 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                           leading: const Icon(Icons.video_file, color: Colors.blue),
                           title: Text(v.title, overflow: TextOverflow.ellipsis),
                           trailing: const Icon(Icons.open_in_new, size: 18),
-                          onTap: () => _openUrl(v.url),
+                          onTap: () => _openUrl(v.url, v.title, isVideo: true),
                         )),
                         ..._existingProject!.documents.map((d) => ListTile(
                           dense: true,
                           leading: const Icon(Icons.description, color: Colors.green),
                           title: Text(d.title, overflow: TextOverflow.ellipsis),
                           trailing: const Icon(Icons.open_in_new, size: 18),
-                          onTap: () => _openUrl(d.url),
+                          onTap: () => _openUrl(d.url, d.title, isImage: _isImageExtension(d.type)),
                         )),
                       ],
 
@@ -785,21 +788,43 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     );
   }
 
-  Future<void> _openUrl(String? url) async {
+  bool _isImageExtension(String? type) {
+    if (type == null) return false;
+    final t = type.toLowerCase();
+    return t == 'jpg' || t == 'jpeg' || t == 'png' || t == 'gif' || t == 'webp';
+  }
+
+  Future<void> _openUrl(String? url, String fileName, {bool isVideo = false, bool isImage = false}) async {
     if (url == null || url.isEmpty) return;
-    final uri = Uri.parse(url);
+    
+    // Fix relative URLs from backend
+    String finalUrl = url;
+    if (finalUrl.startsWith('/')) {
+        finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
+    }
+    
+    if (isVideo || isImage) {
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => NativeMediaViewer(url: finalUrl, isVideo: isVideo),
+        ),
+      );
+      return;
+    }
+
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No se pudo abrir el enlace automáticamente.')),
-          );
-        }
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Descargando $fileName...'), duration: const Duration(seconds: 1)),
+      );
+      await _apiService.downloadAndOpenFile(finalUrl, fileName);
     } catch (e) {
-      debugPrint('Error launching URL: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo abrir $fileName: ${e.toString().replaceAll("Exception: ", "")}')),
+      );
     }
   }
 

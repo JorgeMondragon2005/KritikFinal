@@ -71,16 +71,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     prefixIcon: Icon(Icons.lock),
                   ),
                 ),
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedRole,
-                  decoration: const InputDecoration(hintText: 'Selecciona tu Rol'),
-                  items: const [
-                    DropdownMenuItem(value: 'Student', child: Text('Alumno / Proyectista')),
-                    DropdownMenuItem(value: 'Evaluator', child: Text('Evaluador / Juez')),
-                    DropdownMenuItem(value: 'Admin', child: Text('Administrador')),
-                  ],
-                  onChanged: (val) => setState(() => _selectedRole = val!),
-                ),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: _isLoading ? null : () async {
@@ -115,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         navigator.pushReplacement(
                           MaterialPageRoute(
                             builder: (_) => ProjectListScreen(
-                              role: user?.role ?? _selectedRole.toLowerCase(),
+                              role: user?.role ?? 'student',
                               userId: user?.id ?? _idController.text,
                               userFullName: user?.fullName ?? _idController.text,
                             ),

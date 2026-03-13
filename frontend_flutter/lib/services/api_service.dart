@@ -2,6 +2,8 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 import '../models/user_model.dart';
 import '../models/assignment_model.dart';
 import '../models/project_model.dart';
@@ -39,7 +41,10 @@ class ApiService {
       }
       return null;
     } catch (e) {
-      debugPrint('Login error: $e');
+      debugPrint('Login error caught: $e');
+      if (e is DioException) {
+          debugPrint('DioException details: ${e.response?.data}');
+      }
       rethrow;
     }
   }
@@ -208,8 +213,10 @@ class ApiService {
       final response = await _dio.post('evaluations', data: data.toJson());
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      debugPrint('Submit evaluation error: $e');
-      return false;
+      if (e is DioException) {
+          throw Exception('Backend Error: ${e.response?.statusCode} - ${e.response?.data}');
+      }
+      throw Exception(e.toString());
     }
   }
 
@@ -365,8 +372,10 @@ class ApiService {
       final response = await _dio.put('Users/${user.id}', data: user.toJson());
       return response.statusCode == 204 || response.statusCode == 200;
     } catch (e) {
-      debugPrint('Update profile error: $e');
-      return false;
+      if (e is DioException) {
+          throw Exception('Backend Error: ${e.response?.statusCode} - ${e.response?.data}');
+      }
+      throw Exception(e.toString());
     }
   }
 
@@ -505,6 +514,38 @@ class ApiService {
     } catch (e) {
       debugPrint('Leave classroom error: $e');
       return false;
+    }
+  }
+
+  /// Descarga un archivo a un directorio temporal local y luego lo abre 
+  /// directamente en el sistema operativo usando la app por defecto del teléfono.
+  Future<void> downloadAndOpenFile(String url, String fileName) async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      // Ensure the file name is clean to prevent path injection
+      final cleanFileName = fileName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+      final path = '${tempDir.path}/$cleanFileName';
+
+      // Verify if the file has an extension, if not extract it from URL or add a default
+      String finalPath = path;
+      if (!path.contains('.')) {
+         final extension = url.split('.').last.split('?').first;
+         if (extension.isNotEmpty && extension.length <= 4) {
+             finalPath = '$path.$extension';
+         } else {
+             finalPath = '$path.pdf'; // fallback to pdf
+         }
+      }
+
+      await _dio.download(url, finalPath);
+      final result = await OpenFilex.open(finalPath);
+      
+      if (result.type != ResultType.done) {
+         throw Exception('No pudimos encontrar una app en el celular para abrir este tipo de archivo.');
+      }
+    } catch (e) {
+      debugPrint('Error en downloadAndOpenFile: $e');
+      rethrow;
     }
   }
 }

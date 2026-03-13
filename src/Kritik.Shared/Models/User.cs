@@ -20,6 +20,7 @@ public class User
     public string? Telefono { get; set; }
     public string? Bio { get; set; }
     public string? FotoPerfil { get; set; }
+    public string? PortadaUrl { get; set; }
 }
 
 public class LoginRequest

@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/project_model.dart';
 import '../theme/app_theme.dart';
+import 'native_media_viewer.dart';
 
 import '../services/api_service.dart';
 import '../models/evaluation_model.dart';
@@ -59,19 +60,40 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
     }
   }
 
-  Future<void> _openFileExternally(String url) async {
-    final uri = Uri.parse(url);
+  bool _isImageExtension(String? type) {
+    if (type == null) return false;
+    final t = type.toLowerCase();
+    return t == 'jpg' || t == 'jpeg' || t == 'png' || t == 'gif' || t == 'webp';
+  }
+
+  Future<void> _openFileExternally(String url, String fileName, {bool isVideo = false, bool isImage = false}) async {
+    // Fix relative URLs from backend
+    String finalUrl = url;
+    if (finalUrl.startsWith('/')) {
+        finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
+    }
+
+    if (isVideo || isImage) {
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => NativeMediaViewer(url: finalUrl, isVideo: isVideo),
+        ),
+      );
+      return;
+    }
+
     try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo abrir el archivo. Intenta copiar el enlace.')),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Descargando $fileName...'), duration: const Duration(seconds: 1)),
+      );
+      await _apiService.downloadAndOpenFile(finalUrl, fileName);
     } catch (e) {
-      debugPrint('Error launching URL: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo abrir $fileName: ${e.toString().replaceAll("Exception: ", "")}')),
+      );
     }
   }
 
@@ -196,7 +218,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                         padding: EdgeInsets.only(top: 8, bottom: 4),
                         child: Text('Videos:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.blue)),
                       ),
-                      ..._project!.videos.map((v) => _buildFileCard(v.title, v.url, Icons.video_file, Colors.blue)),
+                      ..._project!.videos.map((v) => _buildFileCard(v.title, v.url, Icons.video_file, Colors.blue, isVideo: true)),
                     ],
                     
                     // Show Documents
@@ -205,7 +227,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                         padding: EdgeInsets.only(top: 8, bottom: 4),
                         child: Text('Documentos:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green)),
                       ),
-                      ..._project!.documents.map((d) => _buildFileCard(d.title, d.url, Icons.description, Colors.green)),
+                      ..._project!.documents.map((d) => _buildFileCard(d.title, d.url, Icons.description, Colors.green, isImage: _isImageExtension(d.type))),
                     ],
                     
                     // Show Legacy/Other (CoverImageUrl)
@@ -217,7 +239,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                         padding: EdgeInsets.only(top: 8, bottom: 4),
                         child: Text('Otros Archivos:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.orange)),
                       ),
-                      _buildFileCard('Archivo Principal', _project!.coverImageUrl!, Icons.insert_drive_file, Colors.orange),
+                      _buildFileCard('Archivo Principal', _project!.coverImageUrl!, Icons.image, Colors.orange, isImage: true),
                     ],
 
                     if (_project!.videos.isEmpty && _project!.documents.isEmpty && (_project!.coverImageUrl == null || _project!.coverImageUrl!.isEmpty))
@@ -349,7 +371,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
     );
   }
 
-  Widget _buildFileCard(String title, String url, IconData icon, Color color) {
+  Widget _buildFileCard(String title, String url, IconData icon, Color color, {bool isVideo = false, bool isImage = false}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -376,9 +398,9 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
           ),
           const SizedBox(height: 8),
           ElevatedButton.icon(
-            onPressed: () => _openFileExternally(url),
+            onPressed: () => _openFileExternally(url, title, isVideo: isVideo, isImage: isImage),
             icon: const Icon(Icons.open_in_new, size: 18),
-            label: const Text('Abrir con App Local'),
+            label: Text(isVideo || isImage ? 'Ver Archivo' : 'Abrir Documento'),
             style: ElevatedButton.styleFrom(
               backgroundColor: color,
               foregroundColor: Colors.white,

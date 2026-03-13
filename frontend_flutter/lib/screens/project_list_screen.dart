@@ -539,7 +539,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                       subtitle: Text(list[index].category ?? 'Proyecto'),
                       onTap: () {
                          Navigator.pop(context);
-                         Navigator.push(context, MaterialPageRoute(builder: (_) => EvaluationScreen(projectId: list[index].id, projectName: list[index].title ?? 'Proyecto')));
+                         Navigator.push(context, MaterialPageRoute(builder: (_) => EvaluationScreen(projectId: list[index].id, projectName: list[index].title ?? 'Proyecto', evaluatorId: widget.userId)));
                       },
                     ),
                   );
@@ -692,6 +692,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               builder: (_) => EvaluationScreen(
                 projectId: p.id ?? '',
                 projectName: title,
+                evaluatorId: widget.userId,
               ),
             ),
           );
@@ -789,18 +790,21 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             leading: const Icon(Icons.person_outline),
             title: const Text('Mi Perfil'),
             onTap: () async {
-              final updatedUser = await Navigator.push<User>(
-                context, 
-                MaterialPageRoute(builder: (_) => ProfileScreen(user: User(
-                  id: widget.userId,
-                  fullName: widget.userFullName,
-                  role: widget.role,
-                  // We might want to fetch full user data here if needed
-                )))
-              );
-              if (updatedUser != null) {
-                // Refresh local state/UI if needed
-                setState(() {});
+              showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+              final userProfile = await _apiService.getUserProfile(widget.userId ?? '');
+              Navigator.pop(context); // Close dialog
+
+              if (userProfile != null) {
+                final updatedUser = await Navigator.push<User>(
+                  context, 
+                  MaterialPageRoute(builder: (_) => ProfileScreen(user: userProfile))
+                );
+                if (updatedUser != null) {
+                  // Refresh local state/UI if needed
+                  setState(() {});
+                }
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al cargar datos del perfil')));
               }
             },
           ),
