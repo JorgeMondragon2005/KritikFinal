@@ -29,4 +29,5 @@ public class Project
     public string? ImageUrl { get; set; } = "https://via.placeholder.com/150";
     public string? CoverImageUrl { get; set; }
     public string? IconUrl { get; set; }
+    public string? PromoVideoUrl { get; set; }
 }

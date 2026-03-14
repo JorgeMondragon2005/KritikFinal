@@ -51,6 +51,7 @@ class Project {
   final String? coverImageUrl;
   final String? iconUrl;
   final String? assignmentId;
+  final String? promoVideoUrl;
   final List<Video> videos;
   final List<Document> documents;
 
@@ -67,6 +68,7 @@ class Project {
     this.coverImageUrl,
     this.iconUrl,
     this.assignmentId,
+    this.promoVideoUrl,
     this.videos = const [],
     this.documents = const [],
   });
@@ -84,6 +86,7 @@ class Project {
         coverImageUrl: json['coverImageUrl']?.toString() ?? json['CoverImageUrl']?.toString(),
         iconUrl: json['iconUrl']?.toString() ?? json['IconUrl']?.toString(),
         assignmentId: json['assignmentId']?.toString() ?? json['AssignmentId']?.toString(),
+        promoVideoUrl: json['promoVideoUrl']?.toString() ?? json['PromoVideoUrl']?.toString(),
         videos: (json['videos'] as List?)?.map((x) => Video.fromJson(x)).toList() ?? (json['Videos'] as List?)?.map((x) => Video.fromJson(x)).toList() ?? [],
         documents: (json['documents'] as List?)?.map((x) => Document.fromJson(x)).toList() ?? (json['Documents'] as List?)?.map((x) => Document.fromJson(x)).toList() ?? [],
       );
@@ -101,6 +104,7 @@ class Project {
     'coverImageUrl': coverImageUrl,
     'iconUrl': iconUrl,
     'assignmentId': assignmentId,
+    'promoVideoUrl': promoVideoUrl,
     'videos': videos.map((v) => v.toJson()).toList(),
     'documents': documents.map((d) => d.toJson()).toList(),
   };
