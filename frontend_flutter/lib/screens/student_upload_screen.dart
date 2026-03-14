@@ -28,6 +28,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
   final _repoLinkController = TextEditingController();
   final _technologiesController = TextEditingController(); // New
   final _promoVideoController = TextEditingController(); // For Demo Video Link (YouTube/Drive/etc)
+  final _accessCodeController = TextEditingController();
   final ApiService _apiService = ApiService();
   
   bool _isSubmitting = false;
