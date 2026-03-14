@@ -26,8 +26,8 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
   final _descriptionController = TextEditingController();
   final _categoryController = TextEditingController();
   final _repoLinkController = TextEditingController();
-  final _demoLinkController = TextEditingController();
-  final _accessCodeController = TextEditingController();
+  final _technologiesController = TextEditingController(); // New
+  final _promoVideoController = TextEditingController(); // For Demo Video Link (YouTube/Drive/etc)
   final ApiService _apiService = ApiService();
   
   bool _isSubmitting = false;
@@ -300,13 +300,11 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         teamName: _teamNameController.text.isNotEmpty ? _teamNameController.text : "Equipo de ${_titleController.text}",
         category: _categoryController.text,
         description: _descriptionController.text,
-        technologies: [
-          if (_repoLinkController.text.isNotEmpty) _repoLinkController.text,
-          if (_demoLinkController.text.isNotEmpty) _demoLinkController.text,
-        ],
+        technologies: _technologiesController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
         studentId: widget.studentId,
         assignmentId: _selectedAssignmentId,
         assignedTeacherId: selectedAssignment.teacherId,
+        promoVideoUrl: _promoVideoController.text, // New field
         coverImageUrl: uploadedFileUrls.isNotEmpty ? uploadedFileUrls.first : null,
         videos: videos,
         documents: documents,
@@ -661,20 +659,23 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
-                        controller: _repoLinkController,
+                        controller: _technologiesController,
                         readOnly: _existingProject != null,
                         decoration: const InputDecoration(
-                          labelText: 'Link de Repositorio (GitHub, etc.)',
-                          prefixIcon: Icon(Icons.link),
+                          labelText: 'Tecnologías (separadas por comas)',
+                          prefixIcon: Icon(Icons.code),
+                          hintText: 'Ej: Flutter, Firebase, Python',
                         ),
+                        validator: (v) => v!.isEmpty ? 'Por favor indica las tecnologías' : null,
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
-                        controller: _demoLinkController,
+                        controller: _promoVideoController,
                         readOnly: _existingProject != null,
                         decoration: const InputDecoration(
-                          labelText: 'Link de Demo o Drive',
-                          prefixIcon: Icon(Icons.ondemand_video),
+                          labelText: 'Video Demo Principal (Link YouTube/Drive)',
+                          prefixIcon: Icon(Icons.play_circle_fill),
+                          hintText: 'Link que aparecerá en el feed principal',
                         ),
                       ),
 

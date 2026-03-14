@@ -23,6 +23,8 @@ class KritikApp extends StatelessWidget {
     return MaterialApp(
       title: 'Kritik App',
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       home: savedUser != null 
         ? ProjectListScreen(
             role: savedUser!.role ?? 'student',

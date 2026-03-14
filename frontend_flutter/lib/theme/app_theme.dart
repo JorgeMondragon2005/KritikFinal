@@ -7,12 +7,18 @@ class AppColors {
   static const Color primaryYellow = Color(0xFFFFD600);
   static const Color backgroundWhite = Color(0xFFFFFFFF);
   static const Color backgroundOffWhite = Color(0xFFF9F9FA);
+  static const Color backgroundDark = Color(0xFF121212);
+  static const Color surfaceDark = Color(0xFF1E1E1E);
   static const Color textPrimary = Color(0xFF111111);
   static const Color textSecondary = Color(0xFF808080);
+  static const Color textPrimaryDark = Color(0xFFF5F5F5);
+  static const Color textSecondaryDark = Color(0xFFB0B0B0);
   static const Color successGreen = Color(0xFF2ECA7F);
   static const Color borderColor = Color(0xFFE0E0E0);
+  static const Color borderColorDark = Color(0xFF333333);
   static const Color errorRed = Color(0xFFFF4C4C);
   static const Color techChipBg = Color(0xFFF3F4F6);
+  static const Color techChipBgDark = Color(0xFF2A2A2A);
   static const Color inactiveSlider = Color(0xFFEEEEEE);
 }
 
@@ -92,6 +98,141 @@ class AppTheme {
           borderThickness: 3.0,
         ),
       ),
+    );
+  }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: AppColors.backgroundDark,
+      primaryColor: AppColors.primaryYellow,
+      colorScheme: const ColorScheme.dark(
+        primary: AppColors.primaryYellow,
+        surface: AppColors.surfaceDark,
+        error: AppColors.errorRed,
+      ),
+      textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme).copyWith(
+        displayLarge: GoogleFonts.poppins(
+          fontWeight: FontWeight.w800,
+          color: AppColors.textPrimaryDark,
+          fontSize: 42,
+        ),
+        headlineLarge: GoogleFonts.poppins(
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimaryDark,
+        ),
+        headlineMedium: GoogleFonts.poppins(
+          fontWeight: FontWeight.w700,
+          color: AppColors.textPrimaryDark,
+        ),
+        bodyLarge: GoogleFonts.poppins(
+          fontWeight: FontWeight.w500,
+          color: AppColors.textPrimaryDark,
+        ),
+        bodyMedium: GoogleFonts.poppins(
+          fontWeight: FontWeight.w400,
+          color: AppColors.textSecondaryDark,
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.surfaceDark,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: AppColors.borderColorDark),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: AppColors.borderColorDark),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(
+            color: AppColors.primaryYellow,
+            width: 2.0,
+          ),
+        ),
+        hintStyle: GoogleFonts.poppins(color: AppColors.textSecondaryDark),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryYellow,
+          foregroundColor: AppColors.textPrimary,
+          elevation: 0,
+          textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          minimumSize: const Size.fromHeight(50),
+        ),
+      ),
+    );
+  }
+}
+
+class SkeletonLoader extends StatefulWidget {
+  final double width;
+  final double height;
+  final double borderRadius;
+
+  const SkeletonLoader({
+    super.key, 
+    this.width = double.infinity, 
+    this.height = 20, 
+    this.borderRadius = 8
+  });
+
+  @override
+  State<SkeletonLoader> createState() => _SkeletonLoaderState();
+}
+
+class _SkeletonLoaderState extends State<SkeletonLoader> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+    _animation = Tween<double>(begin: -1, end: 2).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.grey[850]! : Colors.grey[300]!;
+    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
+
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            gradient: LinearGradient(
+              begin: const Alignment(-1, -0.3),
+              end: const Alignment(1, 0.3),
+              colors: [baseColor, highlightColor, baseColor],
+              stops: [
+                ((_animation.value - 0.3).clamp(0.0, 1.0)),
+                (_animation.value.clamp(0.0, 1.0)),
+                ((_animation.value + 0.3).clamp(0.0, 1.0)),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -16,6 +16,9 @@ import '../models/classroom_model.dart';
 import '../models/enrollment_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'classroom_management_screen.dart';
+import '../widgets/project_card_widget.dart';
+import 'leaderboard_screen.dart';
+import 'teacher_dashboard_screen.dart';
 
 class ProjectListScreen extends StatefulWidget {
   final String role;
@@ -162,10 +165,18 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               )
             : null,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _fetchProjects,
-            ),
+            if (widget.role.toLowerCase() == 'teacher' || widget.role.toLowerCase() == 'admin' || widget.role.toLowerCase() == 'evaluator')
+              IconButton(
+                icon: const Icon(Icons.leaderboard_outlined, color: AppColors.primaryYellow),
+                tooltip: 'Ranking en vivo',
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaderboardScreen())),
+              ),
+            if (widget.role.toLowerCase() == 'teacher')
+              IconButton(
+                icon: const Icon(Icons.analytics_outlined),
+                tooltip: 'Estadísticas',
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TeacherDashboardScreen(teacherId: widget.userId ?? ''))),
+              ),
           ],
         ),
         drawer: _buildDrawer(context),
@@ -186,18 +197,22 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               backgroundColor: AppColors.primaryYellow,
             )
           : null,
-        body: _isLoading 
-          ? const Center(child: CircularProgressIndicator())
-          : isEvaluator
-            ? TabBarView(
-                children: [
-                   _buildProjectTab(),
-                   _buildAssignmentTab(),
-                ],
-              )
-            : widget.role.toLowerCase() == 'student'
-              ? _buildStudentDashboard()
-              : _buildProjectTab(),
+        body: RefreshIndicator(
+          onRefresh: _fetchProjects,
+          color: AppColors.primaryYellow,
+          child: _isLoading 
+            ? const Center(child: CircularProgressIndicator())
+            : isEvaluator
+              ? TabBarView(
+                  children: [
+                     _buildProjectTab(),
+                     _buildAssignmentTab(),
+                  ],
+                )
+              : widget.role.toLowerCase() == 'student'
+                ? _buildStudentDashboard()
+                : _buildProjectTab(),
+        ),
       ),
     );
   }
@@ -642,14 +657,44 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
 
   Widget _buildProjectList() {
     final projects = _filteredProjects;
-    if (projects.isEmpty) return _buildEmptyState();
+
+    if (projects.isEmpty && !_isLoading) {
+      return _buildEmptyState();
+    }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      physics: const AlwaysScrollableScrollPhysics(), // Important for RefreshIndicator
       itemCount: projects.length,
       itemBuilder: (context, index) {
         final p = projects[index];
-        return _buildProjectItem(context, p);
+        final isEvaluated = widget.role.toLowerCase() == 'evaluator' 
+            ? _evaluatedProjectIds.contains(p.id) 
+            : p.status?.toLowerCase() == 'evaluado';
+
+        return ProjectCard(
+          project: p,
+          isEvaluated: isEvaluated,
+          onTap: () async {
+             // Handle navigation based on role
+             if (widget.role.toLowerCase() == 'evaluator' && !isEvaluated) {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => EvaluationScreen(
+                      projectId: p.id ?? '',
+                      projectName: p.title ?? 'Proyecto',
+                      evaluatorId: widget.userId,
+                    ),
+                  ),
+                );
+                if (result == true) _fetchProjects();
+             } else {
+                // Future: ProjectDetailScreen
+                debugPrint('Ver detalle de: ${p.title}');
+             }
+          },
+        );
       },
     );
   }
