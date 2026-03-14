@@ -64,7 +64,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Perfil actualizado correctamente')),
           );
-          Navigator.pop(context, updatedUser);
         }
       } else {
         if (mounted) {
@@ -127,8 +126,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (isCover) _portadaUrl = finalUrl;
           else _fotoPerfilUrl = finalUrl;
         });
-        // Auto-save just to be sure
-        _saveProfile();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error al subir la imagen')),

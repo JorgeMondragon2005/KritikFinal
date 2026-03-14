@@ -25,8 +25,8 @@ class ApiService {
     : _dio = Dio(
         BaseOptions(
           baseUrl: '$_baseUrl/api/',
-          connectTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 10),
+          connectTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
         ),
       );
 
@@ -91,7 +91,15 @@ class ApiService {
       });
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        return data.map((json) => Project.fromJson(json)).toList();
+        List<Project> projects = [];
+        for (var item in data) {
+          try {
+            projects.add(Project.fromJson(item));
+          } catch (e) {
+            debugPrint('Error parsing project item: $e');
+          }
+        }
+        return projects;
       }
       return <Project>[];
     } catch (e) {
@@ -225,9 +233,15 @@ class ApiService {
       final response = await _dio.get('evaluations');
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        // The backend returns all evaluations, we filter locally for the specific evaluator
-        // since we haven't deployed the evaluator-specific endpoint to the Render server yet.
-        return data.map((json) => Evaluation.fromJson(json)).where((e) => e.evaluatorId == evaluatorId).toList();
+        List<Evaluation> evals = [];
+        for (var item in data) {
+          try {
+            evals.add(Evaluation.fromJson(item));
+          } catch (e) {
+            debugPrint('Error parsing an evaluation: $e');
+          }
+        }
+        return evals.where((e) => e.evaluatorId == evaluatorId).toList();
       }
       return [];
     } catch (e) {
@@ -278,7 +292,15 @@ class ApiService {
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         debugPrint('DEBUG: getAssignments returned ${data.length} items');
-        return data.map((json) => Assignment.fromJson(json)).toList();
+        List<Assignment> assignments = [];
+        for (var item in data) {
+          try {
+            assignments.add(Assignment.fromJson(item));
+          } catch (e) {
+            debugPrint('Error parsing assignment item: $e');
+          }
+        }
+        return assignments;
       }
       return <Assignment>[];
     } catch (e) {
@@ -416,7 +438,16 @@ class ApiService {
         if (studentId != null) 'studentId': studentId,
       });
       if (response.statusCode == 200) {
-        return (response.data as List).map((x) => Classroom.fromJson(x)).toList();
+        final List<dynamic> data = response.data;
+        List<Classroom> classrooms = [];
+        for (var item in data) {
+          try {
+            classrooms.add(Classroom.fromJson(item));
+          } catch (e) {
+            debugPrint('Error parsing classroom item: $e');
+          }
+        }
+        return classrooms;
       }
       return <Classroom>[];
     } catch (e) {
