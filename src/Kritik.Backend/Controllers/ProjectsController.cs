@@ -1,6 +1,7 @@
 using Kritik.Backend.Services;
 using Kritik.Shared.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 namespace Kritik.Backend.Controllers;
 
@@ -37,15 +38,15 @@ public class ProjectsController : ControllerBase
                 var avgScore = projectEvals.Average(e => 
                     (e.DetailedScores != null && e.DetailedScores.Any()) 
                         ? e.DetailedScores.Values.Sum() 
-                        : (e.Scores?.Values?.Sum() ?? 0)
+                        : (e.Scores?.Values?.Values?.Sum() ?? 0)
                 );
                 var integrity = 98.2; // Placeholder for now
 
                 ranking.Add(new ProjectRankingDTO
                 {
                     ProjectId = project.Id!,
-                    TeamName = project.TeamName,
-                    Category = project.Category,
+                    TeamName = project.TeamName ?? "S/N",
+                    Category = project.Category ?? "N/A",
                     AverageScore = Math.Round(avgScore, 1),
                     TotalVotes = projectEvals.Count,
                     IntegrityRate = integrity
