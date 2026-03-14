@@ -19,6 +19,7 @@ import 'classroom_management_screen.dart';
 import '../widgets/project_card_widget.dart';
 import 'leaderboard_screen.dart';
 import 'teacher_dashboard_screen.dart';
+import 'project_detail_screen.dart';
 
 class ProjectListScreen extends StatefulWidget {
   final String role;
@@ -690,8 +691,10 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 );
                 if (result == true) _fetchProjects();
              } else {
-                // Future: ProjectDetailScreen
-                debugPrint('Ver detalle de: ${p.title}');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => ProjectDetailScreen(project: p)),
+                );
              }
           },
         );
