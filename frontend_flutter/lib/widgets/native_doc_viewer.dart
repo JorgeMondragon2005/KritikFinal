@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'native_media_viewer.dart';
+import '../screens/native_media_viewer.dart';
 import '../theme/app_theme.dart';
 
 class NativeDocViewer {

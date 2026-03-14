@@ -45,7 +45,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           evaluated++;
           double pSum = 0;
           for (var e in evals) {
-            pSum += e.scores?.values.values.fold(0.0, (prev, el) => prev + el) ?? 0;
+            if (e.scores != null) {
+              pSum += e.scores!.values.fold(0.0, (prev, el) => prev + el);
+            }
           }
           sumAverage += pSum / evals.length;
         }
@@ -153,7 +155,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               const SizedBox(height: 8),
               LinearProgressIndicator(
                 value: _totalProjects > 0 ? e.value / _totalProjects : 0,
-                backgroundColor: isDark ? Colors.white10 : Colors.black05,
+                backgroundColor: isDark ? Colors.white10 : Colors.black12,
                 color: AppColors.primaryYellow,
                 minHeight: 8,
                 borderRadius: BorderRadius.circular(4),

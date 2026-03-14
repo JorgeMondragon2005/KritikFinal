@@ -5,8 +5,14 @@ import 'package:chewie/chewie.dart';
 class NativeMediaViewer extends StatefulWidget {
   final String url;
   final bool isVideo;
+  final bool isImage;
 
-  const NativeMediaViewer({super.key, required this.url, this.isVideo = false});
+  const NativeMediaViewer({
+    super.key, 
+    required this.url, 
+    this.isVideo = false,
+    this.isImage = false,
+  });
 
   @override
   State<NativeMediaViewer> createState() => _NativeMediaViewerState();

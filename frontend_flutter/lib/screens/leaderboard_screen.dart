@@ -39,7 +39,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           double sum = 0;
           for (var e in evals) {
             if (e.scores != null) {
-              sum += e.scores!.values.values.fold(0.0, (prev, element) => prev + element);
+              sum += e.scores!.values.fold(0.0, (prev, element) => prev + element);
             }
           }
           totalScore = sum / evals.length;

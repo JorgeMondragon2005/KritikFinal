@@ -161,7 +161,7 @@ class ProjectCard extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: isDark ? AppColors.techChipBgDark : AppColors.techChipBg,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: isDark ? Colors.white10 : Colors.black05),
+                            border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
                           ),
                           child: Text(
                             tech,
@@ -199,7 +199,7 @@ class ProjectCard extends StatelessWidget {
     return Container(
       height: 200,
       width: double.infinity,
-      color: isDark ? Colors.white05 : Colors.black05,
+      color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
       child: Center(
         child: Icon(
           Icons.image_outlined,
