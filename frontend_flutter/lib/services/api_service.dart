@@ -110,6 +110,32 @@ class ApiService {
     }
   }
 
+  Future<List<Project>> getAllProjects() async {
+    try {
+      final response = await _dio.get('projects');
+      if (response.statusCode == 200 && response.data is List) {
+        return (response.data as List).map((x) => Project.fromJson(x)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error getting all projects: $e');
+      return [];
+    }
+  }
+
+  Future<List<Evaluation>> getProjectEvaluations(String projectId) async {
+    try {
+      final response = await _dio.get('evaluations/project/$projectId');
+      if (response.statusCode == 200 && response.data is List) {
+        return (response.data as List).map((x) => Evaluation.fromJson(x)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error fetching evaluations for project $projectId: $e');
+      return [];
+    }
+  }
+
   Future<Rubric?> getRubricById(String id) async {
     try {
       final response = await _dio.get('rubrics/$id');
