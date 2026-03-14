@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Kritik.Shared.Models;
 
+[BsonIgnoreExtraElements]
 public class Evaluation
 {
     [BsonId]

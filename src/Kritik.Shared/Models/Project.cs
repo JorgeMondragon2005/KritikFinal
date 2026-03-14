@@ -1,8 +1,10 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System.ComponentModel.DataAnnotations;
 
 namespace Kritik.Shared.Models;
 
+[BsonIgnoreExtraElements]
 public class Project
 {
     [BsonId]
