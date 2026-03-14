@@ -108,13 +108,9 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         _descriptionController.text = _existingProject?.description ?? '';
         _categoryController.text = _existingProject?.category ?? '';
         
-        // Populate links if stored in technologies list (common pattern)
-        if (_existingProject!.technologies.isNotEmpty) {
-          _repoLinkController.text = _existingProject!.technologies.first;
-          if (_existingProject!.technologies.length > 1) {
-            _demoLinkController.text = _existingProject!.technologies[1];
-          }
-        }
+        // Populate new fields
+        _technologiesController.text = _existingProject!.technologies.join(', ');
+        _promoVideoController.text = _existingProject!.promoVideoUrl ?? '';
         
         // 3. Fetch evaluation if exists
         _existingEvaluation = await _apiService.getEvaluationByProjectId(_existingProject!.id!);
@@ -125,8 +121,8 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         _teamNameController.clear();
         _descriptionController.clear();
         _categoryController.clear();
-        _repoLinkController.clear();
-        _demoLinkController.clear();
+        _technologiesController.clear();
+        _promoVideoController.clear();
       }
 
     } catch (e) {
