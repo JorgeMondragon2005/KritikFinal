@@ -89,12 +89,14 @@ class ApiService {
         if (assignmentId != null) 'assignmentId': assignmentId,
         if (search != null) 'search': search,
       });
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && response.data is List) {
         final List<dynamic> data = response.data;
         List<Project> projects = [];
         for (var item in data) {
           try {
-            projects.add(Project.fromJson(item));
+            if (item is Map<String, dynamic>) {
+              projects.add(Project.fromJson(item));
+            }
           } catch (e) {
             debugPrint('Error parsing project item: $e');
           }
@@ -289,13 +291,15 @@ class ApiService {
         if (teacherId != null) 'teacherId': teacherId,
         if (studentId != null) 'studentId': studentId,
       });
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && response.data is List) {
         final List<dynamic> data = response.data;
         debugPrint('DEBUG: getAssignments returned ${data.length} items');
         List<Assignment> assignments = [];
         for (var item in data) {
           try {
-            assignments.add(Assignment.fromJson(item));
+            if (item is Map<String, dynamic>) {
+              assignments.add(Assignment.fromJson(item));
+            }
           } catch (e) {
             debugPrint('Error parsing assignment item: $e');
           }
@@ -437,12 +441,14 @@ class ApiService {
         if (teacherId != null) 'teacherId': teacherId,
         if (studentId != null) 'studentId': studentId,
       });
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 && response.data is List) {
         final List<dynamic> data = response.data;
         List<Classroom> classrooms = [];
         for (var item in data) {
           try {
-            classrooms.add(Classroom.fromJson(item));
+            if (item is Map<String, dynamic>) {
+              classrooms.add(Classroom.fromJson(item));
+            }
           } catch (e) {
             debugPrint('Error parsing classroom item: $e');
           }

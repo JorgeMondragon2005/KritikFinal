@@ -380,7 +380,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Retroalimentación del Docente:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-                if (_existingEvaluation!.scores != null)
+                if (_existingEvaluation!.scores != null && _existingEvaluation!.scores!.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
