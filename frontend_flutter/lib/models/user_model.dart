@@ -24,14 +24,14 @@ class User {
       );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'email': email,
-        'password': password,
-        'role': role,
-        'fullName': fullName,
-        'telefono': telefono,
-        'bio': bio,
-        'fotoPerfil': fotoPerfil,
-        'portadaUrl': portadaUrl,
+        'Id': id,
+        'Email': email,
+        'Password': password,
+        'Role': role,
+        'FullName': fullName,
+        'Telefono': telefono,
+        'Bio': bio,
+        'FotoPerfil': fotoPerfil,
+        'PortadaUrl': portadaUrl,
       };
 }

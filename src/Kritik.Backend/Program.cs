@@ -31,6 +31,7 @@ builder.Services.AddSingleton<AssignmentService>();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddSingleton<ClassroomService>();
 builder.Services.AddSingleton<EnrollmentService>();
+builder.Services.AddSingleton<NotificationService>();
 
 builder.Services.AddCors(options =>
 {

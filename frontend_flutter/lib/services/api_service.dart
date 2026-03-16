@@ -12,6 +12,9 @@ import '../models/evaluation_model.dart';
 import '../models/criterion_model.dart';
 import '../models/classroom_model.dart';
 import '../models/enrollment_model.dart';
+import '../models/notification_model.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ApiService {
   final Dio _dio;
@@ -65,6 +68,64 @@ class ApiService {
         return e.response?.data.toString() ?? 'Error en el servidor';
       }
       return 'Error de conexión';
+    }
+  }
+
+  Future<bool> uploadProfileBannerImage(String userId, File imageFile) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$_baseUrl/users/$userId/banner'),
+      );
+      request.files.add(await http.MultipartFile.fromPath('banner', imageFile.path));
+      final response = await request.send();
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error ApiService uploadProfileBannerImage: $e');
+      return false;
+    }
+  }
+
+  // --- RECOVERY SECTION ---
+  Future<bool> forgotPassword(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/forgot-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        debugPrint('Error recuperacion: ${response.statusCode} - ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error ApiService forgotPassword: $e');
+      return false;
+    }
+  }
+
+  Future<bool> resetPassword(String email, String token, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'token': token,
+          'newPassword': newPassword,
+        }),
+      );
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        debugPrint('Error al restablecer contraseña: ${response.statusCode} - ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error ApiService resetPassword: $e');
+      return false;
     }
   }
 
@@ -444,6 +505,63 @@ class ApiService {
           throw Exception('Backend Error: ${e.response?.statusCode} - ${e.response?.data}');
       }
       throw Exception(e.toString());
+    }
+  }
+
+  Future<List<User>> getEvaluators() async {
+    try {
+      final response = await _dio.get('Users/evaluators');
+      if (response.statusCode == 200 && response.data is List) {
+        return (response.data as List).map((x) => User.fromJson(x)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error getting evaluators: $e');
+      return [];
+    }
+  }
+
+  // --- NOTIFICATIONS ---
+  Future<List<AppNotification>> getUserNotifications(String userId) async {
+    try {
+      final response = await _dio.get('users/$userId/notifications');
+      if (response.statusCode == 200) {
+        return (response.data as List).map((x) => AppNotification.fromJson(x)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error ApiService getUserNotifications: $e');
+      return [];
+    }
+  }
+
+  Future<bool> createNotification(AppNotification notification) async {
+    try {
+      final response = await _dio.post('Notifications', data: notification.toJson());
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      debugPrint('Error creating notification: $e');
+      return false;
+    }
+  }
+
+  Future<bool> markNotificationAsRead(String id) async {
+    try {
+      final response = await _dio.put('Notifications/$id/read');
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      debugPrint('Error marking notification as read: $e');
+      return false;
+    }
+  }
+
+  Future<bool> markAllNotificationsAsRead(String userId) async {
+    try {
+      final response = await _dio.put('Notifications/user/$userId/read');
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      debugPrint('Error marking all notifications as read: $e');
+      return false;
     }
   }
 

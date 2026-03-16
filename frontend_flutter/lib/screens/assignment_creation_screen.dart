@@ -3,7 +3,9 @@ import '../services/api_service.dart';
 import '../models/assignment_model.dart';
 import '../models/rubric_model.dart';
 import '../models/classroom_model.dart';
+import '../models/user_model.dart';
 import '../theme/app_theme.dart';
+import '../models/notification_model.dart';
 
 class AssignmentCreationScreen extends StatefulWidget {
   final String teacherId;
@@ -30,6 +32,10 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
   String? _selectedClassId;
   bool _isLoadingClasses = true;
 
+  List<User> _evaluators = [];
+  List<String> _selectedEvaluatorIds = [];
+  bool _isLoadingEvaluators = true;
+
   @override
   void initState() {
     super.initState();
@@ -39,6 +45,7 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
       _selectedClassId = widget.assignment!.classroomId;
       _selectedRubricId = widget.assignment!.rubricId;
       _selectedDate = widget.assignment!.dueDate;
+      _selectedEvaluatorIds = widget.assignment!.assignedEvaluators ?? [];
     } else {
       _selectedClassId = widget.initialClassroomId;
     }
@@ -49,6 +56,7 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
     await Future.wait([
       _fetchRubrics(),
       _fetchClasses(),
+      _fetchEvaluators(),
     ]);
   }
 
@@ -65,9 +73,22 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
     }
   }
 
+  Future<void> _fetchEvaluators() async {
+    try {
+      final evals = await _apiService.getEvaluators();
+      setState(() {
+        _evaluators = evals;
+        _isLoadingEvaluators = false;
+      });
+    } catch (e) {
+      debugPrint('Error fetching evaluators: $e');
+      setState(() => _isLoadingEvaluators = false);
+    }
+  }
+
   Future<void> _fetchRubrics() async {
     try {
-      final rubrics = await _apiService.getRubrics();
+      final rubrics = await _apiService.getRubrics(creatorId: widget.teacherId);
       setState(() {
         _rubrics = rubrics;
         _isLoadingRubrics = false;
@@ -130,6 +151,7 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
         dueDate: _selectedDate,
         accessCode: null,
         classroomId: _selectedClassId,
+        assignedEvaluators: _selectedEvaluatorIds.isNotEmpty ? _selectedEvaluatorIds : null,
       );
 
       final success = widget.assignment != null 
@@ -138,6 +160,23 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
 
       if (mounted) {
         if (success) {
+          // Notify students if it's a new assignment
+          if (widget.assignment == null && _selectedClassId != null) {
+            try {
+              final members = await _apiService.getClassMembers(_selectedClassId!);
+              for (var m in members) {
+                if (m.status.toLowerCase() == 'approved') {
+                  await _apiService.createNotification(AppNotification(
+                    userId: m.studentId,
+                    title: '🌟 Nueva Tarea',
+                    message: 'Se ha asignado una nueva tarea: ${_titleController.text}',
+                    createdAt: DateTime.now(),
+                  ));
+                }
+              }
+            } catch (_) {}
+          }
+
           if (widget.assignment != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Tarea actualizada')),
@@ -250,6 +289,35 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
                     onChanged: widget.initialClassroomId != null ? null : (val) => setState(() => _selectedClassId = val),
                     validator: (val) => val == null ? 'Vincular a una clase es obligatorio' : null,
                   ),
+              const SizedBox(height: 16),
+              const Text('Jurados Asignados (Opcional)', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              _isLoadingEvaluators
+                ? const LinearProgressIndicator()
+                : _evaluators.isEmpty 
+                  ? const Text('No hay jurados registrados en el sistema.', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic))
+                  : Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _evaluators.map((e) {
+                        final isSelected = _selectedEvaluatorIds.contains(e.id);
+                        return FilterChip(
+                          label: Text(e.fullName ?? 'Usuario'),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                _selectedEvaluatorIds.add(e.id!);
+                              } else {
+                                _selectedEvaluatorIds.remove(e.id);
+                              }
+                            });
+                          },
+                          selectedColor: AppColors.primaryYellow.withOpacity(0.3),
+                          checkmarkColor: AppColors.primaryYellow,
+                        );
+                      }).toList(),
+                    ),
               const SizedBox(height: 24),
               ListTile(
                 title: Text(_selectedDate == null 

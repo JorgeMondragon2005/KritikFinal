@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../services/theme_service.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -34,8 +36,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _nameController = TextEditingController(text: widget.user.fullName);
     _phoneController = TextEditingController(text: widget.user.telefono);
     _bioController = TextEditingController(text: widget.user.bio);
+    
     _fotoPerfilUrl = widget.user.fotoPerfil;
+    if (_fotoPerfilUrl != null && _fotoPerfilUrl!.startsWith('/')) {
+      _fotoPerfilUrl = 'https://kritikfinal.onrender.com$_fotoPerfilUrl';
+    }
+    
     _portadaUrl = widget.user.portadaUrl;
+    if (_portadaUrl != null && _portadaUrl!.startsWith('/')) {
+      _portadaUrl = 'https://kritikfinal.onrender.com$_portadaUrl';
+    }
   }
 
   Future<void> _saveProfile() async {
@@ -252,6 +262,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     maxLines: 3,
                   ),
                   const SizedBox(height: 40),
+                  _buildThemeSelector(),
+                  const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _saveProfile,
                     child: _isLoading 
@@ -265,6 +277,84 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildThemeSelector() {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Apariencia',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+          ),
+          child: Column(
+            children: [
+              _buildThemeOption(
+                title: 'Tema del Sistema',
+                icon: Icons.brightness_auto,
+                value: ThemeMode.system,
+                current: themeNotifier.themeMode,
+                onTap: () => themeNotifier.setThemeMode(ThemeMode.system),
+              ),
+              const Divider(height: 1),
+              _buildThemeOption(
+                title: 'Modo Claro',
+                icon: Icons.light_mode,
+                value: ThemeMode.light,
+                current: themeNotifier.themeMode,
+                onTap: () => themeNotifier.setThemeMode(ThemeMode.light),
+              ),
+              const Divider(height: 1),
+              _buildThemeOption(
+                title: 'Modo Oscuro',
+                icon: Icons.dark_mode,
+                value: ThemeMode.dark,
+                current: themeNotifier.themeMode,
+                onTap: () => themeNotifier.setThemeMode(ThemeMode.dark),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildThemeOption({
+    required String title,
+    required IconData icon,
+    required ThemeMode value,
+    required ThemeMode current,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isSelected = value == current;
+
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: isSelected ? AppColors.primaryYellow : (isDark ? Colors.white70 : Colors.black54)),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isSelected ? AppColors.primaryYellow : (isDark ? Colors.white : Colors.black),
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      trailing: isSelected ? const Icon(Icons.check_circle, color: AppColors.primaryYellow) : null,
     );
   }
 }

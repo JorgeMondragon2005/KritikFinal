@@ -30,6 +30,9 @@ public class UserService
     public async Task<User?> GetAsync(string id) =>
         await _usersCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
+    public async Task<List<User>> GetByRoleAsync(string role) =>
+        await _usersCollection.Find(x => x.Role == role).ToListAsync();
+
     public async Task<User?> GetByEmailAsync(string email) =>
         await _usersCollection.Find(x => x.Email == email).FirstOrDefaultAsync();
 

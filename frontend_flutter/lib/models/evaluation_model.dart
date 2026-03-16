@@ -7,6 +7,7 @@ class Evaluation {
   final String? feedback;
   final String? evidencePhotoBase64;
   final String? signatureBase64;
+  final String? badgeEarned;
 
   Evaluation({
     this.projectId,
@@ -17,7 +18,13 @@ class Evaluation {
     this.feedback,
     this.evidencePhotoBase64,
     this.signatureBase64,
+    this.badgeEarned,
   });
+
+  double? get generalScore {
+    if (detailedScores == null || detailedScores!.isEmpty) return null;
+    return detailedScores!.values.fold(0, (sum, score) => sum + score).toDouble();
+  }
 
   factory Evaluation.fromJson(Map<String, dynamic> json) {
     // Backend can return scores as an object with a 'values' field (RubricScores)
@@ -44,6 +51,7 @@ class Evaluation {
       feedback: json['feedback']?.toString() ?? json['Feedback']?.toString(),
       evidencePhotoBase64: json['evidencePhotoBase64']?.toString(),
       signatureBase64: json['signatureBase64']?.toString(),
+      badgeEarned: json['badgeEarned']?.toString() ?? json['BadgeEarned']?.toString(),
     );
   }
 
@@ -56,5 +64,6 @@ class Evaluation {
     'feedback': feedback,
     'evidencePhotoBase64': evidencePhotoBase64,
     'signatureBase64': signatureBase64,
+    if (badgeEarned != null) 'badgeEarned': badgeEarned,
   };
 }

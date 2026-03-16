@@ -5,6 +5,7 @@ import 'role_selection_screen.dart';
 import 'project_list_screen.dart';
 import 'register_screen.dart';
 import 'verification_screen.dart';
+import 'forgot_password_screen.dart';
 import '../services/api_service.dart';
 import '../models/user_model.dart';
 import 'package:dio/dio.dart';
@@ -71,7 +72,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     prefixIcon: Icon(Icons.lock),
                   ),
                 ),
-                const SizedBox(height: 24),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()));
+                    },
+                    child: const Text('¿Olvidaste tu contraseña?', style: TextStyle(color: AppColors.primaryYellow)),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: _isLoading ? null : () async {
                     if (_idController.text.isEmpty) {
@@ -88,12 +98,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     try {
                       User? user;
-                      if (_passwordController.text.isNotEmpty) {
-                        user = await _apiService.login(
-                          _idController.text,
-                          _passwordController.text,
+                      final email = _idController.text.trim();
+                      final password = _passwordController.text;
+
+                      if (password.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Por favor ingresa tu contraseña')),
                         );
+                        setState(() => _isLoading = false);
+                        return;
                       }
+
+                      user = await _apiService.login(email, password);
 
                       if (mounted) {
                         // Save session
@@ -126,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                  action: SnackBarAction(
                                    label: 'Verificar',
                                    onPressed: () => Navigator.of(context).push(
-                                     MaterialPageRoute(builder: (_) => VerificationScreen(email: _idController.text))
+                                     MaterialPageRoute(builder: (_) => VerificationScreen(email: _idController.text.trim()))
                                    ),
                                  ),
                                ),

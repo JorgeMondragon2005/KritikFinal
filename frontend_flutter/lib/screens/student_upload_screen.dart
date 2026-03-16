@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../models/project_model.dart';
@@ -6,6 +7,7 @@ import '../services/api_service.dart';
 import '../models/assignment_model.dart';
 import '../models/rubric_model.dart';
 import '../models/evaluation_model.dart';
+import '../models/notification_model.dart';
 import '../theme/app_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'native_media_viewer.dart';
@@ -28,6 +30,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
   final _repoLinkController = TextEditingController();
   final _technologiesController = TextEditingController(); // New
   final _promoVideoController = TextEditingController(); // For Demo Video Link (YouTube/Drive/etc)
+  PlatformFile? _demoVideoFile;
   final _accessCodeController = TextEditingController();
   final ApiService _apiService = ApiService();
   
@@ -109,8 +112,9 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         _categoryController.text = _existingProject?.category ?? '';
         
         // Populate new fields
-        _technologiesController.text = _existingProject!.technologies.join(', ');
-        _promoVideoController.text = _existingProject!.promoVideoUrl ?? '';
+        _technologiesController.text = _existingProject!.technologies.isNotEmpty ? _existingProject!.technologies.join(', ') : '';
+        // We don't populate _demoVideoFile from URL here, just clear it for new selection if needed
+        _demoVideoFile = null; 
         
         // 3. Fetch evaluation if exists
         _existingEvaluation = await _apiService.getEvaluationByProjectId(_existingProject!.id!);
@@ -122,7 +126,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         _descriptionController.clear();
         _categoryController.clear();
         _technologiesController.clear();
-        _promoVideoController.clear();
+        _demoVideoFile = null;
       }
 
     } catch (e) {
@@ -162,17 +166,17 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     }
   }
 
-  Future<void> _deleteSubmission() async {
+  Future<void> _replaceSubmission() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('¿Cancelar entrega?'),
-        content: const Text('Esto eliminará tu entrega actual y volverá a marcar la tarea como pendiente. Los archivos subidos no se eliminarán del servidor pero ya no estarán asociados a esta tarea.'),
+        content: const Text('Esto eliminará tu entrega actual para que puedas subir una nueva. Tus textos se mantendrán para que no tengas que escribirlos de nuevo. ¿Continuar?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No, mantener')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true), 
-            child: const Text('Sí, cancelar entrega', style: TextStyle(color: Colors.red))
+            child: const Text('Sí, reemplazar', style: TextStyle(color: Colors.red))
           ),
         ],
       )
@@ -185,8 +189,13 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
       final success = await _apiService.deleteProject(_existingProject!.id!);
       if (success) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Entrega cancelada correctamente')));
-          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Entrega actual eliminada. Ahora puedes subir tus nuevos archivos.')));
+          setState(() {
+            _existingProject = null;
+            _existingEvaluation = null;
+            _selectedFiles.clear();
+            _demoVideoFile = null;
+          });
         }
       } else {
         throw Exception('No se pudo eliminar el proyecto');
@@ -246,6 +255,16 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     }
   }
 
+  Future<void> _pickDemoVideo() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.video,
+      allowMultiple: false,
+    );
+    if (result != null) {
+      setState(() => _demoVideoFile = result.files.first);
+    }
+  }
+
   void _removeFile(int index) {
     setState(() {
       _selectedFiles.removeAt(index);
@@ -272,6 +291,16 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
           }
         }
       }
+
+      // 1.1 Upload Demo Video if selected
+      String? promoVideoUrl = _existingProject?.promoVideoUrl;
+      if (_demoVideoFile != null && _demoVideoFile!.path != null) {
+        final url = await _apiService.uploadFile(File(_demoVideoFile!.path!));
+        if (url != null) promoVideoUrl = url;
+      } else if (_promoVideoController.text.isNotEmpty) {
+        promoVideoUrl = _promoVideoController.text; // Use manual URL if no file picked
+      }
+
 
       // 2. Create project with file URLs and teacher link
       List<Video> videos = [];
@@ -301,7 +330,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         studentId: widget.studentId,
         assignmentId: _selectedAssignmentId,
         assignedTeacherId: selectedAssignment.teacherId,
-        promoVideoUrl: _promoVideoController.text, // New field
+        promoVideoUrl: promoVideoUrl, // Use uploaded file URL
         coverImageUrl: uploadedFileUrls.isNotEmpty ? uploadedFileUrls.first : null,
         videos: videos,
         documents: documents,
@@ -311,6 +340,20 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
 
       if (mounted) {
         if (response) {
+          try {
+            final evaluatorsToNotify = selectedAssignment.assignedEvaluators?.isNotEmpty == true 
+                ? selectedAssignment.assignedEvaluators! 
+                : [selectedAssignment.teacherId];
+            for (var evalId in evaluatorsToNotify) {
+              await _apiService.createNotification(AppNotification(
+                userId: evalId,
+                title: 'Nueva Entrega',
+                message: 'El equipo ${_teamNameController.text} subió su proyecto "${_titleController.text}" para la tarea "${selectedAssignment.title}".',
+                createdAt: DateTime.now(),
+              ));
+            }
+          } catch (_) {}
+
           messenger.showSnackBar(
             const SnackBar(content: Text('¡Proyecto y archivos subidos con éxito!')),
           );
@@ -340,17 +383,19 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     
     if (assignment == null) return const SizedBox.shrink();
     
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue.shade100),
+        color: isDark ? AppColors.surfaceDark : Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.blue.shade100),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(assignment.description, style: const TextStyle(fontSize: 14)),
+          Text(assignment.description, style: TextStyle(fontSize: 14, color: isDark ? Colors.white70 : Colors.black87)),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -369,33 +414,77 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                 ),
             ],
           ),
-          if (_existingEvaluation != null) ...[
             const Divider(),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Retroalimentación del Docente:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                const Text('Evaluación Oficial:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)),
                 if (_existingEvaluation!.scores != null && _existingEvaluation!.scores!.isNotEmpty)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.green.shade100,
+                      color: isDark ? Colors.green.withOpacity(0.2) : Colors.green.shade100,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       '${_existingEvaluation!.scores!.values.fold(0, (a, b) => a + b)} pts',
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.greenAccent : Colors.green),
                     ),
                   ),
               ],
             ),
+            const SizedBox(height: 12),
+            
+            // Detailed Scores Breakdown
+            if (_existingEvaluation!.detailedScores != null && _existingEvaluation!.detailedScores!.isNotEmpty) ...[
+              const Text('Desglose de Rúbrica:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              ..._existingEvaluation!.detailedScores!.entries.map((entry) => Padding(
+                padding: const EdgeInsets.only(bottom: 4.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.arrow_right, size: 16, color: Colors.grey),
+                    Expanded(child: Text(entry.key, style: const TextStyle(fontSize: 13))),
+                    Text('${entry.value} pts', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blue)),
+                  ],
+                ),
+              )),
+              const SizedBox(height: 12),
+            ],
+
+            const Text('Comentarios del Docente:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 4),
-            Text(
-              _existingEvaluation!.feedback ?? 'Sin comentarios por ahora.',
-              style: const TextStyle(fontStyle: FontStyle.italic),
+            Container(
+              padding: const EdgeInsets.all(12),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _existingEvaluation!.feedback ?? 'Sin comentarios adicionales.',
+                style: TextStyle(fontStyle: FontStyle.italic, color: isDark ? Colors.white70 : Colors.black87),
+              ),
             ),
+            
+            // Evidence Photo
+            if (_existingEvaluation!.evidencePhotoBase64 != null && _existingEvaluation!.evidencePhotoBase64!.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Text('Foto de Evidencia:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.memory(
+                  base64Decode(_existingEvaluation!.evidencePhotoBase64!),
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => const Center(child: Text('La imagen no se pudo cargar')),
+                ),
+              ),
+            ],
           ],
-        ],
       ),
     );
   }
@@ -431,6 +520,94 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTechnologiesField() {
+    return TextFormField(
+      controller: _technologiesController,
+      readOnly: _existingProject != null,
+      decoration: const InputDecoration(
+        labelText: 'Tecnologías (separadas por comas)',
+        prefixIcon: Icon(Icons.code),
+        hintText: 'Ej: Flutter, Firebase, Python',
+      ),
+      validator: (v) => v!.isEmpty ? 'Por favor indica las tecnologías' : null,
+    );
+  }
+
+  Widget _buildDemoVideoSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.video_library, size: 20, color: isDark ? AppColors.primaryYellow : Colors.black54),
+            const SizedBox(width: 8),
+            Text(
+              'Video Demo Principal',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: isDark ? Colors.white70 : Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+          ),
+          child: Column(
+            children: [
+              if (_demoVideoFile != null)
+                ListTile(
+                  leading: const Icon(Icons.movie, color: Colors.blue),
+                  title: Text(_demoVideoFile!.name, style: const TextStyle(fontSize: 13)),
+                  subtitle: Text('${(_demoVideoFile!.size / 1024 / 1024).toStringAsFixed(2)} MB'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.red, size: 20),
+                    onPressed: () => setState(() => _demoVideoFile = null),
+                  ),
+                )
+              else if (_existingProject?.promoVideoUrl != null)
+                ListTile(
+                  leading: const Icon(Icons.check_circle, color: Colors.green),
+                  title: const Text('Video cargado actualmente', style: TextStyle(fontSize: 13)),
+                  subtitle: const Text('Toca para cambiar'),
+                  onTap: _pickDemoVideo,
+                )
+              else
+                ListTile(
+                  onTap: _pickDemoVideo,
+                  leading: const Icon(Icons.cloud_upload_outlined),
+                  title: const Text('Seleccionar Video Demo', style: TextStyle(fontSize: 14)),
+                  subtitle: const Text('Formatos: MP4, MOV, AVI (Ideal < 50MB)'),
+                ),
+              if (_demoVideoFile == null && _existingProject == null) ...[
+                const Divider(),
+                TextFormField(
+                  controller: _promoVideoController,
+                  decoration: const InputDecoration(
+                    labelText: 'O pega un link de YouTube/Drive',
+                    prefixIcon: Icon(Icons.link),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ]
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -655,30 +832,13 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                         validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _technologiesController,
-                        readOnly: _existingProject != null,
-                        decoration: const InputDecoration(
-                          labelText: 'Tecnologías (separadas por comas)',
-                          prefixIcon: Icon(Icons.code),
-                          hintText: 'Ej: Flutter, Firebase, Python',
-                        ),
-                        validator: (v) => v!.isEmpty ? 'Por favor indica las tecnologías' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _promoVideoController,
-                        readOnly: _existingProject != null,
-                        decoration: const InputDecoration(
-                          labelText: 'Video Demo Principal (Link YouTube/Drive)',
-                          prefixIcon: Icon(Icons.play_circle_fill),
-                          hintText: 'Link que aparecerá en el feed principal',
-                        ),
-                      ),
+                      _buildTechnologiesField(),
+                      const SizedBox(height: 20),
+                      _buildDemoVideoSection(),
+                      const SizedBox(height: 32),
 
                       // Files section
                       if (_existingProject != null) ...[
-                        const SizedBox(height: 32),
                         const Text('Archivos Entregados:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(height: 12),
                         ..._existingProject!.videos.map((v) => ListTile(
@@ -752,9 +912,9 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                         )
                       else if (_existingEvaluation == null)
                         ElevatedButton.icon(
-                          onPressed: _isSubmitting ? null : _deleteSubmission,
-                          icon: const Icon(Icons.cancel),
-                          label: const Text('Cancelar Entrega'),
+                          onPressed: _isSubmitting ? null : _replaceSubmission,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Reemplazar Entrega'),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             backgroundColor: Colors.red.shade400,

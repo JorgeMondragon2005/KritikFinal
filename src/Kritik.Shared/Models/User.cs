@@ -36,4 +36,8 @@ public class LoginResponse
     public string Token { get; set; } = null!;
     public string FullName { get; set; } = null!;
     public string Role { get; set; } = null!;
+    public string? FotoPerfil { get; set; }
+    public string? PortadaUrl { get; set; }
+    public string? Telefono { get; set; }
+    public string? Bio { get; set; }
 }

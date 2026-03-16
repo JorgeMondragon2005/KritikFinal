@@ -24,6 +24,13 @@ public class UsersController : ControllerBase
         _userService = userService;
     }
 
+    [HttpGet("evaluators")]
+    public async Task<ActionResult<List<User>>> GetEvaluators()
+    {
+        var evaluators = await _userService.GetByRoleAsync("Evaluator");
+        return evaluators;
+    }
+
     [HttpGet("{id:length(24)}")]
     public async Task<ActionResult<User>> Get(string id)
     {

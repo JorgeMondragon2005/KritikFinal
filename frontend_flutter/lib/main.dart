@@ -6,12 +6,20 @@ import 'screens/project_list_screen.dart';
 import 'dart:convert';
 import 'models/user_model.dart';
 
+import 'package:provider/provider.dart';
+import 'services/theme_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   final userData = prefs.getString('user_session');
   
-  runApp(KritikApp(savedUser: userData != null ? User.fromJson(jsonDecode(userData)) : null));
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeNotifier(),
+      child: KritikApp(savedUser: userData != null ? User.fromJson(jsonDecode(userData)) : null),
+    ),
+  );
 }
 
 class KritikApp extends StatelessWidget {
@@ -20,11 +28,13 @@ class KritikApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeNotifier = Provider.of<ThemeNotifier>(context);
+    
     return MaterialApp(
       title: 'Kritik App',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: themeNotifier.themeMode,
       home: savedUser != null 
         ? ProjectListScreen(
             role: savedUser!.role ?? 'student',

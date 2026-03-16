@@ -68,7 +68,6 @@ class _ResultsScreenState extends State<ResultsScreen> {
             )
           : Column(
               children: [
-                _buildStatsHeader(),
                 Expanded(
                   child: ListView.builder(
                     padding: const EdgeInsets.all(20),
@@ -79,20 +78,6 @@ class _ResultsScreenState extends State<ResultsScreen> {
                 _buildBottomAction(),
               ],
             ),
-    );
-  }
-
-  Widget _buildStatsHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-      color: Colors.white,
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text('Integridad: 98.2%', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-          Text('Votos: 45', style: TextStyle(fontWeight: FontWeight.bold)),
-        ],
-      ),
     );
   }
 

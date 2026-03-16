@@ -63,15 +63,52 @@ public class EmailService
             }
             else
             {
-                var error = await response.Content.ReadAsStringAsync();
-                _logger.LogError("❌ Error enviando correo a {Email}: {Error}", toEmail, error);
-                Console.WriteLine($"❌ Error enviando correo a {toEmail}: {error}");
+                var errorBody = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Error Brevo: [{Status}] {Error}", response.StatusCode, errorBody);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "❌ Excepción al enviar correo a {Email}", toEmail);
-            Console.WriteLine($"❌ Excepción al enviar correo a {toEmail}: {ex.Message}");
+            _logger.LogError(ex, "Error crítico enviando correo: {Msg}", ex.Message);
+        }
+    }
+
+    public async Task SendRecoveryCodeAsync(string toEmail, string token)
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient();
+            var rawKey = _brevoSettings.ApiKey;
+            client.DefaultRequestHeaders.Add("api-key", rawKey?.Trim());
+            client.DefaultRequestHeaders.Add("accept", "application/json");
+
+            var body = new
+            {
+                sender = new { name = _brevoSettings.SenderName, email = _brevoSettings.SenderEmail },
+                to = new[] { new { email = toEmail } },
+                subject = "🔐 Recuperación de Contraseña - Kritik",
+                htmlContent = $@"
+                    <div style='font-family: Arial, sans-serif; max-width: 480px; margin: auto; padding: 32px; background: #f9f9f9; border-radius: 12px;'>
+                        <h2 style='color: #1a1a2e; text-align: center;'>Kritik <span style='color: #f5a623;'>IA</span> </h2>
+                        <p style='color: #444; font-size: 16px; text-align: center;'>Hemos recibido una solicitud para restablecer tu contraseña.</p>
+                        <p style='color: #444; font-size: 14px; text-align: center;'>Utiliza este código temporal en la aplicación para crear tu nuevo acceso:</p>
+                        <div style='text-align: center; margin: 32px 0;'>
+                            <span style='font-size: 38px; font-weight: bold; letter-spacing: 12px; color: #1a1a2e; background: #fff; padding: 16px 32px; border-radius: 8px; border: 2px solid #e74c3c;'>
+                                {token}
+                            </span>
+                        </div>
+                        <p style='color: #888; font-size: 13px; text-align: center;'>Este código expira. Si no has solicitado esto, puedes ignorar este correo y tu cuenta seguirá segura.</p>
+                    </div>"
+            };
+
+            var json = JsonSerializer.Serialize(body);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            await client.PostAsync("https://api.brevo.com/v3/smtp/email", content);
+        }
+        catch(Exception ex)
+        {
+            _logger.LogError(ex, "Error enviando correo de recuperación a: {Email}", toEmail);
         }
     }
 }

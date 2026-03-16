@@ -116,9 +116,71 @@ public class AuthController : ControllerBase
             return StatusCode(500, $"Error al verificar: {ex.Message}");
         }
     }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        try
+        {
+            var user = await _userService.GetByEmailAsync(request.Email);
+            if (user == null)
+            {
+                // To avoid email enumeration, we return Ok even if it doesn't exist
+                return Ok("Si el correo existe, se enviarán instrucciones de recuperación.");
+            }
+
+            var token = new Random().Next(100000, 999999).ToString();
+            user.VerificationCode = token; // Resusing verification code for recovery token
+            
+            await _userService.UpdateAsync(user.Id!, user);
+            await _emailService.SendRecoveryCodeAsync(user.Email, token);
+
+            return Ok("Código de recuperación enviado");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during ForgotPassword for {Email}", request.Email);
+            return StatusCode(500, "Error procesando solicitud de reseteo");
+        }
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        try
+        {
+            var user = await _userService.GetByEmailAsync(request.Email);
+            if (user == null) return BadRequest("Datos inválidos");
+
+            if (user.VerificationCode == request.Token)
+            {
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+                user.VerificationCode = null; // Clear token after usage
+                await _userService.UpdateAsync(user.Id!, user);
+                return Ok("Contraseña actualizada con éxito");
+            }
+
+            return BadRequest("Token inválido o expirado");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during ResetPassword for {Email}", request.Email);
+            return StatusCode(500, "Error al actualizar contraseña");
+        }
+    }
 }
 
 public class VerifyRequest {
     public string Email { get; set; } = null!;
     public string Code { get; set; } = null!;
+}
+
+public class ForgotPasswordRequest {
+    public string Email { get; set; } = null!;
+}
+
+public class ResetPasswordRequest {
+    public string Email { get; set; } = null!;
+    public string Token { get; set; } = null!;
+    public string NewPassword { get; set; } = null!;
 }

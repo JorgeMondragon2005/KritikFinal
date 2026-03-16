@@ -4,16 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
-  static const Color primaryYellow = Color(0xFFFFD600);
+  static const Color primaryYellow = Color(0xFFF59E0B); // Premium Amber/Yellow
+  static const Color primaryColor = Color(0xFFF59E0B); // Premium Amber/Yellow
   static const Color backgroundWhite = Color(0xFFFFFFFF);
   static const Color backgroundOffWhite = Color(0xFFF9F9FA);
   static const Color backgroundDark = Color(0xFF121212);
   static const Color surfaceDark = Color(0xFF1E1E1E);
   static const Color textPrimary = Color(0xFF111111);
-  static const Color textSecondary = Color(0xFF808080);
-  static const Color textPrimaryDark = Color(0xFFF5F5F5);
-  static const Color textSecondaryDark = Color(0xFFB0B0B0);
-  static const Color successGreen = Color(0xFF2ECA7F);
+  static const Color textSecondary = Color(0xFF6B7280); // Softer gray
+  static const Color textPrimaryDark = Color(0xFFF9FAFB);
+  static const Color textSecondaryDark = Color(0xFF9CA3AF);
+  static const Color successGreen = Color(0xFF10B981); // Emerald
   static const Color borderColor = Color(0xFFE0E0E0);
   static const Color borderColorDark = Color(0xFF333333);
   static const Color errorRed = Color(0xFFFF4C4C);
@@ -26,11 +27,16 @@ class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       scaffoldBackgroundColor: AppColors.backgroundOffWhite,
-      primaryColor: AppColors.primaryYellow,
+      primaryColor: AppColors.primaryColor,
       colorScheme: const ColorScheme.light(
-        primary: AppColors.primaryYellow,
-        surface: AppColors.backgroundOffWhite,
+        primary: AppColors.primaryColor,
+        surface: Colors.white,
         error: AppColors.errorRed,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
       ),
       textTheme: GoogleFonts.poppinsTextTheme().copyWith(
         displayLarge: GoogleFonts.poppins(
@@ -77,8 +83,8 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryYellow,
-          foregroundColor: AppColors.textPrimary,
+          backgroundColor: AppColors.primaryColor,
+          foregroundColor: Colors.white,
           elevation: 0,
           textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           shape: RoundedRectangleBorder(
@@ -88,10 +94,10 @@ class AppTheme {
         ),
       ),
       sliderTheme: SliderThemeData(
-        activeTrackColor: AppColors.primaryYellow,
+        activeTrackColor: AppColors.primaryColor,
         inactiveTrackColor: AppColors.inactiveSlider,
         trackHeight: 12.0,
-        thumbColor: AppColors.primaryYellow,
+        thumbColor: AppColors.primaryColor,
         trackShape: const RoundedRectSliderTrackShape(),
         thumbShape: CustomSliderThumbCircle(
           thumbRadius: 14.0,
@@ -105,11 +111,16 @@ class AppTheme {
     return ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.backgroundDark,
-      primaryColor: AppColors.primaryYellow,
+      primaryColor: AppColors.primaryColor,
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.primaryYellow,
+        primary: AppColors.primaryColor,
         surface: AppColors.surfaceDark,
         error: AppColors.errorRed,
+      ),
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.backgroundDark,
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
       textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme).copyWith(
         displayLarge: GoogleFonts.poppins(
@@ -156,8 +167,8 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primaryYellow,
-          foregroundColor: AppColors.textPrimary,
+          backgroundColor: AppColors.primaryColor,
+          foregroundColor: Colors.white,
           elevation: 0,
           textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           shape: RoundedRectangleBorder(
@@ -165,6 +176,18 @@ class AppTheme {
           ),
           minimumSize: const Size.fromHeight(50),
         ),
+      ),
+    );
+  }
+
+  static void showCustomSnackBar(BuildContext context, String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: isError ? Colors.red.shade600 : AppColors.primaryYellow,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }
@@ -317,7 +340,7 @@ class CustomSliderThumbCircle extends SliderComponentShape {
     final Canvas canvas = context.canvas;
 
     final paint = Paint()
-      ..color = sliderTheme.thumbColor ?? AppColors.primaryYellow
+      ..color = sliderTheme.thumbColor ?? AppColors.primaryColor
       ..style = PaintingStyle.fill;
 
     final borderPaint = Paint()

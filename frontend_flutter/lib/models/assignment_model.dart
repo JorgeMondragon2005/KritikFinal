@@ -7,6 +7,7 @@ class Assignment {
   final DateTime? dueDate;
   final String? accessCode;
   final String? classroomId;
+  final List<String>? assignedEvaluators;
 
   Assignment({
     this.id,
@@ -17,6 +18,7 @@ class Assignment {
     this.dueDate,
     this.accessCode,
     this.classroomId,
+    this.assignedEvaluators,
   });
 
   factory Assignment.fromJson(Map<String, dynamic> json) => Assignment(
@@ -29,6 +31,8 @@ class Assignment {
              (json['DueDate'] != null ? DateTime.parse(json['DueDate'].toString()) : null),
     accessCode: json['accessCode']?.toString() ?? json['AccessCode']?.toString(),
     classroomId: json['classroomId']?.toString() ?? json['ClassroomId']?.toString(),
+    assignedEvaluators: (json['assignedEvaluators'] as List?)?.map((e) => e.toString()).toList() ?? 
+                        (json['AssignedEvaluators'] as List?)?.map((e) => e.toString()).toList(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -40,5 +44,6 @@ class Assignment {
     'dueDate': dueDate?.toIso8601String(),
     'accessCode': accessCode,
     'classroomId': classroomId,
+    'assignedEvaluators': assignedEvaluators,
   };
 }

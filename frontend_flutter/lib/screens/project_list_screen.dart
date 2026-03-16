@@ -1,25 +1,31 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 import '../theme/app_theme.dart';
-import '../services/api_service.dart';
 import '../models/project_model.dart';
 import 'evaluation_screen.dart';
 import 'admin_dashboard_screen.dart';
-import 'results_screen.dart';
 import 'student_upload_screen.dart';
 import 'assignment_creation_screen.dart';
 import 'rubric_management_screen.dart';
+import 'analytics_dashboard_screen.dart';
 import 'login_screen.dart';
 import '../models/assignment_model.dart';
+import '../services/api_service.dart';
 import 'profile_screen.dart';
+import 'notification_screen.dart';
 import '../models/user_model.dart';
 import '../models/classroom_model.dart';
+import '../models/notification_model.dart';
 import '../models/enrollment_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'classroom_management_screen.dart';
 import '../widgets/project_card_widget.dart';
-import 'leaderboard_screen.dart';
 import 'teacher_dashboard_screen.dart';
 import 'project_detail_screen.dart';
+import '../models/evaluation_model.dart';
 
 class ProjectListScreen extends StatefulWidget {
   final String role;
@@ -42,11 +48,13 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   List<Project> _allProjects = [];
   List<Assignment> _allAssignmentsForStudent = [];
   List<Assignment> _pendingAssignments = [];
+  List<Assignment> _managedAssignments = []; // For teachers/evaluators
   List<Classroom> _studentClasses = [];
   bool _isLoading = true;
   String _searchQuery = '';
   String _selectedFilter = 'Todos';
   String _studentStatusFilter = 'Pendientes'; // For student dashboard
+  int _unreadNotifications = 0;
 
   Set<String> _evaluatedProjectIds = {}; // Track which projects the current evaluator has already graded
 
@@ -56,24 +64,26 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     _fetchProjects();
   }
 
-  Future<void> _fetchProjects() async {
-    setState(() => _isLoading = true);
+  Future<void> _fetchProjects({bool showLoader = true}) async {
+    if (showLoader) setState(() => _isLoading = true);
     try {
       final role = widget.role.toLowerCase();
       final userId = widget.userId;
 
       if (userId == null || userId.isEmpty) {
-        setState(() {
-          _allProjects = [];
-          _pendingAssignments = [];
-          _studentClasses = [];
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _allProjects = [];
+            _pendingAssignments = [];
+            _studentClasses = [];
+            if (showLoader) _isLoading = false;
+          });
+        }
         return;
       }
 
       if (role == 'student') {
-        final results = await Future.wait([
+        final results = await Future.wait<dynamic>([
           _apiService.getProjects(studentId: userId),
           _apiService.getAssignments(studentId: userId),
           _apiService.getClassrooms(studentId: userId),
@@ -98,45 +108,69 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           return isPending && isNotExpired;
         }).toList();
 
-        setState(() {
-          _allProjects = projects;
-          _allAssignmentsForStudent = assignments;
-          _pendingAssignments = pending;
-          _studentClasses = classrooms;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _allProjects = projects;
+            _allAssignmentsForStudent = assignments;
+            _pendingAssignments = pending;
+            _studentClasses = classrooms;
+            if (showLoader) _isLoading = false;
+          });
+        }
       } else {
         final teacherId = role == 'evaluator' ? userId : null;
-        final projects = await _apiService.getProjects(teacherId: teacherId);
+        final results = await Future.wait<dynamic>([
+          _apiService.getProjects(teacherId: teacherId),
+          if (role == 'evaluator') _apiService.getAssignments(teacherId: userId) else Future.value(<Assignment>[]),
+          if (role == 'evaluator') _apiService.getEvaluationsByEvaluator(userId) else Future.value(<Evaluation>[]),
+        ]);
 
-        // If Evaluator, fetch their submitted evaluations
-        if (widget.role.toLowerCase() == 'evaluator' && widget.userId != null) {
-          final evals = await _apiService.getEvaluationsByEvaluator(widget.userId!);
+        final projects = List<Project>.from(results[0]);
+        final assignments = List<Assignment>.from(results[1]);
+        final evals = List<Evaluation>.from(results[2]);
+        
+        if (role == 'evaluator') {
           _evaluatedProjectIds = evals.map((e) => e.projectId ?? '').toSet();
         }
         
-        setState(() {
-          _allProjects = projects;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _allProjects = projects;
+            _managedAssignments = assignments;
+            if (showLoader) _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        if (showLoader) setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error al cargar datos: $e')),
         );
+      }
+    } finally {
+      if (mounted && widget.userId != null && widget.userId!.isNotEmpty) {
+        try {
+          final List<AppNotification> notifs = await _apiService.getUserNotifications(widget.userId!);
+          setState(() {
+            _unreadNotifications = notifs.where((n) => !n.isRead).length;
+          });
+        } catch (_) {}
       }
     }
   }
 
   List<Project> get _filteredProjects {
+    final isEvalRole = widget.role.toLowerCase() == 'evaluator';
+    
     return _allProjects.where((p) {
       final title = p.title ?? p.teamName ?? '';
       final matchesSearch = title.toLowerCase().contains(_searchQuery.toLowerCase());
       
       bool matchesFilter = true;
-      final isEvaluated = p.status?.toLowerCase() == 'evaluado';
+      final isEvaluated = isEvalRole 
+          ? _evaluatedProjectIds.contains(p.id) 
+          : p.status?.toLowerCase() == 'evaluado';
       
       if (_selectedFilter == 'Pendientes') matchesFilter = !isEvaluated;
       if (_selectedFilter == 'Evaluados') matchesFilter = isEvaluated;
@@ -147,13 +181,14 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
 
   Widget build(BuildContext context) {
     bool isEvaluator = widget.role.toLowerCase() == 'evaluator';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return DefaultTabController(
       length: isEvaluator ? 2 : 1,
       child: Scaffold(
         appBar: AppBar(
           title: Text('Proyectos', style: Theme.of(context).textTheme.headlineMedium),
-          backgroundColor: AppColors.backgroundOffWhite,
+          backgroundColor: isDark ? AppColors.surfaceDark : AppColors.backgroundOffWhite,
           elevation: 0,
           bottom: isEvaluator 
             ? const TabBar(
@@ -166,12 +201,37 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               )
             : null,
           actions: [
-            if (widget.role.toLowerCase() == 'teacher' || widget.role.toLowerCase() == 'admin' || widget.role.toLowerCase() == 'evaluator')
-              IconButton(
-                icon: const Icon(Icons.leaderboard_outlined, color: AppColors.primaryYellow),
-                tooltip: 'Ranking en vivo',
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaderboardScreen())),
-              ),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.notifications_none),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => NotificationScreen(userId: widget.userId ?? '')),
+                    ).then((_) {
+                      if (mounted) _fetchProjects();
+                    });
+                  },
+                ),
+                if (_unreadNotifications > 0)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                      child: Text(
+                        '$_unreadNotifications',
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
             if (widget.role.toLowerCase() == 'teacher')
               IconButton(
                 icon: const Icon(Icons.analytics_outlined),
@@ -199,10 +259,10 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             )
           : null,
         body: RefreshIndicator(
-          onRefresh: _fetchProjects,
+          onRefresh: () => _fetchProjects(showLoader: false),
           color: AppColors.primaryYellow,
           child: _isLoading 
-            ? const Center(child: CircularProgressIndicator())
+            ? _buildProjectSkeleton()
             : isEvaluator
               ? TabBarView(
                   children: [
@@ -297,7 +357,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         ),
         Expanded(
           child: _isLoading && _pendingAssignments.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? _buildProjectSkeleton()
             : assignmentsToShow.isEmpty
               ? Center(
                   child: Column(
@@ -376,18 +436,31 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
 
   Widget _buildStudentFilterChip(String label) {
     final isSelected = _studentStatusFilter == label;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () => setState(() => _studentStatusFilter = label),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.textPrimary : AppColors.backgroundWhite,
+          color: isSelected 
+              ? (isDark ? Colors.white : AppColors.textPrimary) 
+              : (isDark ? AppColors.surfaceDark : AppColors.backgroundWhite),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? AppColors.textPrimary : AppColors.borderColor),
+          border: Border.all(
+            color: isSelected 
+                ? (isDark ? Colors.white : AppColors.textPrimary) 
+                : (isDark ? AppColors.borderColorDark : AppColors.borderColor)
+          ),
         ),
         child: Text(
           label,
-          style: TextStyle(color: isSelected ? Colors.white : Colors.black, fontWeight: FontWeight.bold, fontSize: 12),
+          style: TextStyle(
+            color: isSelected 
+                ? (isDark ? Colors.black : Colors.white) 
+                : (isDark ? Colors.white70 : Colors.black), 
+            fontWeight: FontWeight.bold, 
+            fontSize: 12
+          ),
         ),
       ),
     );
@@ -468,49 +541,46 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   Widget _buildAssignmentTab() {
-    return FutureBuilder<List<Assignment>>(
-      future: _apiService.getAssignments(teacherId: widget.userId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final assignments = snapshot.data ?? [];
-        if (assignments.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.assignment_late_outlined, size: 64, color: Colors.grey),
-                const SizedBox(height: 16),
-                const Text('No has creado ninguna convocatoria aún'),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => Navigator.push(
-                    context, 
-                    MaterialPageRoute(builder: (_) => AssignmentCreationScreen(teacherId: widget.userId!))
-                  ).then((_) => setState(() {})),
-                  child: const Text('Crear Primera Convocatoria'),
-                ),
-              ],
-            ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: assignments.length,
-          itemBuilder: (context, index) {
-            final a = assignments[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: ListTile(
-                title: Text(a.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text('Código: ${a.accessCode ?? "---"}'),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                onTap: () => _showAssignmentDetails(a),
+    final assignments = _managedAssignments;
+    
+    if (assignments.isEmpty) {
+      return Center(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.assignment_late_outlined, size: 64, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text('No has creado ninguna convocatoria aún'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => Navigator.push(
+                  context, 
+                  MaterialPageRoute(builder: (_) => AssignmentCreationScreen(teacherId: widget.userId!))
+                ).then((_) => _fetchProjects()),
+                child: const Text('Crear Primera Convocatoria'),
               ),
-            );
-          },
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      itemCount: assignments.length,
+      itemBuilder: (context, index) {
+        final a = assignments[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: ListTile(
+            title: Text(a.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => _showAssignmentDetails(a),
+          ),
         );
       },
     );
@@ -522,32 +592,43 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.only(top: 12, left: 24, right: 24, bottom: 24),
         height: MediaQuery.of(context).size.height * 0.7,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
             Text(a.title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Text(a.description, style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.primaryYellow.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primaryYellow),
-              ),
-              child: Column(
-                children: [
-                  const Text('Comparte este código con tus alumnos:', style: TextStyle(fontSize: 12)),
-                  const SizedBox(height: 8),
-                  Text(a.accessCode ?? 'N/A', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: 4)),
-                ],
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Alumnos que han entregado:', style: TextStyle(fontWeight: FontWeight.bold)),
+                if (widget.role.toLowerCase() == 'teacher')
+                  TextButton.icon(
+                    onPressed: () => _exportToCsv(a),
+                    icon: const Icon(Icons.download, size: 18),
+                    label: const Text('Exportar CSV'),
+                    style: TextButton.styleFrom(foregroundColor: AppColors.primaryYellow),
+                  ),
+              ],
             ),
-            const SizedBox(height: 24),
-            const Text('Alumnos que han entregado:', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Expanded(
               child: FutureBuilder<List<Project>>(
@@ -571,14 +652,69 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 },
               ),
             ),
+            const SizedBox(height: 16),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cerrar'),
+              child: const Text('Cerrar Ventana'),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _exportToCsv(Assignment a) async {
+    try {
+      AppTheme.showCustomSnackBar(context, 'Generando reporte CSV, por favor espera...');
+      
+      final projects = await _apiService.getProjects(assignmentId: a.id);
+      if (projects.isEmpty) {
+        if (mounted) AppTheme.showCustomSnackBar(context, 'No hay entregas para exportar.', isError: true);
+        return;
+      }
+
+      final buffer = StringBuffer();
+      // Use UTF-8 BOM to ensure proper encoding in Excel
+      buffer.write('\uFEFF');
+      buffer.writeln('ID Proyecto,Equipo/Alumno,Categoria,Status,Puntaje General,Retroalimentacion');
+
+      for (var p in projects) {
+        String scoreStr = 'N/A';
+        String feedbackStr = 'N/A';
+        
+        if (p.status?.toLowerCase() == 'evaluado') {
+          final eval = await _apiService.getEvaluationByProjectId(p.id!);
+          if (eval != null) {
+            final score = eval.scores?['General'] ?? eval.detailedScores?.values.fold(0, (sum, val) => (sum ?? 0) + val);
+            scoreStr = score?.toString() ?? 'N/A';
+            feedbackStr = eval.feedback?.replaceAll(',', ';').replaceAll('\n', ' ') ?? 'N/A';
+          }
+        }
+        
+        final safeTeam = p.teamName?.replaceAll(',', ';') ?? 'S/N';
+        final safeCat = p.category?.replaceAll(',', ';') ?? 'N/A';
+        final idStr = p.id ?? 'Unknown';
+        
+        buffer.writeln('$idStr,$safeTeam,$safeCat,${p.status ?? "Pendiente"},$scoreStr,$feedbackStr');
+      }
+
+      final tempDir = await getTemporaryDirectory();
+      final cleanName = a.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+      final path = '${tempDir.path}/Resultados_$cleanName.csv';
+      
+      final file = File(path);
+      await file.writeAsString(buffer.toString());
+      
+      if (mounted) AppTheme.showCustomSnackBar(context, 'Reporte generado. Abriendo archivo...');
+      await OpenFilex.open(path);
+      
+    } catch (e) {
+      debugPrint('Export Error: $e');
+      if (mounted) AppTheme.showCustomSnackBar(context, 'Error al exportar: $e', isError: true);
+    }
   }
 
   IconData _getFabIcon() {
@@ -606,15 +742,16 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   Widget _buildSearchBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: TextFormField(
         onChanged: (val) => setState(() => _searchQuery = val),
         decoration: InputDecoration(
           hintText: 'Buscar proyectos...',
-          prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+          prefixIcon: Icon(Icons.search, color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondary),
           filled: true,
-          fillColor: AppColors.backgroundWhite,
+          fillColor: isDark ? AppColors.surfaceDark : AppColors.backgroundWhite,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0), borderSide: BorderSide.none),
         ),
       ),
@@ -639,18 +776,30 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
 
   Widget _buildFilterChip(String label) {
     final isSelected = _selectedFilter == label;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () => setState(() => _selectedFilter = label),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.textPrimary : AppColors.backgroundWhite,
+          color: isSelected 
+              ? (isDark ? Colors.white : AppColors.textPrimary) 
+              : (isDark ? AppColors.surfaceDark : AppColors.backgroundWhite),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? AppColors.textPrimary : AppColors.borderColor),
+          border: Border.all(
+            color: isSelected 
+                ? (isDark ? Colors.white : AppColors.textPrimary) 
+                : (isDark ? AppColors.borderColorDark : AppColors.borderColor)
+          ),
         ),
         child: Text(
           label,
-          style: TextStyle(color: isSelected ? Colors.white : Colors.black, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: isSelected 
+                ? (isDark ? Colors.black : Colors.white) 
+                : (isDark ? Colors.white70 : Colors.black), 
+            fontWeight: FontWeight.bold
+          ),
         ),
       ),
     );
@@ -676,27 +825,30 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         return ProjectCard(
           project: p,
           isEvaluated: isEvaluated,
-          onTap: () async {
-             // Handle navigation based on role
-             if (widget.role.toLowerCase() == 'evaluator' && !isEvaluated) {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => EvaluationScreen(
-                      projectId: p.id ?? '',
-                      projectName: p.title ?? 'Proyecto',
-                      evaluatorId: widget.userId,
-                    ),
-                  ),
-                );
-                if (result == true) _fetchProjects();
-             } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => ProjectDetailScreen(project: p)),
-                );
-             }
+          userRole: widget.role,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ProjectDetailScreen(
+                project: p, 
+                userRole: widget.role,
+                userId: widget.userId,
+              )),
+            ).then((_) => _fetchProjects());
           },
+        );
+      },
+    );
+  }
+
+  Widget _buildProjectSkeleton() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      itemCount: 4,
+      itemBuilder: (context, index) {
+        return const Padding(
+          padding: EdgeInsets.only(bottom: 16.0),
+          child: SkeletonLoader(height: 120, borderRadius: 16),
         );
       },
     );
@@ -707,16 +859,25 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.search_off, size: 64, color: AppColors.textSecondary),
-          const SizedBox(height: 16),
-          const Text('No se encontraron proyectos'),
-          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.primaryYellow.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.folder_open_outlined, size: 64, color: AppColors.primaryYellow),
+          ),
+          const SizedBox(height: 24),
+          const Text('Aún no hay proyectos aquí', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          const Text('Cuando se suban proyectos aparecerán en esta lista', style: TextStyle(color: Colors.grey)),
+          const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: _fetchProjects,
             icon: const Icon(Icons.refresh),
-            label: const Text('Reintentar'),
+            label: const Text('Actualizar'),
           ),
-          if (widget.role == 'Student') ...[
+          if (widget.role.toLowerCase() == 'student') ...[
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StudentUploadScreen(studentId: widget.userId ?? 'student_1'))),
@@ -740,25 +901,15 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: GestureDetector(
-        onTap: () async {
-          if (widget.role == 'Admin' || widget.role == 'Student') {
-             // Maybe show details instead of evaluation?
-             return;
-          }
-          final result = await Navigator.push(
+        onTap: () {
+          Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => EvaluationScreen(
-                projectId: p.id ?? '',
-                projectName: title,
-                evaluatorId: widget.userId,
-              ),
-            ),
-          );
-
-          if (result == true) {
-            _fetchProjects();
-          }
+            MaterialPageRoute(builder: (_) => ProjectDetailScreen(
+              project: p,
+              userRole: widget.role,
+              userId: widget.userId,
+            )),
+          ).then((_) => _fetchProjects());
         },
         child: GlassmorphismCard(
           padding: const EdgeInsets.all(16.0),
@@ -867,12 +1018,6 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               }
             },
           ),
-          if (widget.role.toLowerCase() == 'student')
-            ListTile(
-              leading: const Icon(Icons.cloud_upload_outlined),
-              title: const Text('Subir Mi Proyecto'),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StudentUploadScreen(studentId: widget.userId ?? ''))),
-            ),
           if (widget.role.toLowerCase() == 'evaluator')
             ListTile(
               leading: const Icon(Icons.list_alt),
@@ -883,11 +1028,6 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             leading: const Icon(Icons.class_outlined),
             title: const Text('Mis Clases'),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ClassroomManagementScreen(userId: widget.userId ?? '', role: widget.role))),
-          ),
-          ListTile(
-            leading: const Icon(Icons.bar_chart_outlined),
-            title: const Text('Resultados Live'),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ResultsScreen())),
           ),
           const Spacer(),
           ListTile(

@@ -18,4 +18,5 @@ public class Assignment
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string? AccessCode { get; set; } // Opcional: código para unirse
     public string? ClassroomId { get; set; } // Link assignment to a class
+    public List<string>? AssignedEvaluators { get; set; }
 }

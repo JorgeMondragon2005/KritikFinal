@@ -10,6 +10,7 @@ import 'native_media_viewer.dart';
 import '../services/api_service.dart';
 import '../models/evaluation_model.dart';
 import '../models/rubric_model.dart';
+import '../models/notification_model.dart';
 
 class EvaluationScreen extends StatefulWidget {
   final String? projectId;
@@ -35,6 +36,15 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
   
   String? _evidencePath;
   bool _isSubmitting = false;
+
+  final List<String> _availableBadges = [
+    'Ninguno',
+    'Mejor Innovación',
+    'Diseño Impecable',
+    'Mejor Pitch',
+    'Excelente Viabilidad'
+  ];
+  String? _selectedBadge = 'Ninguno';
 
   @override
   void initState() {
@@ -98,7 +108,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
   }
 
   Future<void> _loadRubrics() async {
-    final rubrics = await _apiService.getRubrics();
+    final rubrics = await _apiService.getRubrics(creatorId: widget.evaluatorId);
     if (mounted) {
       setState(() {
         _rubrics = rubrics;
@@ -163,6 +173,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
         detailedScores: _detailedScores,
         feedback: _commentController.text,
         evidencePhotoBase64: base64Photo,
+        badgeEarned: _selectedBadge == 'Ninguno' ? null : _selectedBadge,
       );
 
       final success = await _apiService.submitEvaluation(evaluation);
@@ -170,6 +181,16 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       if (!mounted) return;
 
       if (success) {
+        if (_project != null) {
+          try {
+            await _apiService.createNotification(AppNotification(
+              userId: _project!.studentId ?? '',
+              title: 'Proyecto Evaluado',
+              message: 'El jurado ha evaluado tu proyecto "${_project!.title}". Revisa tu retroalimentación.',
+              createdAt: DateTime.now(),
+            ));
+          } catch (_) {}
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('¡Evaluación enviada con éxito!')),
         );
@@ -207,47 +228,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                   const SizedBox(height: 16),
                   
                   if (_isLoadingProject)
-                    const LinearProgressIndicator()
-                  else if (_project != null) ...[
-                    const Text('Archivos Entregados:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    const SizedBox(height: 12),
-                    
-                    // Show Videos
-                    if (_project!.videos.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8, bottom: 4),
-                        child: Text('Videos:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.blue)),
-                      ),
-                      ..._project!.videos.map((v) => _buildFileCard(v.title, v.url, Icons.video_file, Colors.blue, isVideo: true)),
-                    ],
-                    
-                    // Show Documents
-                    if (_project!.documents.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8, bottom: 4),
-                        child: Text('Documentos:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.green)),
-                      ),
-                      ..._project!.documents.map((d) => _buildFileCard(d.title, d.url, Icons.description, Colors.green, isImage: _isImageExtension(d.type))),
-                    ],
-                    
-                    // Show Legacy/Other (CoverImageUrl)
-                    if (_project!.coverImageUrl != null && 
-                        _project!.coverImageUrl!.isNotEmpty &&
-                        !_project!.videos.any((v) => v.url == _project!.coverImageUrl) &&
-                        !_project!.documents.any((d) => d.url == _project!.coverImageUrl)) ...[
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8, bottom: 4),
-                        child: Text('Otros Archivos:', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.orange)),
-                      ),
-                      _buildFileCard('Archivo Principal', _project!.coverImageUrl!, Icons.image, Colors.orange, isImage: true),
-                    ],
-
-                    if (_project!.videos.isEmpty && _project!.documents.isEmpty && (_project!.coverImageUrl == null || _project!.coverImageUrl!.isEmpty))
-                      const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text('No hay archivos adjuntos en esta entrega.', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
-                      ),
-                  ],
+                    const LinearProgressIndicator(),
                   const SizedBox(height: 24),
                   
                   // Rubric Selection
@@ -255,6 +236,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                   const SizedBox(height: 8),
                   DropdownButtonFormField<Rubric>(
                     value: _selectedRubric,
+                    dropdownColor: Theme.of(context).colorScheme.surface,
                     decoration: const InputDecoration(border: OutlineInputBorder()),
                     items: _rubrics.map<DropdownMenuItem<Rubric>>((r) => DropdownMenuItem(
                       value: r,
@@ -311,6 +293,29 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                     maxLines: 3,
                     decoration: const InputDecoration(hintText: 'Retroalimentación para el alumno...', border: OutlineInputBorder()),
                   ),
+                  const SizedBox(height: 24),
+                  
+                  // Award Selection
+                  const Text('🏆 Reconocimiento Especial (Opcional)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _selectedBadge,
+                    dropdownColor: Theme.of(context).colorScheme.surface,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.star_border, color: Colors.amber),
+                    ),
+                    items: _availableBadges.map((badge) => DropdownMenuItem(
+                      value: badge,
+                      child: Text(badge),
+                    )).toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedBadge = val;
+                      });
+                    },
+                  ),
+                  
                   const SizedBox(height: 48),
                   ElevatedButton(
                     onPressed: _isSubmitting ? null : _submit,

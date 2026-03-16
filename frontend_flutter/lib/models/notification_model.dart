@@ -1,35 +1,40 @@
-class NotificationModel {
-  final String id;
+class AppNotification {
+  final String? id;
+  final String userId;
   final String title;
   final String message;
-  final DateTime timestamp;
   final bool isRead;
-  final String? deepLink; // Redirect to a specific project or evaluation
+  final DateTime createdAt;
+  final String? actionUrl;
 
-  NotificationModel({
-    required this.id,
+  AppNotification({
+    this.id,
+    required this.userId,
     required this.title,
     required this.message,
-    required this.timestamp,
     this.isRead = false,
-    this.deepLink,
+    required this.createdAt,
+    this.actionUrl,
   });
 
-  factory NotificationModel.fromJson(Map<String, dynamic> json) => NotificationModel(
-    id: json['id']?.toString() ?? '',
-    title: json['title']?.toString() ?? '',
-    message: json['message']?.toString() ?? '',
-    timestamp: DateTime.parse(json['timestamp'] ?? DateTime.now().toIso8601String()),
-    isRead: json['isRead'] ?? false,
-    deepLink: json['deepLink']?.toString(),
+  factory AppNotification.fromJson(Map<String, dynamic> json) => AppNotification(
+    id: json['id']?.toString() ?? json['_id']?.toString() ?? json['Id']?.toString(),
+    userId: json['userId']?.toString() ?? json['UserId']?.toString() ?? '',
+    title: json['title']?.toString() ?? json['Title']?.toString() ?? '',
+    message: json['message']?.toString() ?? json['Message']?.toString() ?? '',
+    isRead: json['isRead'] ?? json['IsRead'] ?? false,
+    createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'].toString()) : 
+               (json['CreatedAt'] != null ? DateTime.parse(json['CreatedAt'].toString()) : DateTime.now()),
+    actionUrl: json['actionUrl']?.toString() ?? json['ActionUrl']?.toString(),
   );
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    'userId': userId,
     'title': title,
     'message': message,
-    'timestamp': timestamp.toIso8601String(),
     'isRead': isRead,
-    'deepLink': deepLink,
+    'createdAt': createdAt.toIso8601String(),
+    'actionUrl': actionUrl,
   };
 }

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/rubric_model.dart';
 import '../services/api_service.dart';
+import '../models/rubric_model.dart';
+import '../models/criterion_model.dart';
+import 'dart:ui';
 import '../theme/app_theme.dart';
 
 class RubricManagementScreen extends StatefulWidget {
@@ -55,25 +58,36 @@ class _RubricManagementScreenState extends State<RubricManagementScreen> {
     });
   }
 
-  void _showCreateDialog() {
-    List<Map<String, dynamic>> items = [];
-    _nameController.clear();
+  void _showCreateDialog([Rubric? existingRubric]) {
+    List<Map<String, dynamic>> items = existingRubric != null
+        ? existingRubric.items.map((c) => {'criteria': c.criteria, 'description': c.description, 'maxPoints': c.maxPoints}).toList()
+        : [];
+    _nameController.text = existingRubric?.name ?? '';
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (mContext) => StatefulBuilder(
-        builder: (sContext, setModalState) => Container(
-          height: MediaQuery.of(mContext).size.height * 0.85,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-          ),
-          child: SafeArea(
-            bottom: true,
+      backgroundColor: Colors.transparent, // Make background transparent for blur
+      elevation: 0,
+      builder: (context) => StatefulBuilder(
+        builder: (sContext, setModalState) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.85,
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceDark.withOpacity(0.85) : Colors.white.withOpacity(0.85),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
+            ),
             child: Padding(
-              padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(mContext).viewInsets.bottom + 16),
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 24,
+                right: 24,
+                top: 24,
+              ),
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -82,8 +96,8 @@ class _RubricManagementScreenState extends State<RubricManagementScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Nueva Lista/Rúbrica', style: Theme.of(mContext).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-                        IconButton(onPressed: () => Navigator.pop(mContext), icon: const Icon(Icons.close)),
+                        Text(existingRubric != null ? 'Editar Lista/Rúbrica' : 'Nueva Lista/Rúbrica', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                        IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -152,6 +166,12 @@ class _RubricManagementScreenState extends State<RubricManagementScreen> {
                                     ),
                                   ],
                                 ),
+                                const SizedBox(height: 8),
+                                TextField(
+                                  decoration: const InputDecoration(hintText: 'Descripción del criterio (ej. Detalles, reglas)', isDense: true),
+                                  onChanged: (v) => items[index]['description'] = v,
+                                  controller: TextEditingController(text: items[index]['description'])..selection = TextSelection.fromPosition(TextPosition(offset: (items[index]['description']?.toString().length ?? 0))),
+                                ),
                               ],
                             ),
                           ),
@@ -176,18 +196,25 @@ class _RubricManagementScreenState extends State<RubricManagementScreen> {
                           }
                         }
                         
-                        final success = await _apiService.createRubric({
+                        final payload = {
                           'name': _nameController.text,
                           'items': items,
                           'creatorId': widget.teacherId,
                           'isGlobal': false,
-                        });
+                        };
+
+                        bool success;
+                        if (existingRubric != null && existingRubric.id != null) {
+                          success = await _apiService.updateRubric(existingRubric.id!, payload);
+                        } else {
+                          success = await _apiService.createRubric(payload);
+                        }
                         
                         if (success) {
                           if (!mounted) return;
-                          Navigator.pop(mContext);
+                          Navigator.pop(context);
                           _loadRubrics();
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Rúbrica guardada con éxito')));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(existingRubric != null ? 'Rúbrica actualizada con éxito' : 'Rúbrica guardada con éxito')));
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al guardar la rúbrica: revisa la conexión.')));
                         }
@@ -203,7 +230,8 @@ class _RubricManagementScreenState extends State<RubricManagementScreen> {
               ),
             ),
           ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -231,6 +259,7 @@ class _RubricManagementScreenState extends State<RubricManagementScreen> {
                   title: Text(rubric.name ?? 'Sin nombre', style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text('${rubric.items.length} criterios'),
                   trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showCreateDialog(rubric),
                 ),
               );
             },
