@@ -414,6 +414,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                 ),
             ],
           ),
+          if (_existingEvaluation != null) ...[
             const Divider(),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -485,6 +486,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
               ),
             ],
           ],
+        ],
       ),
     );
   }
