@@ -37,7 +37,7 @@ public class AIService
             return "La API Key de Gemini no está configurada o es inválida.";
         }
 
-        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_apiKey}";
+        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={_apiKey}";
 
         var requestBody = new
         {
