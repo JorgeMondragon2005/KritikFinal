@@ -3,6 +3,10 @@ import '../services/api_service.dart';
 import '../models/project_model.dart';
 import '../models/assignment_model.dart';
 import '../theme/app_theme.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:open_filex/open_filex.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   final String teacherId;
@@ -223,17 +227,76 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
   Widget _buildExportButton() {
     return ElevatedButton.icon(
-      onPressed: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Generando reporte PDF...')),
-        );
-      },
-      icon: const Icon(Icons.picture_as_pdf),
-      label: const Text('Exportar Reporte de Calificaciones'),
+      onPressed: _exportReport,
+      icon: const Icon(Icons.download),
+      label: const Text('Exportar Reporte de Calificaciones (CSV)'),
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.redAccent,
+        backgroundColor: Colors.green,
         foregroundColor: Colors.white,
       ),
     );
+  }
+
+  Future<void> _exportReport() async {
+    if (_totalProjects == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay datos para exportar')),
+      );
+      return;
+    }
+
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Generando datos, por favor espera...')),
+      );
+
+      final dir = await getTemporaryDirectory();
+      final File file = File('${dir.path}/Estadisticas_Profesor.csv');
+      final buffer = StringBuffer();
+      
+      buffer.write('\uFEFF'); // UTF-8 BOM
+      buffer.writeln('ID Proyecto,Equipo/Alumno,Categoria,Status,Puntaje_Promedio');
+
+      final projects = await _apiService.getProjects(teacherId: widget.teacherId);
+      
+      for (var p in projects) {
+        String scoreStr = 'N/A';
+        if (p.status?.toLowerCase() == 'evaluado') {
+          final evals = await _apiService.getProjectEvaluations(p.id!);
+          if (evals.isNotEmpty) {
+            double finalScore = evals.fold<double>(0.0, (prev, e) {
+               double eScore = e.generalScore ?? 0.0;
+               if (eScore == 0.0 && e.scores != null) {
+                   eScore = e.scores!.values.fold<double>(0.0, (acc, el) => acc + ((el ?? 0) as num).toDouble());
+               }
+               return prev + eScore;
+            }) / evals.length;
+            scoreStr = finalScore.toStringAsFixed(1);
+          }
+        }
+        
+        final safeTeam = p.teamName?.replaceAll(',', ';') ?? 'S/N';
+        final safeCat = p.category?.replaceAll(',', ';') ?? 'N/A';
+        final idStr = p.id ?? 'Unknown';
+        
+        buffer.writeln('$idStr,$safeTeam,$safeCat,${p.status ?? "Pendiente"},$scoreStr');
+      }
+
+      await file.writeAsString(buffer.toString(), encoding: utf8);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reporte generado. Abriendo archivo...')),
+        );
+      }
+
+      await OpenFilex.open(file.path);
+    } catch (e) {
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text('Error al generar CSV: $e')),
+         );
+      }
+    }
   }
 }
