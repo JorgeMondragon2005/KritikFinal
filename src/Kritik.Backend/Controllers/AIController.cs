@@ -68,7 +68,9 @@ Asegúrate de que las llaves del objeto 'scores' coincidan exactamente con la pr
             var resultText = await _aiService.GenerateContentAsync(prompt);
             
             // Clean up Markdown backticks if Gemini includes them
-            resultText = resultText.Replace("```json", "").Replace("```", "").Trim();
+            resultText = resultText.Replace("```json", "", StringComparison.OrdinalIgnoreCase)
+                                   .Replace("```", "")
+                                   .Trim();
             
             try 
             {
@@ -105,7 +107,10 @@ Devuelve tu respuesta ÚNICAMENTE como un array JSON válido de los 'Id' de esos
 Ejemplo de salida: [""id_1"", ""id_2"", ""id_3""]
 ";
             var resultText = await _aiService.GenerateContentAsync(prompt);
-            resultText = resultText.Replace("```json", "").Replace("```", "").Trim();
+            
+            resultText = resultText.Replace("```json", "", StringComparison.OrdinalIgnoreCase)
+                                   .Replace("```", "")
+                                   .Trim();
             
             try 
             {
