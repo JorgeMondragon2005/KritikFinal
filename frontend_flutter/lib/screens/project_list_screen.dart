@@ -291,7 +291,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           color: AppColors.primaryYellow,
           child: _isLoading 
             ? _buildProjectSkeleton()
-            : isEvaluator
+            : hasDualTabs
               ? TabBarView(
                   children: [
                      _buildProjectTab(),
