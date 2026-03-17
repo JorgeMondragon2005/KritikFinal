@@ -44,4 +44,14 @@ public class UserService
 
     public async Task<List<User>> GetAllAsync() =>
         await _usersCollection.Find(_ => true).ToListAsync();
+
+    public async Task EnsureAdminExistsAsync(string email)
+    {
+        var user = await _usersCollection.Find(x => x.Email == email).FirstOrDefaultAsync();
+        if (user != null && user.Role != "Admin")
+        {
+            user.Role = "Admin";
+            await _usersCollection.ReplaceOneAsync(x => x.Id == user.Id, user);
+        }
+    }
 }

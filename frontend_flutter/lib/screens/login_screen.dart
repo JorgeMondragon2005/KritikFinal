@@ -200,22 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   child: const Text('¿No tienes cuenta? Regístrate aquí'),
                 ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () => _navigateToRoleSelection(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.backgroundWhite,
-                    foregroundColor: AppColors.textPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
-                      side: const BorderSide(
-                        color: AppColors.textPrimary,
-                        width: 1.0,
-                      ),
-                    ),
-                  ),
-                  child: const Text('Acceso como Invitado'),
-                ),
+
               ],
             ),
           ),

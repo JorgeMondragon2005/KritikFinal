@@ -57,6 +57,10 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 
 var app = builder.Build();
 
+// Auto-Promote the owner to Admin on startup
+var userService = app.Services.GetRequiredService<UserService>();
+await userService.EnsureAdminExistsAsync("jorgemoondragon595@gmail.com");
+
 // Configure Kestrel to allow large requests
 app.Use(async (context, next) =>
 {
