@@ -380,12 +380,13 @@ class ApiService {
   }
 
   // Assignments
-  Future<List<Assignment>> getAssignments({String? teacherId, String? studentId}) async {
+  Future<List<Assignment>> getAssignments({String? teacherId, String? studentId, String? evaluatorId}) async {
     try {
-      debugPrint('DEBUG: Calling getAssignments with teacherId: $teacherId, studentId: $studentId');
+      debugPrint('DEBUG: Calling getAssignments with teacherId: $teacherId, studentId: $studentId, evaluatorId: $evaluatorId');
       final response = await _dio.get('Assignments', queryParameters: {
         if (teacherId != null) 'teacherId': teacherId,
         if (studentId != null) 'studentId': studentId,
+        if (evaluatorId != null) 'evaluatorId': evaluatorId,
       });
       if (response.statusCode == 200 && response.data is List) {
         final List<dynamic> data = response.data;
