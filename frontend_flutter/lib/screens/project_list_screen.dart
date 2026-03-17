@@ -60,6 +60,10 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   String? _portadaUrl;
 
   Set<String> _evaluatedProjectIds = {}; // Track which projects the current evaluator has already graded
+  
+  // AI Matchmaking
+  List<String> _recommendedProjectIds = [];
+  bool _isMatchmaking = false;
 
   @override
   void initState() {
@@ -200,6 +204,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       
       if (_selectedFilter == 'Pendientes') matchesFilter = !isEvaluated;
       if (_selectedFilter == 'Evaluados') matchesFilter = isEvaluated;
+      if (_selectedFilter == 'Recomendados') matchesFilter = _recommendedProjectIds.contains(p.id);
       
       return matchesSearch && matchesFilter;
     }).toList();
@@ -870,37 +875,98 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           _buildFilterChip('Pendientes'),
           const SizedBox(width: 8),
           _buildFilterChip('Evaluados'),
+          const SizedBox(width: 8),
+          _buildFilterChip('Recomendados', isAi: true),
         ],
       ),
     );
   }
 
-  Widget _buildFilterChip(String label) {
+  Future<void> _runMatchmaking() async {
+    if (_allProjects.isEmpty || widget.userId == null) return;
+    
+    setState(() => _isMatchmaking = true);
+    
+    try {
+      final ids = await _apiService.getMatchmakingRecommendations(
+        widget.userId!,
+        widget.role,
+        _allProjects,
+      );
+      
+      if (mounted) {
+        setState(() {
+          _recommendedProjectIds = ids;
+          if (_recommendedProjectIds.isEmpty) {
+             ScaffoldMessenger.of(context).showSnackBar(
+               const SnackBar(content: Text('La IA no encontró recomendaciones compatibles para ti.'))
+             );
+             _selectedFilter = 'Todos'; // Revert
+          } else {
+             ScaffoldMessenger.of(context).showSnackBar(
+               SnackBar(content: Text('La IA encontró ${ids.length} proyectos recomendados.'))
+             );
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(content: Text('Error obteniendo recomendaciones de IA.'))
+         );
+         setState(() => _selectedFilter = 'Todos');
+      }
+    } finally {
+      if (mounted) setState(() => _isMatchmaking = false);
+    }
+  }
+
+  Widget _buildFilterChip(String label, {bool isAi = false}) {
     final isSelected = _selectedFilter == label;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
-      onTap: () => setState(() => _selectedFilter = label),
+      onTap: () {
+        if (isAi && label == 'Recomendados' && !isSelected && _recommendedProjectIds.isEmpty) {
+           setState(() => _selectedFilter = label);
+           _runMatchmaking();
+        } else {
+           setState(() => _selectedFilter = label);
+        }
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected 
-              ? (isDark ? Colors.white : AppColors.textPrimary) 
+              ? (isAi ? Colors.purple : (isDark ? Colors.white : AppColors.textPrimary)) 
               : (isDark ? AppColors.surfaceDark : AppColors.backgroundWhite),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected 
-                ? (isDark ? Colors.white : AppColors.textPrimary) 
+                ? (isAi ? Colors.purpleAccent : (isDark ? Colors.white : AppColors.textPrimary)) 
                 : (isDark ? AppColors.borderColorDark : AppColors.borderColor)
           ),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected 
-                ? (isDark ? Colors.black : Colors.white) 
-                : (isDark ? Colors.white70 : Colors.black), 
-            fontWeight: FontWeight.bold
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isAi) ...[
+               Icon(Icons.auto_awesome, size: 14, color: isSelected ? Colors.white : Colors.purple),
+               const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected 
+                    ? (isDark ? Colors.black : Colors.white) 
+                    : (isAi ? Colors.purple : (isDark ? Colors.white70 : Colors.black)), 
+                fontWeight: FontWeight.bold
+              ),
+            ),
+            if (isAi && _selectedFilter == label && _isMatchmaking) ...[
+               const SizedBox(width: 8),
+               const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+            ],
+          ],
         ),
       ),
     );

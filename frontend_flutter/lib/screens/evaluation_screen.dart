@@ -235,6 +235,66 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
     }
   }
 
+  Future<void> _autofillWithAI() async {
+    if (_project == null || _selectedRubric == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Asegúrate de que el proyecto y la rúbrica estén cargados.')),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Expanded(child: Text("La IA está leyendo el proyecto y evaluando con la rúbrica...")),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final resultMap = await _apiService.suggestEvaluationResultsWithAI(_project!, _selectedRubric!);
+      
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        
+        if (resultMap != null && resultMap['scores'] != null) {
+          setState(() {
+            final Map<String, dynamic> aiScores = resultMap['scores'];
+            // Match AI keys with our local detailed scores
+            for (var key in _detailedScores.keys.toList()) {
+              if (aiScores.containsKey(key)) {
+                _detailedScores[key] = (aiScores[key] as num).toInt();
+              }
+            }
+            if (resultMap['feedback'] != null) {
+               _commentController.text = resultMap['feedback'].toString();
+            }
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('¡Evaluación autocompletada con IA! Revisa y ajusta los valores.')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('La IA no devolvió un formato válido.')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error AI: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -255,8 +315,23 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                   
                   if (_isLoadingProject)
                     const LinearProgressIndicator(),
-                  const SizedBox(height: 24),
-                  
+
+                  // AI Autocomplete Button
+                  if (!_isLoadingProject && _project != null && _selectedRubric != null) ...[
+                    OutlinedButton.icon(
+                      onPressed: _isSubmitting ? null : _autofillWithAI,
+                      icon: const Icon(Icons.auto_awesome, color: Colors.purple),
+                      label: const Text('Autocompletar con IA', style: TextStyle(color: Colors.purple)),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.purple),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ] else ...[
+                    const SizedBox(height: 24),
+                  ],
+
                   // Rubric Selection
                   const Text('Lista de Cotejo / Rúbrica', style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),

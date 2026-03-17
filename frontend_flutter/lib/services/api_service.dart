@@ -789,4 +789,53 @@ class ApiService {
       rethrow;
     }
   }
+
+  // --- AI INTEGRATION EXPERIMENTAL ---
+  Future<String?> getProjectMentorReview(Project project) async {
+    try {
+      final response = await _dio.post('AI/mentor/review', data: project.toJson());
+      if (response.statusCode == 200) {
+        return response.data['suggestion'];
+      }
+      return null;
+    } catch (e) {
+      debugPrint('AI Mentor error: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> suggestEvaluationResultsWithAI(Project project, Rubric rubric) async {
+    try {
+      final response = await _dio.post('AI/evaluation/suggest', data: {
+        'project': project.toJson(),
+        'rubric': rubric.toJson(),
+      });
+      if (response.statusCode == 200) {
+        return response.data;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('AI Evaluator error: $e');
+      return null;
+    }
+  }
+
+  Future<List<String>> getMatchmakingRecommendations(String userId, String userRole, List<Project> projects) async {
+    try {
+      final response = await _dio.post('AI/matchmaking', data: {
+        'userId': userId,
+        'userRole': userRole,
+        'projects': projects.map((p) => p.toJson()).toList(),
+      });
+      if (response.statusCode == 200) {
+        final List<dynamic> ids = response.data;
+        return ids.map((id) => id.toString()).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('AI Matchmaking error: $e');
+      return [];
+    }
+  }
 }
+

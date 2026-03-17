@@ -420,6 +420,79 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     }
   }
 
+  Future<void> _reviewWithAI() async {
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor completa los campos principales primero.')),
+      );
+      return;
+    }
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Row(
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 16),
+            Expanded(child: Text("El Kiosko IA está revisando tu proyecto...")),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final selectedAssignment = _assignments.firstWhere((a) => a.id == _selectedAssignmentId);
+      final dummyProject = Project(
+        title: _titleController.text,
+        teamName: _teamNameController.text,
+        category: _categoryController.text,
+        description: _descriptionController.text,
+        technologies: _technologiesController.text.split(',').map((e) => e.trim()).toList(),
+        studentId: widget.studentId,
+        assignmentId: _selectedAssignmentId,
+        assignedTeacherId: selectedAssignment.teacherId,
+        videos: [],
+        documents: [],
+      );
+
+      final suggestion = await _apiService.getProjectMentorReview(dummyProject);
+      
+      if (mounted) {
+        Navigator.pop(context); // Close loading dialog
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.auto_awesome, color: Colors.purple),
+                const SizedBox(width: 8),
+                const Text('Sugerencia del Kiosko IA'),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Text(suggestion ?? 'No se pudo obtener sugerencia.'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Entendido'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error AI: $e')),
+        );
+      }
+    }
+  }
+
   Widget _buildAssignmentDetails() {
     final assignment = _assignments.cast<Assignment?>().firstWhere(
       (a) => a?.id == _selectedAssignmentId,
@@ -1028,6 +1101,19 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                       ],
 
                       // Final Buttons
+                      const SizedBox(height: 32),
+                      if ((_existingProject == null || _isEditingProject) && !isExpired) ...[
+                        OutlinedButton.icon(
+                          onPressed: _isSubmitting ? null : _reviewWithAI,
+                          icon: const Icon(Icons.auto_awesome, color: Colors.purple),
+                          label: const Text('Revisar con IA (Kiosko Mentor)', style: TextStyle(color: Colors.purple)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.purple),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       const SizedBox(height: 48),
                       if (isExpired && _existingProject == null)
                         Container(
