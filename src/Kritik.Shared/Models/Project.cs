@@ -30,4 +30,5 @@ public class Project
     public string? CoverImageUrl { get; set; }
     public string? IconUrl { get; set; }
     public string? PromoVideoUrl { get; set; }
+    public string? PitchVideoUrl { get; set; }
 }

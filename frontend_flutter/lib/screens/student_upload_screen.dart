@@ -31,7 +31,9 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
   final _repoLinkController = TextEditingController();
   final _technologiesController = TextEditingController(); // New
   final _promoVideoController = TextEditingController(); // For Demo Video Link (YouTube/Drive/etc)
+  final _pitchVideoController = TextEditingController(); // For Pitch Video Link
   PlatformFile? _demoVideoFile;
+  PlatformFile? _pitchVideoFile;
   final _accessCodeController = TextEditingController();
   final ApiService _apiService = ApiService();
   
@@ -116,8 +118,9 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         
         // Populate new fields
         _technologiesController.text = _existingProject!.technologies.isNotEmpty ? _existingProject!.technologies.join(', ') : '';
-        // We don't populate _demoVideoFile from URL here, just clear it for new selection if needed
+        // We don't populate video files from URL here, just clear it for new selection if needed
         _demoVideoFile = null; 
+        _pitchVideoFile = null;
         
         // 3. Fetch evaluation if exists
         _existingEvaluation = await _apiService.getEvaluationByProjectId(_existingProject!.id!);
@@ -130,6 +133,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         _categoryController.clear();
         _technologiesController.clear();
         _demoVideoFile = null;
+        _pitchVideoFile = null;
       }
 
     } catch (e) {
@@ -245,12 +249,30 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
       if (result.files.first.size > 50 * 1024 * 1024) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('El video excede el límite de 50MB. Sube un archivo más ligero o utiliza un enlace de YouTube/Drive abajo.')),
+            const SnackBar(content: Text('El video demo excede el límite de 50MB. Sube un archivo más ligero o utiliza un enlace de YouTube/Drive abajo.')),
           );
         }
         return;
       }
       setState(() => _demoVideoFile = result.files.first);
+    }
+  }
+
+  Future<void> _pickPitchVideo() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.video,
+      allowMultiple: false,
+    );
+    if (result != null) {
+      if (result.files.first.size > 50 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('El video pitch excede el límite de 50MB. Sube un archivo más ligero o utiliza un enlace libre abajo.')),
+          );
+        }
+        return;
+      }
+      setState(() => _pitchVideoFile = result.files.first);
     }
   }
 
@@ -290,6 +312,15 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         promoVideoUrl = _promoVideoController.text; // Use manual URL if no file picked
       }
 
+      // 1.2 Upload Pitch Video if selected
+      String? pitchVideoUrl = _existingProject?.pitchVideoUrl;
+      if (_pitchVideoFile != null && _pitchVideoFile!.path != null) {
+        final url = await _apiService.uploadFile(File(_pitchVideoFile!.path!));
+        if (url != null) pitchVideoUrl = url;
+      } else if (_pitchVideoController.text.isNotEmpty) {
+        pitchVideoUrl = _pitchVideoController.text; // Use manual URL if no file picked
+      }
+
 
       // 2. Create project with file URLs and teacher link
       List<Video> videos = [];
@@ -324,6 +355,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
            assignmentId: _selectedAssignmentId,
            assignedTeacherId: _existingProject!.assignedTeacherId ?? selectedAssignment.teacherId,
            promoVideoUrl: promoVideoUrl ?? _existingProject!.promoVideoUrl,
+           pitchVideoUrl: pitchVideoUrl ?? _existingProject!.pitchVideoUrl,
            coverImageUrl: uploadedFileUrls.isNotEmpty ? uploadedFileUrls.first : _existingProject!.coverImageUrl,
            videos: [..._existingProject!.videos, ...videos],
            documents: [..._existingProject!.documents, ...documents],
@@ -341,6 +373,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
            assignmentId: _selectedAssignmentId,
            assignedTeacherId: selectedAssignment.teacherId,
            promoVideoUrl: promoVideoUrl, // Use uploaded file URL
+           pitchVideoUrl: pitchVideoUrl, // Use uploaded Pitch file URL
            coverImageUrl: uploadedFileUrls.isNotEmpty ? uploadedFileUrls.first : null,
            videos: videos,
            documents: documents,
@@ -625,6 +658,81 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     );
   }
 
+  Widget _buildPitchVideoSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.ondemand_video, size: 20, color: isDark ? AppColors.primaryYellow : Colors.black54),
+            const SizedBox(width: 8),
+            Text(
+              'Video Pitch (Opcional)',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: isDark ? Colors.white70 : Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+          ),
+          child: Column(
+            children: [
+              if (_pitchVideoFile != null)
+                ListTile(
+                  leading: const Icon(Icons.movie, color: Colors.blue),
+                  title: Text(_pitchVideoFile!.name, style: const TextStyle(fontSize: 13)),
+                  subtitle: Text('${(_pitchVideoFile!.size / 1024 / 1024).toStringAsFixed(2)} MB'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.red, size: 20),
+                    onPressed: () => setState(() => _pitchVideoFile = null),
+                  ),
+                )
+              else if (_existingProject?.pitchVideoUrl != null)
+                ListTile(
+                  leading: const Icon(Icons.check_circle, color: Colors.green),
+                  title: const Text('Pitch cargado actualmente', style: TextStyle(fontSize: 13)),
+                  subtitle: Text(_isEditingProject ? 'Toca para cambiar' : (_existingEvaluation != null ? 'Proyecto ya evaluado' : 'Visita editar para cambiar')),
+                  onTap: _isEditingProject ? _pickPitchVideo : null,
+                )
+              else
+                ListTile(
+                  onTap: _pickPitchVideo,
+                  leading: const Icon(Icons.cloud_upload_outlined),
+                  title: const Text('Seleccionar Video Pitch', style: TextStyle(fontSize: 14)),
+                  subtitle: const Text('Formatos: MP4, MOV, AVI (Ideal < 50MB)'),
+                ),
+              if (_pitchVideoFile == null && (_existingProject == null || _isEditingProject)) ...[
+                const Divider(),
+                TextFormField(
+                  controller: _pitchVideoController,
+                  decoration: const InputDecoration(
+                    labelText: 'O pega un link de YouTube/Drive',
+                    prefixIcon: Icon(Icons.link),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+                  ),
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ]
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Identity guard
@@ -857,6 +965,8 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                         _buildTechnologiesField(),
                         const SizedBox(height: 20),
                         _buildDemoVideoSection(),
+                        const SizedBox(height: 20),
+                        _buildPitchVideoSection(),
                         const SizedBox(height: 32),
                       ],
 

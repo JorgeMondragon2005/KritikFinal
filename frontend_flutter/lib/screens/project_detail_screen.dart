@@ -127,6 +127,39 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     '${widget.project.category} • ${widget.project.teamName}',
                     style: const TextStyle(color: AppColors.primaryYellow, fontWeight: FontWeight.bold),
                   ),
+
+                  // Demo Video Section (Moved to the absolute top)
+                  if (widget.project.promoVideoUrl != null && widget.project.promoVideoUrl!.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    const Text('Video Demo Principal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryYellow.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.primaryYellow.withOpacity(0.3)),
+                      ),
+                      child: Column(
+                        children: [
+                          const Icon(Icons.play_circle_filled, size: 48, color: AppColors.primaryYellow),
+                          const SizedBox(height: 12),
+                          const Text('Ver video demo oficial', style: TextStyle(fontWeight: FontWeight.bold)),
+                          TextButton(
+                            onPressed: () {
+                              String finalUrl = widget.project.promoVideoUrl!;
+                              if (finalUrl.startsWith('/')) {
+                                finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
+                              }
+                              NativeDocViewer.show(context, finalUrl, 'Video Demo', isVideo: true);
+                            },
+                            child: const Text('REPRODUCIR AHORA'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   
                   if (_existingEvaluation?.badgeEarned != null) ...[
                     const SizedBox(height: 16),
@@ -180,9 +213,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
                   const SizedBox(height: 32),
 
-                  // Demo Video Section
-                  if (widget.project.promoVideoUrl != null && widget.project.promoVideoUrl!.isNotEmpty) ...[
-                    const Text('Video Promocional', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  // Pitch Video Section (At the bottom, replacing the old Promocional)
+                  if (widget.project.pitchVideoUrl != null && widget.project.pitchVideoUrl!.isNotEmpty) ...[
+                    const Text('Video Pitch', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                     const SizedBox(height: 12),
                     Container(
                       width: double.infinity,
@@ -194,16 +227,16 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                       ),
                       child: Column(
                         children: [
-                          const Icon(Icons.play_circle_filled, size: 48, color: AppColors.primaryYellow),
+                          const Icon(Icons.ondemand_video, size: 48, color: AppColors.primaryYellow),
                           const SizedBox(height: 12),
-                          const Text('Ver video demo oficial', style: TextStyle(fontWeight: FontWeight.bold)),
+                          const Text('Ver pitch del proyecto', style: TextStyle(fontWeight: FontWeight.bold)),
                           TextButton(
                             onPressed: () {
-                              String finalUrl = widget.project.promoVideoUrl!;
+                              String finalUrl = widget.project.pitchVideoUrl!;
                               if (finalUrl.startsWith('/')) {
                                 finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
                               }
-                              NativeDocViewer.show(context, finalUrl, 'Video Demo', isVideo: true);
+                              NativeDocViewer.show(context, finalUrl, 'Video Pitch', isVideo: true);
                             },
                             child: const Text('REPRODUCIR AHORA'),
                           ),
