@@ -1,8 +1,5 @@
 // lib/screens/admin_dashboard_screen.dart
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import '../models/project_model.dart';
 import '../services/api_service.dart';
 import 'admin_users_screen.dart' as admin_users;
@@ -19,7 +16,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final ApiService _apiService = ApiService();
   List<Project>? _projects;
   bool _isLoading = true;
-  bool _isImporting = false;
 
   @override
   void initState() {
@@ -36,45 +32,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     });
   }
 
-  Future<void> _handleImport() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
-      );
 
-      if (result != null) {
-        setState(() => _isImporting = true);
-        
-        File file = File(result.files.single.path!);
-        String content = await file.readAsString();
-        List<dynamic> jsonList = jsonDecode(content);
-        
-        List<Project> newProjects = jsonList.map((j) => Project.fromJson(j)).toList();
-        
-        bool success = await _apiService.createProjectsBatch(newProjects);
-        
-        if (!mounted) return;
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('¡Importación exitosa!')),
-          );
-          _loadData(); // Reload list
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error al subir los proyectos al servidor')),
-          );
-        }
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
-    } finally {
-      setState(() => _isImporting = false);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,7 +56,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildImportCard(),
+                _buildAdminOptionsCard(),
                 const SizedBox(height: 30),
                 Text('Proyectos Cargados (${_projects?.length ?? 0})', 
                   style: Theme.of(context).textTheme.headlineSmall),
@@ -113,7 +71,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildImportCard() {
+  Widget _buildAdminOptionsCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -127,58 +85,25 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       ),
       child: Column(
         children: [
-          const Icon(Icons.cloud_upload_outlined, size: 48, color: Colors.orange),
+          const Icon(Icons.shield_outlined, size: 48, color: Colors.orange),
           const SizedBox(height: 16),
-          const Text('Carga Masiva de Proyectos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          const Text('Sube un archivo JSON con los datos del evento.', textAlign: TextAlign.center),
+          const Text('Acciones de Administrador', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          const Text('Configura los roles de los usuarios registrados del evento.', textAlign: TextAlign.center),
           const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _isImporting ? null : _handleImport,
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white),
-            child: _isImporting 
-              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Text('Seleccionar Archivo'),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
+          ElevatedButton.icon(
             onPressed: () {
               Navigator.push(context, MaterialPageRoute(builder: (_) => const admin_users.AdminUsersScreen()));
             },
             icon: const Icon(Icons.people_outline),
             label: const Text('Gestión de Usuarios (Roles)'),
-            style: OutlinedButton.styleFrom(foregroundColor: Colors.blueAccent),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: _isImporting ? null : _loadDemoData,
-            icon: const Icon(Icons.auto_awesome),
-            label: const Text('Cargar Proyectos Demo'),
-            style: OutlinedButton.styleFrom(foregroundColor: Colors.blueAccent),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.blueAccent,
+            ),
           ),
         ],
       ),
     );
-  }
-
-  Future<void> _loadDemoData() async {
-    setState(() => _isImporting = true);
-    final demoProjects = [
-      Project(title: 'App de Salud AI', category: 'Mobile / AI', technologies: ['Flutter', 'Python']),
-      Project(title: 'Internet de las Cosas (IoT)', category: 'Hardware', technologies: ['Arduino', 'C++']),
-      Project(title: 'Plataforma E-learning', category: 'Web', technologies: ['React', 'Node.js']),
-    ];
-    
-    bool success = await _apiService.createProjectsBatch(demoProjects);
-    
-    if (!mounted) return;
-    
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('¡Datos demo cargados!')));
-      _loadData();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al cargar datos demo')));
-    }
-    setState(() => _isImporting = false);
   }
 
   Widget _buildProjectTile(Project project) {
