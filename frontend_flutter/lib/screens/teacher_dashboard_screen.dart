@@ -64,7 +64,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 } catch (_) {}
 
                 if (jurorWeight > 0 && e.scores != null) {
-                  double eScore = e.scores!.values.fold(0.0, (prev, el) => prev + el);
+                  double eScore = e.scores!.values.fold(0.0, (prev, el) => prev + (el ?? 0));
                   weightedScore += eScore * (jurorWeight / 100.0);
                   totalWeightUsed += jurorWeight;
                 }
@@ -73,7 +73,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               if (totalWeightUsed > 0) {
                 projectFinalScore = weightedScore / (totalWeightUsed / 100.0);
               } else {
-                double fallback = evals.fold(0.0, (prev, e) => prev + (e.scores?.values.fold(0.0, (p, el) => p + el) ?? 0));
+                double fallback = evals.fold(0.0, (prev, e) => prev + (e.scores?.values.fold(0.0, (p, el) => p + (el ?? 0)) ?? 0));
                 projectFinalScore = fallback / evals.length;
               }
             } else {
