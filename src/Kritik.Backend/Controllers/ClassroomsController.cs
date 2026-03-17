@@ -46,7 +46,10 @@ public class ClassroomsController : ControllerBase
         }
 
         if (string.IsNullOrEmpty(teacherId))
-            return new List<Classroom>();
+        {
+            // Validating global classroom search for Evaluators fetching assignment groupings.
+            return await _classroomService.GetAsync();
+        }
 
         var possibleIds = new List<string> { teacherId };
 
