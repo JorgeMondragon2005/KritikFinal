@@ -690,23 +690,65 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: FutureBuilder<List<Project>>(
-                future: _apiService.getProjects(assignmentId: a.id),
+              child: FutureBuilder<List<dynamic>>(
+                future: Future.wait([
+                  _apiService.getProjects(assignmentId: a.id),
+                  if (a.classroomId != null) _apiService.getClassMembers(a.classroomId!) else Future.value(<ClassEnrollment>[]),
+                ]),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                  final list = snapshot.data ?? [];
-                  if (list.isEmpty) return const Center(child: Text('Nadie ha entregado todavía', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)));
-                  return ListView.builder(
-                    itemCount: list.length,
-                    itemBuilder: (context, index) => ListTile(
-                      leading: const Icon(Icons.person),
-                      title: Text(list[index].teamName ?? 'Alumno sin nombre'),
-                      subtitle: Text(list[index].category ?? 'Proyecto'),
-                      onTap: () {
-                         Navigator.pop(context);
-                         Navigator.push(context, MaterialPageRoute(builder: (_) => EvaluationScreen(projectId: list[index].id, projectName: list[index].title ?? 'Proyecto', evaluatorId: widget.userId)));
-                      },
-                    ),
+                  final projects = (snapshot.data?[0] as List<Project>?) ?? [];
+                  final enrollments = (snapshot.data?[1] as List<ClassEnrollment>?) ?? [];
+                  
+                  if (projects.isEmpty && enrollments.isEmpty) return const Center(child: Text('Nadie ha entregado todavía', style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic)));
+                  
+                  // Setup tracking lists
+                  final submittedStudentIds = projects.map((p) => p.studentId).toSet();
+                  
+                  // Enrolled students who haven't submitted
+                  final pendingStudents = enrollments.where((e) => !submittedStudentIds.contains(e.studentId)).toList();
+
+                  return ListView(
+                    children: [
+                      if (projects.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Text('✅ Entregados', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                        ),
+                        ...projects.map((p) {
+                          String status = p.status ?? 'Pendiente';
+                          Color statusColor = status.toLowerCase() == 'evaluado' ? Colors.blue : Colors.orange;
+
+                          return ListTile(
+                            leading: CircleAvatar(
+                               backgroundColor: statusColor.withOpacity(0.2),
+                               child: Icon(Icons.check, color: statusColor, size: 18)
+                            ),
+                            title: Text(p.teamName ?? 'Alumno sin nombre'),
+                            subtitle: Text('Estado: $status - Categoría: ${p.category ?? "Proyecto"}'),
+                            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                            onTap: () {
+                               Navigator.pop(context);
+                               Navigator.push(context, MaterialPageRoute(builder: (_) => EvaluationScreen(projectId: p.id, projectName: p.title ?? 'Proyecto', evaluatorId: widget.userId)));
+                            },
+                          );
+                        }),
+                      ],
+                      if (pendingStudents.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.only(top: 16, bottom: 8),
+                          child: Text('⏳ Sin Entregar', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                        ),
+                        ...pendingStudents.map((e) => ListTile(
+                          leading: CircleAvatar(
+                             backgroundColor: Colors.red.withOpacity(0.1),
+                             child: const Icon(Icons.person_off, color: Colors.red, size: 18)
+                          ),
+                          title: Text(e.studentName ?? e.studentId),
+                          subtitle: const Text('Aún no ha subido su proyecto', style: TextStyle(color: Colors.red, fontSize: 12)),
+                        )),
+                      ],
+                    ],
                   );
                 },
               ),

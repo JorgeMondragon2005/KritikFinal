@@ -14,6 +14,7 @@ import '../models/classroom_model.dart';
 import '../models/enrollment_model.dart';
 import '../models/notification_model.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 
 class ApiService {
@@ -744,35 +745,20 @@ class ApiService {
     }
   }
 
-  Future<bool> updateProject(Project project) async {
-    try {
-      final response = await _dio.put('Projects/${project.id}', data: project.toJson());
-      return response.statusCode == 200 || response.statusCode == 204;
-    } catch (e) {
-      debugPrint('Update project error (ID: ${project.id}): $e');
-      return false;
-    }
-  }
 
-  Future<bool> updateEvaluation(Evaluation evaluation) async {
-    try {
-      final response = await _dio.put('Evaluations/${evaluation.id}', data: evaluation.toJson());
-      return response.statusCode == 200 || response.statusCode == 204;
-    } catch (e) {
-      debugPrint('Update evaluation error (ID: ${evaluation.id}): $e');
-      return false;
-    }
-  }
-
-  /// Descarga un archivo o lo abre directamente en el navegador del dispositivo
+  /// Descarga un archivo y lo abre usando la aplicación nativa correspondiente
   Future<void> downloadAndOpenFile(String url, String fileName) async {
     try {
       final finalUrl = url.startsWith('/') ? 'https://kritikfinal.onrender.com$url' : url;
-      final uri = Uri.parse(finalUrl);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        throw Exception('El enlace no es válido o fallaron los permisos');
+      
+      final dir = await getTemporaryDirectory();
+      final filePath = '${dir.path}/$fileName';
+      
+      await _dio.download(finalUrl, filePath);
+      
+      final result = await OpenFilex.open(filePath);
+      if (result.type != ResultType.done) {
+        throw Exception('No se encontró una aplicación para abrir este archivo.');
       }
     } catch (e) {
       debugPrint('Download/Open error: $e');

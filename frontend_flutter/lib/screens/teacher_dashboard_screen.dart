@@ -70,19 +70,36 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   totalWeightUsed += jurorWeight;
                 }
               }
-              // Normalizar en caso de que falten evaluadores (ej. solo evaluó el 50%)
               if (totalWeightUsed > 0) {
                 projectFinalScore = weightedScore / (totalWeightUsed / 100.0);
               } else {
-                double fallback = evals.fold<double>(0.0, (prev, e) => prev + (e.scores?.values.fold<double>(0.0, (p, el) => p + ((el ?? 0) as num).toDouble()) ?? 0.0));
+                double fallback = evals.fold<double>(0.0, (prev, e) {
+                   double eScore = e.generalScore ?? 0.0;
+                   if (eScore == 0.0 && e.scores != null) {
+                       eScore = e.scores!.values.fold<double>(0.0, (p, el) => p + ((el ?? 0) as num).toDouble());
+                   }
+                   return prev + eScore;
+                });
                 projectFinalScore = fallback / evals.length;
               }
             } else {
-              double fallback = evals.fold<double>(0.0, (prev, e) => prev + (e.scores?.values.fold<double>(0.0, (p, el) => p + ((el ?? 0) as num).toDouble()) ?? 0.0));
+              double fallback = evals.fold<double>(0.0, (prev, e) {
+                   double eScore = e.generalScore ?? 0.0;
+                   if (eScore == 0.0 && e.scores != null) {
+                       eScore = e.scores!.values.fold<double>(0.0, (p, el) => p + ((el ?? 0) as num).toDouble());
+                   }
+                   return prev + eScore;
+              });
               projectFinalScore = fallback / evals.length;
             }
           } else {
-            double fallback = evals.fold<double>(0.0, (prev, e) => prev + (e.scores?.values.fold<double>(0.0, (p, el) => p + ((el ?? 0) as num).toDouble()) ?? 0.0));
+            double fallback = evals.fold<double>(0.0, (prev, e) {
+                   double eScore = e.generalScore ?? 0.0;
+                   if (eScore == 0.0 && e.scores != null) {
+                       eScore = e.scores!.values.fold<double>(0.0, (p, el) => p + ((el ?? 0) as num).toDouble());
+                   }
+                   return prev + eScore;
+            });
             projectFinalScore = fallback / evals.length;
           }
 

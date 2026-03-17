@@ -1,4 +1,5 @@
 class Evaluation {
+  final String? id;
   final String? projectId;
   final String? evaluatorId;
   final String? rubricId;
@@ -10,6 +11,7 @@ class Evaluation {
   final String? badgeEarned;
 
   Evaluation({
+    this.id,
     this.projectId,
     this.evaluatorId,
     this.rubricId,
@@ -42,6 +44,7 @@ class Evaluation {
     }
 
     return Evaluation(
+      id: json['id']?.toString() ?? json['Id']?.toString() ?? json['_id']?.toString(),
       projectId: json['projectId']?.toString() ?? json['ProjectId']?.toString(),
       evaluatorId: json['evaluatorId']?.toString() ?? json['EvaluatorId']?.toString(),
       rubricId: json['rubricId']?.toString() ?? json['RubricId']?.toString(),
@@ -56,6 +59,7 @@ class Evaluation {
   }
 
   Map<String, dynamic> toJson() => {
+    'id': id,
     'projectId': projectId,
     'evaluatorId': evaluatorId,
     'rubricId': rubricId,

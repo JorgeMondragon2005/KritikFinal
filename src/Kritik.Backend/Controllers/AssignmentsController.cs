@@ -13,19 +13,22 @@ public class AssignmentsController : ControllerBase
     private readonly ClassroomService _classroomService;
     private readonly UserService _userService;
     private readonly EmailService _emailService;
+    private readonly NotificationService _notificationService;
 
     public AssignmentsController(
         AssignmentService assignmentService, 
         EnrollmentService enrollmentService, 
         ClassroomService classroomService,
         UserService userService,
-        EmailService emailService)
+        EmailService emailService,
+        NotificationService notificationService)
     {
         _assignmentService = assignmentService;
         _enrollmentService = enrollmentService;
         _classroomService = classroomService;
         _userService = userService;
         _emailService = emailService;
+        _notificationService = notificationService;
     }
 
     [HttpGet]
@@ -136,6 +139,25 @@ public class AssignmentsController : ControllerBase
         }
 
         await _assignmentService.CreateAsync(newAssignment);
+
+        // Notificar a alumnos inscritos
+        if (!string.IsNullOrEmpty(newAssignment.ClassroomId))
+        {
+            var enrollments = await _enrollmentService.GetByClassAsync(newAssignment.ClassroomId);
+            var studentsToNotify = enrollments.Where(e => e.Status == "Accepted").Select(e => e.StudentId).ToList();
+            
+            foreach (var studentId in studentsToNotify)
+            {
+                await _notificationService.CreateAsync(new Notification
+                {
+                    UserId = studentId,
+                    Title = "Nueva Tarea/Convocatoria",
+                    Message = $"El profesor {teacherName} ha publicado '{newAssignment.Title}'.",
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+
         return Ok(newAssignment);
     }
 

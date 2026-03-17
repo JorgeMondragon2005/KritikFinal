@@ -256,6 +256,7 @@ class _VideoPreviewWidget extends StatefulWidget {
 class _VideoPreviewWidgetState extends State<_VideoPreviewWidget> {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
+  bool _isMuted = true;
 
   @override
   void initState() {
@@ -306,6 +307,22 @@ class _VideoPreviewWidgetState extends State<_VideoPreviewWidget> {
                 size: 50,
               ),
             ),
+          ),
+        ),
+        Positioned(
+          bottom: 8,
+          right: 8,
+          child: IconButton(
+            icon: Icon(
+              _isMuted ? Icons.volume_off : Icons.volume_up,
+              color: Colors.white.withOpacity(0.8),
+            ),
+            onPressed: () {
+              setState(() {
+                _isMuted = !_isMuted;
+                _controller!.setVolume(_isMuted ? 0.0 : 1.0);
+              });
+            },
           ),
         ),
       ],

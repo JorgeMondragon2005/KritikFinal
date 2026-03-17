@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
+import '../theme/app_theme.dart';
 
 class NativeMediaViewer extends StatefulWidget {
   final String url;
@@ -53,6 +54,14 @@ class _NativeMediaViewerState extends State<NativeMediaViewer> {
         allowFullScreen: true,
         allowMuting: true,
         autoInitialize: true,
+        showControls: true,
+        showOptions: false,
+        fullScreenByDefault: false,
+        materialProgressColors: ChewieProgressColors(
+          playedColor: AppColors.primaryYellow,
+          handleColor: AppColors.primaryYellow,
+          bufferedColor: Colors.white30,
+        ),
         errorBuilder: (context, errorMessage) {
           return Center(
             child: Text(
@@ -62,7 +71,9 @@ class _NativeMediaViewerState extends State<NativeMediaViewer> {
           );
         },
       );
-      // Removed forced volume setting to allow muting
+      
+      // Initialize volume and wait for it
+      await _videoPlayerController!.setVolume(1.0);
     } catch (e) {
       if (mounted) {
         setState(() {

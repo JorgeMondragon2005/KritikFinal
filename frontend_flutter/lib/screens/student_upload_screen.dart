@@ -285,8 +285,9 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
 
       final selectedAssignment = _assignments.firstWhere((a) => a.id == _selectedAssignmentId);
 
+      bool wasEditing = _existingProject != null && _isEditingProject;
       bool response = false;
-      if (_existingProject != null && _isEditingProject) {
+      if (wasEditing) {
          final updateProj = Project(
            id: _existingProject!.id,
            title: _titleController.text,
@@ -331,15 +332,17 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
             for (var evalId in evaluatorsToNotify) {
               await _apiService.createNotification(AppNotification(
                 userId: evalId,
-                title: 'Nueva Entrega',
-                message: 'El equipo ${_teamNameController.text} subió su proyecto "${_titleController.text}" para la tarea "${selectedAssignment.title}".',
+                title: wasEditing ? 'Entrega Actualizada' : 'Nueva Entrega',
+                message: wasEditing
+                  ? 'El equipo ${_teamNameController.text} actualizó su proyecto "${_titleController.text}" en la tarea "${selectedAssignment.title}".'
+                  : 'El equipo ${_teamNameController.text} subió su proyecto "${_titleController.text}" para la tarea "${selectedAssignment.title}".',
                 createdAt: DateTime.now(),
               ));
             }
           } catch (_) {}
 
           messenger.showSnackBar(
-            const SnackBar(content: Text('¡Proyecto y archivos subidos con éxito!')),
+            SnackBar(content: Text(wasEditing ? '¡Proyecto actualizado con éxito!' : '¡Proyecto y archivos subidos con éxito!')),
           );
           navigator.pop();
         } else {
@@ -788,7 +791,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                       if (!isExpired || _existingProject != null) ...[
                         TextFormField(
                           controller: _titleController,
-                          readOnly: _existingProject != null,
+                          readOnly: _existingProject != null && !_isEditingProject,
                           decoration: const InputDecoration(
                             labelText: 'Título del Proyecto',
                             prefixIcon: Icon(Icons.title),
@@ -798,7 +801,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _teamNameController,
-                          readOnly: _existingProject != null,
+                          readOnly: _existingProject != null && !_isEditingProject,
                           decoration: const InputDecoration(
                             labelText: 'Nombre del Equipo',
                             prefixIcon: Icon(Icons.group),
@@ -807,7 +810,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _categoryController,
-                          readOnly: _existingProject != null,
+                          readOnly: _existingProject != null && !_isEditingProject,
                           decoration: const InputDecoration(
                             labelText: 'Categoría',
                             prefixIcon: Icon(Icons.category),
@@ -817,7 +820,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _descriptionController,
-                          readOnly: _existingProject != null,
+                          readOnly: _existingProject != null && !_isEditingProject,
                           maxLines: 5,
                           decoration: const InputDecoration(
                             labelText: 'Descripción detallada',
@@ -840,15 +843,19 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                           dense: true,
                           leading: const Icon(Icons.video_file, color: Colors.blue),
                           title: Text(v.title, overflow: TextOverflow.ellipsis),
-                          trailing: const Icon(Icons.open_in_new, size: 18),
-                          onTap: () => _openUrl(v.url, v.title, isVideo: true),
+                          trailing: _isEditingProject 
+                            ? IconButton(icon: const Icon(Icons.close, color: Colors.red, size: 20), onPressed: () => setState(() => _existingProject!.videos.removeWhere((item) => item.url == v.url)))
+                            : const Icon(Icons.open_in_new, size: 18),
+                          onTap: _isEditingProject ? null : () => _openUrl(v.url, v.title, isVideo: true),
                         )),
                         ..._existingProject!.documents.map((d) => ListTile(
                           dense: true,
                           leading: const Icon(Icons.description, color: Colors.green),
                           title: Text(d.title, overflow: TextOverflow.ellipsis),
-                          trailing: const Icon(Icons.open_in_new, size: 18),
-                          onTap: () => _openUrl(d.url, d.title, isImage: _isImageExtension(d.type)),
+                          trailing: _isEditingProject 
+                            ? IconButton(icon: const Icon(Icons.close, color: Colors.red, size: 20), onPressed: () => setState(() => _existingProject!.documents.removeWhere((item) => item.url == d.url)))
+                            : const Icon(Icons.open_in_new, size: 18),
+                          onTap: _isEditingProject ? null : () => _openUrl(d.url, d.title, isImage: _isImageExtension(d.type)),
                         )),
                       ],
 
@@ -876,7 +883,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                         },
                       ),
                       
-                      if (_existingProject == null && !isExpired) ...[
+                      if ((_existingProject == null || _isEditingProject) && !isExpired) ...[
                         const SizedBox(height: 8),
                         OutlinedButton.icon(
                           onPressed: _pickFiles,
