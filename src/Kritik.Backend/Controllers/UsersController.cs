@@ -13,6 +13,11 @@ public class UserUpdateDto
     public string? PortadaUrl { get; set; }
 }
 
+public class RoleUpdateDto
+{
+    public string Role { get; set; } = null!;
+}
+
 [ApiController]
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
@@ -22,6 +27,13 @@ public class UsersController : ControllerBase
     public UsersController(UserService userService)
     {
         _userService = userService;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<List<User>>> GetAll()
+    {
+        var users = await _userService.GetAllAsync();
+        return users;
     }
 
     [HttpGet("evaluators")]
@@ -52,6 +64,17 @@ public class UsersController : ControllerBase
         user.FotoPerfil = updatedUser.FotoPerfil;
         user.PortadaUrl = updatedUser.PortadaUrl;
 
+        await _userService.UpdateAsync(id, user);
+        return NoContent();
+    }
+
+    [HttpPut("{id:length(24)}/role")]
+    public async Task<IActionResult> UpdateRole(string id, RoleUpdateDto roleUpdate)
+    {
+        var user = await _userService.GetAsync(id);
+        if (user == null) return NotFound();
+
+        user.Role = roleUpdate.Role;
         await _userService.UpdateAsync(id, user);
         return NoContent();
     }

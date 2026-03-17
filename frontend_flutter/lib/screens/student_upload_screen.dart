@@ -213,8 +213,25 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     );
 
     if (result != null) {
+      bool hasLargeFiles = false;
+      List<PlatformFile> validFiles = [];
+      
+      for (var file in result.files) {
+        if (file.size > 50 * 1024 * 1024) {
+          hasLargeFiles = true;
+        } else {
+          validFiles.add(file);
+        }
+      }
+
+      if (hasLargeFiles && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Atención: Algunos archivos exceden el límite de 50MB y no fueron agregados.')),
+        );
+      }
+
       setState(() {
-        _selectedFiles.addAll(result.files);
+        _selectedFiles.addAll(validFiles);
       });
     }
   }
@@ -225,6 +242,14 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
       allowMultiple: false,
     );
     if (result != null) {
+      if (result.files.first.size > 50 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('El video excede el límite de 50MB. Sube un archivo más ligero o utiliza un enlace de YouTube/Drive abajo.')),
+          );
+        }
+        return;
+      }
       setState(() => _demoVideoFile = result.files.first);
     }
   }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../models/project_model.dart';
 import '../services/api_service.dart';
+import 'admin_users_screen.dart' as admin_users;
 
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -137,6 +138,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             child: _isImporting 
               ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
               : const Text('Seleccionar Archivo'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const admin_users.AdminUsersScreen()));
+            },
+            icon: const Icon(Icons.people_outline),
+            label: const Text('Gestión de Usuarios (Roles)'),
+            style: OutlinedButton.styleFrom(foregroundColor: Colors.blueAccent),
           ),
           const SizedBox(height: 12),
           OutlinedButton.icon(

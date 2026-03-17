@@ -3,7 +3,7 @@ class User {
   final String? email;
   final String? password;
   final String? fullName;
-  final String? role;
+  String? role;
   final String? telefono;
   final String? bio;
   final String? fotoPerfil;

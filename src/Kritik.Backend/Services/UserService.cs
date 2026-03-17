@@ -41,4 +41,7 @@ public class UserService
 
     public async Task UpdateAsync(string id, User updatedUser) =>
         await _usersCollection.ReplaceOneAsync(x => x.Id == id, updatedUser);
+
+    public async Task<List<User>> GetAllAsync() =>
+        await _usersCollection.Find(_ => true).ToListAsync();
 }

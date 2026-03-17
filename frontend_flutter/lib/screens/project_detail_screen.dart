@@ -219,6 +219,26 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                   ...widget.project.videos.map((v) => _buildFileItem(context, v.title, v.url, Icons.video_file, isVideo: true)),
                   ...widget.project.documents.map((d) => _buildFileItem(context, d.title, d.url, Icons.description, isImage: _isImage(d.type))),
                   
+                  // Evaluation Feedback
+                  if (_existingEvaluation?.feedback != null && _existingEvaluation!.feedback!.isNotEmpty) ...[
+                    const SizedBox(height: 32),
+                    const Text('Feedback del Evaluador', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: isDark ? AppColors.surfaceDark : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                      ),
+                      child: Text(
+                        _existingEvaluation!.feedback!,
+                        style: TextStyle(height: 1.5, color: isDark ? Colors.white70 : Colors.black87),
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 100), // Bottom padding
                 ],
               ),

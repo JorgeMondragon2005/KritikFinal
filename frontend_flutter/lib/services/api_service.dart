@@ -268,6 +268,30 @@ class ApiService {
     }
   }
 
+  Future<List<User>> getUsers() async {
+    try {
+      final response = await _dio.get('users');
+      if (response.statusCode == 200) {
+         final list = response.data as List;
+         return list.map((e) => User.fromJson(e)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error fetching users: $e');
+      return [];
+    }
+  }
+
+  Future<bool> updateUserRole(String userId, String newRole) async {
+    try {
+      final response = await _dio.put('users/$userId/role', data: {'role': newRole});
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      debugPrint('Error updating user role: $e');
+      return false;
+    }
+  }
+
   Future<bool> updateRubric(String id, Map<String, dynamic> rubric) async {
     try {
       final response = await _dio.put('rubrics/$id', data: rubric);
