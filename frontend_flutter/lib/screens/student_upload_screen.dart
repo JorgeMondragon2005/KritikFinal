@@ -34,6 +34,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
   final _pitchVideoController = TextEditingController(); // For Pitch Video Link
   PlatformFile? _demoVideoFile;
   PlatformFile? _pitchVideoFile;
+  PlatformFile? _coverImageFile; // Banner image
   final _accessCodeController = TextEditingController();
   final ApiService _apiService = ApiService();
   
@@ -134,6 +135,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         _technologiesController.clear();
         _demoVideoFile = null;
         _pitchVideoFile = null;
+        _coverImageFile = null;
       }
 
     } catch (e) {
@@ -276,6 +278,24 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     }
   }
 
+  Future<void> _pickCoverImage() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+    );
+    if (result != null) {
+      if (result.files.first.size > 10 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('La imagen excede el límite de 10MB.')),
+          );
+        }
+        return;
+      }
+      setState(() => _coverImageFile = result.files.first);
+    }
+  }
+
   void _removeFile(int index) {
     setState(() {
       _selectedFiles.removeAt(index);
@@ -321,6 +341,13 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
         pitchVideoUrl = _pitchVideoController.text; // Use manual URL if no file picked
       }
 
+      // 1.3 Upload Cover Image if selected
+      String? coverImageUrl = _existingProject?.coverImageUrl;
+      if (_coverImageFile != null && _coverImageFile!.path != null) {
+        final url = await _apiService.uploadFile(File(_coverImageFile!.path!));
+        if (url != null) coverImageUrl = url;
+      }
+
 
       // 2. Create project with file URLs and teacher link
       List<Video> videos = [];
@@ -356,7 +383,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
            assignedTeacherId: _existingProject!.assignedTeacherId ?? selectedAssignment.teacherId,
            promoVideoUrl: promoVideoUrl ?? _existingProject!.promoVideoUrl,
            pitchVideoUrl: pitchVideoUrl ?? _existingProject!.pitchVideoUrl,
-           coverImageUrl: uploadedFileUrls.isNotEmpty ? uploadedFileUrls.first : _existingProject!.coverImageUrl,
+           coverImageUrl: coverImageUrl ?? _existingProject!.coverImageUrl,
            videos: [..._existingProject!.videos, ...videos],
            documents: [..._existingProject!.documents, ...documents],
          );
@@ -374,7 +401,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
            assignedTeacherId: selectedAssignment.teacherId,
            promoVideoUrl: promoVideoUrl, // Use uploaded file URL
            pitchVideoUrl: pitchVideoUrl, // Use uploaded Pitch file URL
-           coverImageUrl: uploadedFileUrls.isNotEmpty ? uploadedFileUrls.first : null,
+           coverImageUrl: coverImageUrl,
            videos: videos,
            documents: documents,
          );
@@ -806,6 +833,67 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     );
   }
 
+  Widget _buildCoverImageSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.image, size: 20, color: isDark ? AppColors.primaryYellow : Colors.black54),
+            const SizedBox(width: 8),
+            Text(
+              'Imagen de Portada / Banner (Opcional)',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: isDark ? Colors.white70 : Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
+          ),
+          child: Column(
+            children: [
+              if (_coverImageFile != null)
+                ListTile(
+                  leading: const Icon(Icons.image, color: Colors.blue),
+                  title: Text(_coverImageFile!.name, style: const TextStyle(fontSize: 13)),
+                  subtitle: Text('${(_coverImageFile!.size / 1024 / 1024).toStringAsFixed(2)} MB'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.close, color: Colors.red, size: 20),
+                    onPressed: () => setState(() => _coverImageFile = null),
+                  ),
+                )
+              else if (_existingProject?.coverImageUrl != null)
+                ListTile(
+                  leading: const Icon(Icons.check_circle, color: Colors.green),
+                  title: const Text('Portada cargada actualmente', style: TextStyle(fontSize: 13)),
+                  subtitle: Text(_isEditingProject ? 'Toca para cambiar' : (_existingEvaluation != null ? 'Proyecto ya evaluado' : 'Visita editar para cambiar')),
+                  onTap: _isEditingProject ? _pickCoverImage : null,
+                )
+              else
+                ListTile(
+                  onTap: _pickCoverImage,
+                  leading: const Icon(Icons.add_photo_alternate_outlined),
+                  title: const Text('Seleccionar Imagen de Portada', style: TextStyle(fontSize: 14)),
+                  subtitle: const Text('Formatos: JPG, PNG (Ideal < 10MB)'),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Identity guard
@@ -1040,6 +1128,8 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                         _buildDemoVideoSection(),
                         const SizedBox(height: 20),
                         _buildPitchVideoSection(),
+                        const SizedBox(height: 20),
+                        _buildCoverImageSection(),
                         const SizedBox(height: 32),
                       ],
 
