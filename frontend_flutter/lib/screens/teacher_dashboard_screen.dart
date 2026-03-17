@@ -81,7 +81,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               projectFinalScore = fallback / evals.length;
             }
           } else {
-            double fallback = evals.fold(0.0, (prev, e) => prev + (e.scores?.values.fold(0.0, (p, el) => p + el) ?? 0));
+            double fallback = evals.fold(0.0, (prev, e) => prev + (e.scores?.values.fold(0.0, (p, el) => p + (el ?? 0)) ?? 0));
             projectFinalScore = fallback / evals.length;
           }
 
