@@ -52,15 +52,17 @@ class _NativeMediaViewerState extends State<NativeMediaViewer> {
         aspectRatio: _videoPlayerController!.value.aspectRatio,
         allowFullScreen: true,
         allowMuting: true,
+        autoInitialize: true,
         errorBuilder: (context, errorMessage) {
           return Center(
             child: Text(
-              errorMessage,
+              errorMessage ?? 'Error desconocido', // Handle null errorMessage
               style: const TextStyle(color: Colors.white),
             ),
           );
         },
       );
+      // Removed forced volume setting to allow muting
     } catch (e) {
       if (mounted) {
         setState(() {

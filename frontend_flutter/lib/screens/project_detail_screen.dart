@@ -59,7 +59,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     final bool canEvaluate = (widget.userRole?.toLowerCase() == 'evaluator' || widget.userRole?.toLowerCase() == 'teacher');
 
     Widget? fab;
-    if (canEvaluate && !isEvaluated && !_isLoadingEval) {
+    if (canEvaluate && !_isLoadingEval) {
       fab = FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
@@ -71,8 +71,8 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             )),
           ).then((acted) { if (acted == true) _fetchEvaluation(); });
         },
-        icon: const Icon(Icons.star, color: Colors.white),
-        label: const Text('Evaluar Proyecto', style: TextStyle(color: Colors.white)),
+        icon: Icon(isEvaluated ? Icons.edit : Icons.star, color: Colors.white),
+        label: Text(isEvaluated ? 'Editar Evaluación' : 'Evaluar Proyecto', style: const TextStyle(color: Colors.white)),
         backgroundColor: AppColors.primaryColor,
       );
     } else if (isEvaluated && !_isLoadingEval && widget.userRole?.toLowerCase() == 'student') {

@@ -33,6 +33,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
   Map<String, int> _detailedScores = {};
   Project? _project;
   bool _isLoadingProject = false;
+  Evaluation? _existingEvaluation;
   
   String? _evidencePath;
   bool _isSubmitting = false;
@@ -58,9 +59,21 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
     setState(() => _isLoadingProject = true);
     try {
       final projects = await _apiService.getProjects();
+      final evaluation = await _apiService.getEvaluationByProjectId(widget.projectId!);
       if (mounted) {
         setState(() {
           _project = projects.firstWhere((p) => p.id == widget.projectId);
+          if (evaluation != null && evaluation.evaluatorId == widget.evaluatorId) {
+            _existingEvaluation = evaluation;
+            _commentController.text = evaluation.feedback ?? '';
+            _selectedBadge = evaluation.badgeEarned ?? 'Ninguno';
+            if (_rubrics.isNotEmpty && _selectedRubric == null && evaluation.rubricId != null) {
+                _selectedRubric = _rubrics.firstWhere((r) => r.id == evaluation.rubricId, orElse: () => _rubrics.first);
+            }
+            if (evaluation.detailedScores != null) {
+                _detailedScores = Map<String, int>.from(evaluation.detailedScores!);
+            }
+          }
           _isLoadingProject = false;
         });
       }
@@ -113,8 +126,14 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       setState(() {
         _rubrics = rubrics;
         if (_rubrics.isNotEmpty) {
-          _selectedRubric = _rubrics.first;
-          _initializeScores();
+          if (_existingEvaluation?.rubricId != null) {
+              _selectedRubric = _rubrics.firstWhere((r) => r.id == _existingEvaluation!.rubricId, orElse: () => _rubrics.first);
+          } else {
+              _selectedRubric = _rubrics.first;
+          }
+          if (_detailedScores.isEmpty) {
+             _initializeScores();
+          }
         }
       });
     }
@@ -122,8 +141,12 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
 
   void _initializeScores() {
     if (_selectedRubric != null) {
-      final items = _selectedRubric!.items;
-      _detailedScores = { for (var item in items) item.criteria : item.maxPoints };
+      if (_existingEvaluation != null && _existingEvaluation!.detailedScores != null && _existingEvaluation!.rubricId == _selectedRubric!.id) {
+          _detailedScores = Map<String,int>.from(_existingEvaluation!.detailedScores!);
+      } else {
+          final items = _selectedRubric!.items;
+          _detailedScores = { for (var item in items) item.criteria : item.maxPoints };
+      }
     }
   }
 
@@ -166,17 +189,20 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
 
       if (!mounted) return;
       final evaluation = Evaluation(
+        id: _existingEvaluation?.id, // Keep the old ID for updating
         projectId: widget.projectId,
         evaluatorId: widget.evaluatorId ?? "evaluator_unknown",
         rubricId: _selectedRubric?.id,
         scores: {"General": _detailedScores.values.fold(0, (a, b) => a + b)}, 
         detailedScores: _detailedScores,
         feedback: _commentController.text,
-        evidencePhotoBase64: base64Photo,
+        evidencePhotoBase64: base64Photo ?? _existingEvaluation?.evidencePhotoBase64, // keep old if not taking a new one
         badgeEarned: _selectedBadge == 'Ninguno' ? null : _selectedBadge,
       );
 
-      final success = await _apiService.submitEvaluation(evaluation);
+      final success = _existingEvaluation != null 
+          ? await _apiService.updateEvaluation(evaluation)
+          : await _apiService.submitEvaluation(evaluation);
 
       if (!mounted) return;
 
@@ -320,7 +346,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                   ElevatedButton(
                     onPressed: _isSubmitting ? null : _submit,
                     style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryYellow, padding: const EdgeInsets.symmetric(vertical: 16)),
-                    child: const Text('Confirmar Calificación', style: TextStyle(fontSize: 16)),
+                    child: Text(_existingEvaluation != null ? 'Actualizar Calificación' : 'Confirmar Calificación', style: const TextStyle(fontSize: 16)),
                   ),
                 ],
               ),

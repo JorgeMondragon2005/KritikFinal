@@ -42,6 +42,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
   bool _isLoadingAssignments = true;
   Assignment? _joinedAssignment;
   bool _isSearchingCode = false;
+  bool _isEditingProject = false;
 
   Rubric? _assignmentRubric;
   Evaluation? _existingEvaluation;
@@ -65,6 +66,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     setState(() {
       _isLoadingDetails = true;
       _errorMessage = null;
+      _isEditingProject = false;
     });
 
     try {
@@ -167,47 +169,8 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
     }
   }
 
-  Future<void> _replaceSubmission() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('¿Cancelar entrega?'),
-        content: const Text('Esto eliminará tu entrega actual para que puedas subir una nueva. Tus textos se mantendrán para que no tengas que escribirlos de nuevo. ¿Continuar?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true), 
-            child: const Text('Sí, reemplazar', style: TextStyle(color: Colors.red))
-          ),
-        ],
-      )
-    );
-
-    if (confirmed != true) return;
-
-    setState(() => _isSubmitting = true);
-    try {
-      final success = await _apiService.deleteProject(_existingProject!.id!);
-      if (success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Entrega actual eliminada. Ahora puedes subir tus nuevos archivos.')));
-          setState(() {
-            _existingProject = null;
-            _existingEvaluation = null;
-            _selectedFiles.clear();
-            _demoVideoFile = null;
-          });
-        }
-      } else {
-        throw Exception('No se pudo eliminar el proyecto');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
-    }
+  void _editSubmission() {
+    setState(() => _isEditingProject = true);
   }
 
   Future<void> _searchByCode() async {
@@ -322,22 +285,42 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
 
       final selectedAssignment = _assignments.firstWhere((a) => a.id == _selectedAssignmentId);
 
-      final newProject = Project(
-        title: _titleController.text,
-        teamName: _teamNameController.text.isNotEmpty ? _teamNameController.text : "Equipo de ${_titleController.text}",
-        category: _categoryController.text,
-        description: _descriptionController.text,
-        technologies: _technologiesController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
-        studentId: widget.studentId,
-        assignmentId: _selectedAssignmentId,
-        assignedTeacherId: selectedAssignment.teacherId,
-        promoVideoUrl: promoVideoUrl, // Use uploaded file URL
-        coverImageUrl: uploadedFileUrls.isNotEmpty ? uploadedFileUrls.first : null,
-        videos: videos,
-        documents: documents,
-      );
-
-      final response = await _apiService.createProjectsBatch([newProject]);
+      bool response = false;
+      if (_existingProject != null && _isEditingProject) {
+         final updateProj = Project(
+           id: _existingProject!.id,
+           title: _titleController.text,
+           teamName: _teamNameController.text.isNotEmpty ? _teamNameController.text : "Equipo de ${_titleController.text}",
+           category: _categoryController.text,
+           description: _descriptionController.text,
+           technologies: _technologiesController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+           studentId: widget.studentId,
+           assignmentId: _selectedAssignmentId,
+           assignedTeacherId: _existingProject!.assignedTeacherId ?? selectedAssignment.teacherId,
+           promoVideoUrl: promoVideoUrl ?? _existingProject!.promoVideoUrl,
+           coverImageUrl: uploadedFileUrls.isNotEmpty ? uploadedFileUrls.first : _existingProject!.coverImageUrl,
+           videos: [..._existingProject!.videos, ...videos],
+           documents: [..._existingProject!.documents, ...documents],
+         );
+         response = await _apiService.updateProject(updateProj);
+         if (response && mounted) setState(() => _isEditingProject = false);
+      } else {
+         final newProject = Project(
+           title: _titleController.text,
+           teamName: _teamNameController.text.isNotEmpty ? _teamNameController.text : "Equipo de ${_titleController.text}",
+           category: _categoryController.text,
+           description: _descriptionController.text,
+           technologies: _technologiesController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList(),
+           studentId: widget.studentId,
+           assignmentId: _selectedAssignmentId,
+           assignedTeacherId: selectedAssignment.teacherId,
+           promoVideoUrl: promoVideoUrl, // Use uploaded file URL
+           coverImageUrl: uploadedFileUrls.isNotEmpty ? uploadedFileUrls.first : null,
+           videos: videos,
+           documents: documents,
+         );
+         response = await _apiService.createProjectsBatch([newProject]);
+      }
 
       if (mounted) {
         if (response) {
@@ -529,7 +512,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
   Widget _buildTechnologiesField() {
     return TextFormField(
       controller: _technologiesController,
-      readOnly: _existingProject != null,
+      readOnly: _existingProject != null && !_isEditingProject,
       decoration: const InputDecoration(
         labelText: 'Tecnologías (separadas por comas)',
         prefixIcon: Icon(Icons.code),
@@ -583,8 +566,8 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                 ListTile(
                   leading: const Icon(Icons.check_circle, color: Colors.green),
                   title: const Text('Video cargado actualmente', style: TextStyle(fontSize: 13)),
-                  subtitle: Text(_existingEvaluation != null ? 'Proyecto ya evaluado' : 'Toca para cambiar'),
-                  onTap: _existingEvaluation != null ? null : _pickDemoVideo,
+                  subtitle: Text(_isEditingProject ? 'Toca para cambiar' : (_existingEvaluation != null ? 'Proyecto ya evaluado' : 'Visita editar para cambiar')),
+                  onTap: _isEditingProject ? _pickDemoVideo : null,
                 )
               else
                 ListTile(
@@ -593,7 +576,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                   title: const Text('Seleccionar Video Demo', style: TextStyle(fontSize: 14)),
                   subtitle: const Text('Formatos: MP4, MOV, AVI (Ideal < 50MB)'),
                 ),
-              if (_demoVideoFile == null && _existingProject == null) ...[
+              if (_demoVideoFile == null && (_existingProject == null || _isEditingProject)) ...[
                 const Divider(),
                 TextFormField(
                   controller: _promoVideoController,
@@ -925,7 +908,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                             ],
                           ),
                         )
-                      else if (_existingProject == null)
+                      else if (_existingProject == null || _isEditingProject)
                         ElevatedButton(
                           onPressed: _isSubmitting ? null : _submitProject,
                           style: ElevatedButton.styleFrom(
@@ -941,7 +924,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                                 width: 20, 
                                 child: CircularProgressIndicator(color: AppColors.textPrimary, strokeWidth: 2)
                               )
-                            : const Text('Enviar Proyecto', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            : Text(_isEditingProject ? 'Actualizar Proyecto' : 'Enviar Proyecto', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         )
                       else if (_existingEvaluation == null)
                         if (isExpired)
@@ -967,12 +950,12 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                           )
                         else
                           ElevatedButton.icon(
-                            onPressed: _isSubmitting ? null : _replaceSubmission,
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Reemplazar Entrega'),
+                            onPressed: _isSubmitting ? null : _editSubmission,
+                            icon: const Icon(Icons.edit),
+                            label: const Text('Editar Entrega'),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: Colors.red.shade400,
+                              backgroundColor: Colors.blue.shade400,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),

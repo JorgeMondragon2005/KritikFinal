@@ -472,6 +472,26 @@ class ApiService {
     }
   }
 
+  Future<bool> updateProject(Project project) async {
+    try {
+      final response = await _dio.put('Projects/${project.id}', data: project.toJson());
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      debugPrint('Update project error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> updateEvaluation(Evaluation evaluation) async {
+    try {
+      final response = await _dio.put('Evaluations/${evaluation.id}', data: evaluation.toJson());
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      debugPrint('Update evaluation error: $e');
+      return false;
+    }
+  }
+
   Future<bool> deleteAssignment(String id) async {
     try {
       final response = await _dio.delete('Assignments/$id');
@@ -534,7 +554,7 @@ class ApiService {
   // --- NOTIFICATIONS ---
   Future<List<AppNotification>> getUserNotifications(String userId) async {
     try {
-      final response = await _dio.get('users/$userId/notifications');
+      final response = await _dio.get('Notifications/user/$userId');
       if (response.statusCode == 200) {
         return (response.data as List).map((x) => AppNotification.fromJson(x)).toList();
       }
@@ -724,34 +744,38 @@ class ApiService {
     }
   }
 
-  /// Descarga un archivo a un directorio temporal local y luego lo abre 
-  /// directamente en el sistema operativo usando la app por defecto del teléfono.
+  Future<bool> updateProject(Project project) async {
+    try {
+      final response = await _dio.put('Projects/${project.id}', data: project.toJson());
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      debugPrint('Update project error (ID: ${project.id}): $e');
+      return false;
+    }
+  }
+
+  Future<bool> updateEvaluation(Evaluation evaluation) async {
+    try {
+      final response = await _dio.put('Evaluations/${evaluation.id}', data: evaluation.toJson());
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      debugPrint('Update evaluation error (ID: ${evaluation.id}): $e');
+      return false;
+    }
+  }
+
+  /// Descarga un archivo o lo abre directamente en el navegador del dispositivo
   Future<void> downloadAndOpenFile(String url, String fileName) async {
     try {
-      final tempDir = await getTemporaryDirectory();
-      // Ensure the file name is clean to prevent path injection
-      final cleanFileName = fileName.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
-      final path = '${tempDir.path}/$cleanFileName';
-
-      // Verify if the file has an extension, if not extract it from URL or add a default
-      String finalPath = path;
-      if (!path.contains('.')) {
-         final extension = url.split('.').last.split('?').first;
-         if (extension.isNotEmpty && extension.length <= 4) {
-             finalPath = '$path.$extension';
-         } else {
-             finalPath = '$path.pdf'; // fallback to pdf
-         }
-      }
-
-      await _dio.download(url, finalPath);
-      final result = await OpenFilex.open(finalPath);
-      
-      if (result.type != ResultType.done) {
-         throw Exception('No pudimos encontrar una app en el celular para abrir este tipo de archivo.');
+      final finalUrl = url.startsWith('/') ? 'https://kritikfinal.onrender.com$url' : url;
+      final uri = Uri.parse(finalUrl);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw Exception('El enlace no es válido o fallaron los permisos');
       }
     } catch (e) {
-      debugPrint('Error en downloadAndOpenFile: $e');
+      debugPrint('Download/Open error: $e');
       rethrow;
     }
   }

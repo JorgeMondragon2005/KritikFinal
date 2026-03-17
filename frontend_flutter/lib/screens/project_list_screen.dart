@@ -140,7 +140,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         final results = await Future.wait<dynamic>([
           _apiService.getProjects(teacherId: teacherId),
           _apiService.getAssignments(
-             teacherId: role == 'teacher' ? userId : null,
+             teacherId: (role == 'teacher' || role == 'evaluator') ? userId : null,
              evaluatorId: role == 'evaluator' ? userId : null,
           ), // El backend filtra y devuelve la lista exacta.
           if (role == 'evaluator') _apiService.getEvaluationsByEvaluator(userId!) else Future.value(<Evaluation>[]),
@@ -259,7 +259,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                   ),
               ],
             ),
-            if (widget.role.toLowerCase() == 'teacher')
+            if (widget.role.toLowerCase() == 'teacher' || widget.role.toLowerCase() == 'evaluator')
               IconButton(
                 icon: const Icon(Icons.analytics_outlined),
                 tooltip: 'Estadísticas',
@@ -1089,16 +1089,18 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             title: const Text('Mis Clases'),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ClassroomManagementScreen(userId: widget.userId ?? '', role: widget.role))),
           ),
-          if (widget.role.toLowerCase() == 'teacher')
+          if (widget.role.toLowerCase() == 'teacher' || widget.role.toLowerCase() == 'evaluator') ...[
+            const Divider(),
             ListTile(
-              leading: const Icon(Icons.download_rounded, color: AppColors.primaryYellow),
+              leading: const Icon(Icons.picture_as_pdf, color: Colors.blue),
               title: const Text('Descargar Reporte General (PDF)'),
               onTap: () async {
-                 Navigator.pop(context);
-                 AppTheme.showCustomSnackBar(context, 'Construyendo el reporte maestro. Puede tardar unos segundos...');
+                 Navigator.pop(context); // Close drawer
+                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Generando reporte PDF global...')));
                  await PdfService.generateGlobalClassReport(widget.userId ?? '');
               },
             ),
+          ],
           const Spacer(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
