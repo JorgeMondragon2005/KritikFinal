@@ -11,12 +11,21 @@ public class AssignmentsController : ControllerBase
     private readonly AssignmentService _assignmentService;
     private readonly EnrollmentService _enrollmentService;
     private readonly ClassroomService _classroomService;
+    private readonly UserService _userService;
+    private readonly EmailService _emailService;
 
-    public AssignmentsController(AssignmentService assignmentService, EnrollmentService enrollmentService, ClassroomService classroomService)
+    public AssignmentsController(
+        AssignmentService assignmentService, 
+        EnrollmentService enrollmentService, 
+        ClassroomService classroomService,
+        UserService userService,
+        EmailService emailService)
     {
         _assignmentService = assignmentService;
         _enrollmentService = enrollmentService;
         _classroomService = classroomService;
+        _userService = userService;
+        _emailService = emailService;
     }
 
     [HttpGet]
@@ -101,6 +110,38 @@ public class AssignmentsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Post(Assignment newAssignment)
     {
+        var teacher = await _userService.GetAsync(newAssignment.TeacherId);
+        string teacherName = teacher?.FullName ?? "Un Profesor";
+
+        newAssignment.AssignedEvaluators ??= new List<string>();
+
+        if (newAssignment.Jurors != null && newAssignment.Jurors.Any())
+        {
+            foreach (var juror in newAssignment.Jurors)
+            {
+                var existingUser = await _userService.GetByEmailAsync(juror.Email.Trim().ToLower());
+                if (existingUser != null)
+                {
+                    juror.UserId = existingUser.Id;
+                    if (!newAssignment.AssignedEvaluators.Contains(existingUser.Id))
+                    {
+                        newAssignment.AssignedEvaluators.Add(existingUser.Id);
+                    }
+                    if (existingUser.Role?.ToLower() == "student") 
+                    {
+                        existingUser.Role = "Evaluator";
+                        await _userService.UpdateAsync(existingUser.Id!, existingUser);
+                    }
+                    // Background fire-and-forget
+                    _ = _emailService.SendJurorInvitationAsync(juror.Email, newAssignment.Title, teacherName, false);
+                }
+                else
+                {
+                    _ = _emailService.SendJurorInvitationAsync(juror.Email, newAssignment.Title, teacherName, true);
+                }
+            }
+        }
+
         await _assignmentService.CreateAsync(newAssignment);
         return Ok(newAssignment);
     }

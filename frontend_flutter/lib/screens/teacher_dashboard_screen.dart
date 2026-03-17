@@ -33,6 +33,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       int evaluated = 0;
       double sumAverage = 0;
       Map<String, int> techs = {};
+      Map<String, Assignment> assignmentCache = {};
 
       for (var p in projects) {
         // Count techs
@@ -43,13 +44,48 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         final evals = await _apiService.getProjectEvaluations(p.id ?? '');
         if (evals.isNotEmpty) {
           evaluated++;
-          double pSum = 0;
-          for (var e in evals) {
-            if (e.scores != null) {
-              pSum += e.scores!.values.fold(0.0, (prev, el) => prev + el);
+          double projectFinalScore = 0;
+
+          if (p.assignmentId != null) {
+            if (!assignmentCache.containsKey(p.assignmentId!)) {
+              final a = await _apiService.getAssignmentById(p.assignmentId!);
+              if (a != null) assignmentCache[p.assignmentId!] = a;
             }
+            final assignment = assignmentCache[p.assignmentId!];
+
+            if (assignment != null && assignment.jurors != null && assignment.jurors!.isNotEmpty) {
+              double weightedScore = 0;
+              double totalWeightUsed = 0;
+              for (var e in evals) {
+                var jurorWeight = 0;
+                try {
+                  final juror = assignment.jurors!.firstWhere((j) => j.userId == e.evaluatorId);
+                  jurorWeight = juror.weightPercentage;
+                } catch (_) {}
+
+                if (jurorWeight > 0 && e.scores != null) {
+                  double eScore = e.scores!.values.fold(0.0, (prev, el) => prev + el);
+                  weightedScore += eScore * (jurorWeight / 100.0);
+                  totalWeightUsed += jurorWeight;
+                }
+              }
+              // Normalizar en caso de que falten evaluadores (ej. solo evaluó el 50%)
+              if (totalWeightUsed > 0) {
+                projectFinalScore = weightedScore / (totalWeightUsed / 100.0);
+              } else {
+                double fallback = evals.fold(0.0, (prev, e) => prev + (e.scores?.values.fold(0.0, (p, el) => p + el) ?? 0));
+                projectFinalScore = fallback / evals.length;
+              }
+            } else {
+              double fallback = evals.fold(0.0, (prev, e) => prev + (e.scores?.values.fold(0.0, (p, el) => p + el) ?? 0));
+              projectFinalScore = fallback / evals.length;
+            }
+          } else {
+            double fallback = evals.fold(0.0, (prev, e) => prev + (e.scores?.values.fold(0.0, (p, el) => p + el) ?? 0));
+            projectFinalScore = fallback / evals.length;
           }
-          sumAverage += pSum / evals.length;
+
+          sumAverage += projectFinalScore;
         }
       }
 

@@ -33,16 +33,16 @@ public class EvaluationsController : ControllerBase
     }
 
     [HttpGet("project/{projectId:length(24)}")]
-    public async Task<ActionResult<Evaluation>> GetByProject(string projectId)
+    public async Task<ActionResult<List<Evaluation>>> GetByProject(string projectId)
     {
-        var evaluation = await _evaluationService.GetByProjectIdAsync(projectId);
+        var evaluations = await _evaluationService.GetByProjectIdAsync(projectId);
 
-        if (evaluation is null)
+        if (evaluations is null || !evaluations.Any())
         {
             return NotFound();
         }
 
-        return evaluation;
+        return evaluations;
     }
 
     [HttpPost]

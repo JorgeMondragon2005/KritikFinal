@@ -18,5 +18,14 @@ public class Assignment
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string? AccessCode { get; set; } // Opcional: código para unirse
     public string? ClassroomId { get; set; } // Link assignment to a class
-    public List<string>? AssignedEvaluators { get; set; }
+    public List<string>? AssignedEvaluators { get; set; } // Legacy or Keep it for simple strings
+    public List<JurorAssignment> Jurors { get; set; } = new();
+}
+
+public class JurorAssignment
+{
+    public string Email { get; set; } = null!;
+    public int WeightPercentage { get; set; } = 0; // 0-100
+    public string Status { get; set; } = "Pending"; // "Pending", "Accepted", "Completed"
+    public string? UserId { get; set; } // Id of the user in DB, if mapped
 }

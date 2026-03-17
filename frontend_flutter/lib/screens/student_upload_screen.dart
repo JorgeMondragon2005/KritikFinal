@@ -623,6 +623,13 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
        );
     }
 
+    final selectedAssignment = _assignments.cast<Assignment?>().firstWhere(
+      (a) => a?.id == _selectedAssignmentId,
+      orElse: () => null,
+    );
+    final bool isExpired = selectedAssignment?.dueDate != null && 
+                           selectedAssignment!.dueDate!.isBefore(DateTime.now());
+
     if (_errorMessage != null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Error')),
@@ -894,7 +901,28 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
 
                       // Final Buttons
                       const SizedBox(height: 48),
-                      if (_existingProject == null)
+                      if (isExpired && _existingProject == null)
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.red.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.warning, color: Colors.red),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'La fecha límite para esta tarea ha expirado. Ya no puedes enviar proyectos.',
+                                  style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (_existingProject == null)
                         ElevatedButton(
                           onPressed: _isSubmitting ? null : _submitProject,
                           style: ElevatedButton.styleFrom(
@@ -913,17 +941,39 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                             : const Text('Enviar Proyecto', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         )
                       else if (_existingEvaluation == null)
-                        ElevatedButton.icon(
-                          onPressed: _isSubmitting ? null : _replaceSubmission,
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Reemplazar Entrega'),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.red.shade400,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        if (isExpired)
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.red.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.info_outline, color: Colors.red),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'La fecha límite ha expirado. Ya no puedes reescribir ni modificar tu entrega.',
+                                    style: TextStyle(color: Colors.red.shade700, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          ElevatedButton.icon(
+                            onPressed: _isSubmitting ? null : _replaceSubmission,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Reemplazar Entrega'),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              backgroundColor: Colors.red.shade400,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
                           ),
-                        ),
                       const SizedBox(height: 40),
                     ] else ...[
                       const SizedBox(height: 100),

@@ -210,11 +210,20 @@ class ApiService {
     }
   }
 
-  Future<Evaluation?> getEvaluationByProjectId(String projectId) async {
+  Future<Evaluation?> getEvaluationByProjectId(String projectId, {String? evaluatorId}) async {
     try {
       final response = await _dio.get('evaluations/project/$projectId');
-      if (response.statusCode == 200) {
-        return Evaluation.fromJson(response.data);
+      if (response.statusCode == 200 && response.data is List) {
+        final evals = (response.data as List).map((x) => Evaluation.fromJson(x)).toList();
+        if (evals.isEmpty) return null;
+        if (evaluatorId != null) {
+          try {
+            return evals.firstWhere((e) => e.evaluatorId == evaluatorId);
+          } catch (_) {
+            return null; // Evaluator hasn't evaluated yet
+          }
+        }
+        return evals.first; // Legacy fallback
       }
       return null;
     } catch (e) {

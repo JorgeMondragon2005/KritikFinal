@@ -111,4 +111,40 @@ public class EmailService
             _logger.LogError(ex, "Error enviando correo de recuperación a: {Email}", toEmail);
         }
     }
+    public async Task SendJurorInvitationAsync(string toEmail, string assignmentTitle, string inviterName, bool isNewUser)
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient();
+            client.DefaultRequestHeaders.Add("api-key", _brevoSettings.ApiKey?.Trim());
+            client.DefaultRequestHeaders.Add("accept", "application/json");
+
+            var messageHtml = isNewUser
+                ? $"<p>El profesor <b>{inviterName}</b> te ha invitado a evaluar el proyecto/convocatoria <b>'{assignmentTitle}'</b>.</p><p>Dado que aún no tienes una cuenta en Kritik, por favor regístrate en la aplicación con este correo para comenzar a evaluar los proyectos asignados.</p>"
+                : $"<p>El profesor <b>{inviterName}</b> te ha asignado como Jurado en la convocatoria <b>'{assignmentTitle}'</b>.</p><p>Ingresa a tu cuenta de Kritik para ver los detalles de los proyectos a evaluar.</p>";
+
+            var body = new
+            {
+                sender = new { name = _brevoSettings.SenderName, email = _brevoSettings.SenderEmail },
+                to = new[] { new { email = toEmail } },
+                subject = "🏛️ Invitación para Jurado Evaluador - Kritik",
+                htmlContent = $@"
+                    <div style='font-family: Arial, sans-serif; max-width: 480px; margin: auto; padding: 32px; background: #f9f9f9; border-radius: 12px;'>
+                        <h2 style='color: #1a1a2e; text-align: center;'><span style='color: #f5a623;'>Kritik</span> 🎓</h2>
+                        {messageHtml}
+                        <hr style='border: none; border-top: 1px solid #eee; margin: 24px 0;'/>
+                        <p style='color: #bbb; font-size: 11px; text-align: center;'>© Kritik App - Plataforma de evaluación entre pares</p>
+                    </div>"
+            };
+
+            var json = JsonSerializer.Serialize(body);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            await client.PostAsync("https://api.brevo.com/v3/smtp/email", content);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error enviando invitación de jurado a: {Email}", toEmail);
+        }
+    }
 }

@@ -32,9 +32,9 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
   String? _selectedClassId;
   bool _isLoadingClasses = true;
 
-  List<User> _evaluators = [];
-  List<String> _selectedEvaluatorIds = [];
-  bool _isLoadingEvaluators = true;
+  List<JurorAssignment> _jurors = [];
+  final _jurorEmailController = TextEditingController();
+  final _jurorWeightController = TextEditingController(text: '100');
 
   @override
   void initState() {
@@ -45,7 +45,7 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
       _selectedClassId = widget.assignment!.classroomId;
       _selectedRubricId = widget.assignment!.rubricId;
       _selectedDate = widget.assignment!.dueDate;
-      _selectedEvaluatorIds = widget.assignment!.assignedEvaluators ?? [];
+      _jurors = widget.assignment!.jurors ?? [];
     } else {
       _selectedClassId = widget.initialClassroomId;
     }
@@ -56,7 +56,6 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
     await Future.wait([
       _fetchRubrics(),
       _fetchClasses(),
-      _fetchEvaluators(),
     ]);
   }
 
@@ -70,19 +69,6 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
     } catch (e) {
       debugPrint('Error fetching classes: $e');
       setState(() => _isLoadingClasses = false);
-    }
-  }
-
-  Future<void> _fetchEvaluators() async {
-    try {
-      final evals = await _apiService.getEvaluators();
-      setState(() {
-        _evaluators = evals;
-        _isLoadingEvaluators = false;
-      });
-    } catch (e) {
-      debugPrint('Error fetching evaluators: $e');
-      setState(() => _isLoadingEvaluators = false);
     }
   }
 
@@ -151,7 +137,7 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
         dueDate: _selectedDate,
         accessCode: null,
         classroomId: _selectedClassId,
-        assignedEvaluators: _selectedEvaluatorIds.isNotEmpty ? _selectedEvaluatorIds : null,
+        jurors: _jurors.isNotEmpty ? _jurors : null,
       );
 
       final success = widget.assignment != null 
@@ -292,32 +278,91 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
               const SizedBox(height: 16),
               const Text('Jurados Asignados (Opcional)', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              _isLoadingEvaluators
-                ? const LinearProgressIndicator()
-                : _evaluators.isEmpty 
-                  ? const Text('No hay jurados registrados en el sistema.', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic))
-                  : Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _evaluators.map((e) {
-                        final isSelected = _selectedEvaluatorIds.contains(e.id);
-                        return FilterChip(
-                          label: Text(e.fullName ?? 'Usuario'),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() {
-                              if (selected) {
-                                _selectedEvaluatorIds.add(e.id!);
-                              } else {
-                                _selectedEvaluatorIds.remove(e.id);
-                              }
-                            });
-                          },
-                          selectedColor: AppColors.primaryYellow.withOpacity(0.3),
-                          checkmarkColor: AppColors.primaryYellow,
-                        );
-                      }).toList(),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: TextFormField(
+                      controller: _jurorEmailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Correo del Jurado',
+                        hintText: 'ej: profesor@escuela.edu',
+                        prefixIcon: Icon(Icons.email_outlined, size: 20),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 1,
+                    child: TextFormField(
+                      controller: _jurorWeightController,
+                      decoration: const InputDecoration(
+                        labelText: 'Peso (%)',
+                        hintText: 'Ej: 50',
+                        prefixIcon: Icon(Icons.percent, size: 20),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    child: IconButton(
+                      onPressed: () {
+                        final email = _jurorEmailController.text.trim();
+                        final weightText = _jurorWeightController.text.trim();
+                        if (email.isEmpty || weightText.isEmpty) return;
+                        if (!email.contains('@')) {
+                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Correo inválido')));
+                           return;
+                        }
+                        final weight = int.tryParse(weightText) ?? 0;
+                        if (weight <= 0 || weight > 100) {
+                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Porcentaje inválido')));
+                           return;
+                        }
+                        setState(() {
+                          _jurors.add(JurorAssignment(email: email, weightPercentage: weight));
+                          _jurorEmailController.clear();
+                          _jurorWeightController.text = '100'; // Reset
+                        });
+                      },
+                      icon: const Icon(Icons.add_circle, size: 36, color: AppColors.primaryYellow),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (_jurors.isNotEmpty)
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.borderColor),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _jurors.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final j = _jurors[index];
+                      return ListTile(
+                        leading: const CircleAvatar(
+                          backgroundColor: AppColors.backgroundWhite,
+                          child: Icon(Icons.person_outline, color: AppColors.primaryYellow),
+                        ),
+                        title: Text(j.email, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        subtitle: Text('Peso de calificación general: ${j.weightPercentage}%'),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          onPressed: () => setState(() => _jurors.removeAt(index)),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               const SizedBox(height: 24),
               ListTile(
                 title: Text(_selectedDate == null 
