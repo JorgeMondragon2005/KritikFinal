@@ -138,19 +138,17 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         final teacherId = role == 'evaluator' ? userId : null;
         final results = await Future.wait<dynamic>([
           _apiService.getProjects(teacherId: teacherId),
-          _apiService.getAssignments(), // Fetch all to filter locally
+          _apiService.getAssignments(
+             teacherId: role == 'teacher' ? userId : null,
+             evaluatorId: role == 'evaluator' ? userId : null,
+          ), // El backend filtra y devuelve la lista exacta.
           if (role == 'evaluator') _apiService.getEvaluationsByEvaluator(userId!) else Future.value(<Evaluation>[]),
           _apiService.getClassrooms(), // Fetch all classrooms for grouping names
         ]);
 
         final projects = List<Project>.from(results[0]);
         var allAssignments = List<Assignment>.from(results[1]);
-        List<Assignment> managed = [];
-        if (role == 'teacher') {
-          managed = allAssignments.where((a) => a.teacherId == userId).toList();
-        } else {
-          managed = allAssignments.where((a) => a.assignedEvaluators?.contains(userId) ?? false).toList();
-        }
+        List<Assignment> managed = allAssignments;
         
         final evals = List<Evaluation>.from(results[2]);
         final classrooms = List<Classroom>.from(results[3]);

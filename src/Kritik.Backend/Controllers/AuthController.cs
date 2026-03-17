@@ -47,7 +47,9 @@ public class AuthController : ControllerBase
                 Id = user.Id!,
                 Token = token,
                 FullName = user.FullName,
-                Role = user.Role
+                Role = user.Role,
+                FotoPerfil = user.FotoPerfil,
+                PortadaUrl = user.PortadaUrl
             });
         }
         catch (Exception ex)

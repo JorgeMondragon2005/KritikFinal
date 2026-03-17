@@ -29,7 +29,7 @@ public class AssignmentsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<List<Assignment>> Get([FromQuery] string? teacherId, [FromQuery] string? studentId)
+    public async Task<List<Assignment>> Get([FromQuery] string? teacherId, [FromQuery] string? studentId, [FromQuery] string? evaluatorId)
     {
         if (!string.IsNullOrEmpty(studentId))
         {
@@ -77,6 +77,14 @@ public class AssignmentsController : ControllerBase
                 .Select(g => g.First())
                 .GroupBy(a => a.Title)
                 .Select(g => g.First())
+                .ToList();
+        }
+        
+        if (!string.IsNullOrEmpty(evaluatorId))
+        {
+            var allAssignments = await _assignmentService.GetAsync();
+            return allAssignments
+                .Where(a => a.Jurors != null && a.Jurors.Any(j => j.UserId == evaluatorId))
                 .ToList();
         }
         

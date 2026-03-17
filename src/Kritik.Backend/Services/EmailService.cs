@@ -41,7 +41,7 @@ public class EmailService
                         <h2 style='color: #1a1a2e; text-align: center;'>Bienvenido a <span style='color: #f5a623;'>Kritik</span> 🎓</h2>
                         <p style='color: #444; font-size: 16px;'>Usa el siguiente código para verificar tu cuenta:</p>
                         <div style='text-align: center; margin: 32px 0;'>
-                            <span style='font-size: 42px; font-weight: bold; letter-spacing: 12px; color: #1a1a2e; background: #fff; padding: 16px 32px; border-radius: 8px; border: 2px solid #f5a623;'>
+                            <span style='font-size: 38px; font-weight: bold; letter-spacing: 6px; white-space: nowrap; color: #1a1a2e; background: #fff; padding: 16px 24px; border-radius: 8px; border: 2px solid #f5a623;'>
                                 {code}
                             </span>
                         </div>
@@ -93,7 +93,7 @@ public class EmailService
                         <p style='color: #444; font-size: 16px; text-align: center;'>Hemos recibido una solicitud para restablecer tu contraseña.</p>
                         <p style='color: #444; font-size: 14px; text-align: center;'>Utiliza este código temporal en la aplicación para crear tu nuevo acceso:</p>
                         <div style='text-align: center; margin: 32px 0;'>
-                            <span style='font-size: 38px; font-weight: bold; letter-spacing: 12px; color: #1a1a2e; background: #fff; padding: 16px 32px; border-radius: 8px; border: 2px solid #e74c3c;'>
+                            <span style='font-size: 38px; font-weight: bold; letter-spacing: 6px; white-space: nowrap; color: #1a1a2e; background: #fff; padding: 16px 24px; border-radius: 8px; border: 2px solid #e74c3c;'>
                                 {token}
                             </span>
                         </div>

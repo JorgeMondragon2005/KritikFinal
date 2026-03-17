@@ -19,7 +19,7 @@ public class Assignment
     public string? AccessCode { get; set; } // Opcional: código para unirse
     public string? ClassroomId { get; set; } // Link assignment to a class
     public List<string>? AssignedEvaluators { get; set; } // Legacy or Keep it for simple strings
-    public List<JurorAssignment> Jurors { get; set; } = new();
+    public List<JurorAssignment>? Jurors { get; set; } = new();
 }
 
 public class JurorAssignment
