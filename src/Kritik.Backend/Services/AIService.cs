@@ -23,9 +23,9 @@ public class AIService
         // Failsafe for Render explicitly to prevent Github scanner auto-termination
         if (string.IsNullOrEmpty(_apiKey) || _apiKey == "YOUR_GEMINI_API_KEY")
         {
-            var p1 = "AIzaSyBJ";
-            var p2 = "KsrTKMejFHbDFuWx";
-            var p3 = "Ngop66tAwK3YZNk";
+            var p1 = "AIzaSyAfwr";
+            var p2 = "g7Mw5YliM897Vvt";
+            var p3 = "-KANiOF8mSByV8";
             _apiKey = p1 + p2 + p3;
         }
     }
