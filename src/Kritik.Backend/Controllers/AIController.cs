@@ -70,8 +70,16 @@ Asegúrate de que las llaves del objeto 'scores' coincidan exactamente con la pr
             // Clean up Markdown backticks if Gemini includes them
             resultText = resultText.Replace("```json", "").Replace("```", "").Trim();
             
-            using var doc = JsonDocument.Parse(resultText);
-            return Ok(doc.RootElement);
+            try 
+            {
+                using var doc = JsonDocument.Parse(resultText);
+                return Ok(doc.RootElement);
+            }
+            catch (JsonException)
+            {
+                // Fallback if parsing fails
+                return Ok(new { scores = new Dictionary<string, int>(), feedback = resultText });
+            }
         }
         catch (Exception ex)
         {
@@ -94,13 +102,20 @@ Tengo esta lista de proyectos registrados:
 
 Como un Matchmaker experto, analiza el rol del usuario (si es estudiante buscará compañeros interesantes, si es maestro buscará proyectos técnicos de alto nivel), y escoge los 3 proyectos más relevantes para esta persona.
 Devuelve tu respuesta ÚNICAMENTE como un array JSON válido de los 'Id' de esos 3 proyectos. No incluyas explicación ni Markdown ```json.
-Ejemplo de salida: [""id1"", ""id2"", ""id3""]
+Ejemplo de salida: [""id_1"", ""id_2"", ""id_3""]
 ";
             var resultText = await _aiService.GenerateContentAsync(prompt);
             resultText = resultText.Replace("```json", "").Replace("```", "").Trim();
             
-            using var doc = JsonDocument.Parse(resultText);
-            return Ok(doc.RootElement);
+            try 
+            {
+                using var doc = JsonDocument.Parse(resultText);
+                return Ok(doc.RootElement);
+            }
+            catch (JsonException)
+            {
+                return Ok(new List<string>()); // Empty list on fail
+            }
         }
         catch (Exception ex)
         {
