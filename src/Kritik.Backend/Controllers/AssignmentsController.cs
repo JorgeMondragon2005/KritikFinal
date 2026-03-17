@@ -61,23 +61,8 @@ public class AssignmentsController : ControllerBase
 
         if (!string.IsNullOrEmpty(teacherId))
         {
-            var teacherClasses = await _classroomService.GetByTeacherAsync(teacherId);
-            var classIds = teacherClasses.Select(c => c.Id).Where(id => id != null).ToList();
-            
-            var allAssignments = new List<Assignment>();
-            foreach (var classId in classIds)
-            {
-                var classAssignments = await _assignmentService.GetByClassAsync(classId!);
-                allAssignments.AddRange(classAssignments);
-            }
-            
-            // Deduplicate by ID and Title
-            return allAssignments
-                .GroupBy(a => a.Id)
-                .Select(g => g.First())
-                .GroupBy(a => a.Title)
-                .Select(g => g.First())
-                .ToList();
+            var teacherAssignments = await _assignmentService.GetByTeacherAsync(teacherId);
+            return teacherAssignments;
         }
         
         if (!string.IsNullOrEmpty(evaluatorId))

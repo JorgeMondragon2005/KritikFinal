@@ -1088,6 +1088,16 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             title: const Text('Mis Clases'),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ClassroomManagementScreen(userId: widget.userId ?? '', role: widget.role))),
           ),
+          if (widget.role.toLowerCase() == 'teacher')
+            ListTile(
+              leading: const Icon(Icons.download_rounded, color: AppColors.primaryYellow),
+              title: const Text('Descargar Reporte General (PDF)'),
+              onTap: () async {
+                 Navigator.pop(context);
+                 AppTheme.showCustomSnackBar(context, 'Construyendo el reporte maestro. Puede tardar unos segundos...');
+                 await PdfService.generateGlobalClassReport(widget.userId ?? '');
+              },
+            ),
           const Spacer(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),

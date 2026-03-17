@@ -11,6 +11,7 @@ import '../models/notification_model.dart';
 import '../theme/app_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'native_media_viewer.dart';
+import '../services/pdf_service.dart';
 
 class StudentUploadScreen extends StatefulWidget {
   final String studentId;
@@ -582,8 +583,8 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                 ListTile(
                   leading: const Icon(Icons.check_circle, color: Colors.green),
                   title: const Text('Video cargado actualmente', style: TextStyle(fontSize: 13)),
-                  subtitle: const Text('Toca para cambiar'),
-                  onTap: _pickDemoVideo,
+                  subtitle: Text(_existingEvaluation != null ? 'Proyecto ya evaluado' : 'Toca para cambiar'),
+                  onTap: _existingEvaluation != null ? null : _pickDemoVideo,
                 )
               else
                 ListTile(
@@ -801,50 +802,52 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                       _buildAssignmentDetails(),
                       const SizedBox(height: 24),
                       
-                      TextFormField(
-                        controller: _titleController,
-                        readOnly: _existingProject != null,
-                        decoration: const InputDecoration(
-                          labelText: 'Título del Proyecto',
-                          prefixIcon: Icon(Icons.title),
+                      if (!isExpired || _existingProject != null) ...[
+                        TextFormField(
+                          controller: _titleController,
+                          readOnly: _existingProject != null,
+                          decoration: const InputDecoration(
+                            labelText: 'Título del Proyecto',
+                            prefixIcon: Icon(Icons.title),
+                          ),
+                          validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
                         ),
-                        validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _teamNameController,
-                        readOnly: _existingProject != null,
-                        decoration: const InputDecoration(
-                          labelText: 'Nombre del Equipo',
-                          prefixIcon: Icon(Icons.group),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _teamNameController,
+                          readOnly: _existingProject != null,
+                          decoration: const InputDecoration(
+                            labelText: 'Nombre del Equipo',
+                            prefixIcon: Icon(Icons.group),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _categoryController,
-                        readOnly: _existingProject != null,
-                        decoration: const InputDecoration(
-                          labelText: 'Categoría',
-                          prefixIcon: Icon(Icons.category),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _categoryController,
+                          readOnly: _existingProject != null,
+                          decoration: const InputDecoration(
+                            labelText: 'Categoría',
+                            prefixIcon: Icon(Icons.category),
+                          ),
+                          validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
                         ),
-                        validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _descriptionController,
-                        readOnly: _existingProject != null,
-                        maxLines: 5,
-                        decoration: const InputDecoration(
-                          labelText: 'Descripción detallada',
-                          alignLabelWithHint: true,
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _descriptionController,
+                          readOnly: _existingProject != null,
+                          maxLines: 5,
+                          decoration: const InputDecoration(
+                            labelText: 'Descripción detallada',
+                            alignLabelWithHint: true,
+                          ),
+                          validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
                         ),
-                        validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildTechnologiesField(),
-                      const SizedBox(height: 20),
-                      _buildDemoVideoSection(),
-                      const SizedBox(height: 32),
+                        const SizedBox(height: 16),
+                        _buildTechnologiesField(),
+                        const SizedBox(height: 20),
+                        _buildDemoVideoSection(),
+                        const SizedBox(height: 32),
+                      ],
 
                       // Files section
                       if (_existingProject != null) ...[
@@ -890,7 +893,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                         },
                       ),
                       
-                      if (_existingProject == null) ...[
+                      if (_existingProject == null && !isExpired) ...[
                         const SizedBox(height: 8),
                         OutlinedButton.icon(
                           onPressed: _pickFiles,
@@ -974,6 +977,26 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
                           ),
+                      if (_existingEvaluation != null) ...[
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () => PdfService.generateAndShowCertificate(
+                              project: _existingProject!, 
+                              evaluation: _existingEvaluation!
+                            ),
+                            icon: const Icon(Icons.picture_as_pdf),
+                            label: const Text('Descargar Certificado PDF', style: TextStyle(fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              backgroundColor: Colors.green.shade600,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 40),
                     ] else ...[
                       const SizedBox(height: 100),

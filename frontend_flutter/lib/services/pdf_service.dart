@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:printing/printing.dart';
 import 'package:open_filex/open_filex.dart';
 
+import '../services/api_service.dart';
 import '../models/project_model.dart';
 import '../models/evaluation_model.dart';
 
@@ -128,6 +129,97 @@ class PdfService {
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => pdf.save(),
       );
+    }
+  }
+
+  static Future<void> generateGlobalClassReport(String teacherId) async {
+    final apiService = ApiService();
+    try {
+      final assignments = await apiService.getAssignments(teacherId: teacherId);
+      
+      final Map<String, List<Project>> assignmentProjects = {};
+      final Map<String, Evaluation?> projectEvals = {};
+      
+      for (var a in assignments) {
+        if (a.id == null) continue;
+        final projects = await apiService.getProjects(assignmentId: a.id);
+        assignmentProjects[a.id!] = projects;
+        
+        for (var p in projects) {
+          if (p.id != null && p.status?.toLowerCase() == 'evaluado') {
+             projectEvals[p.id!] = await apiService.getEvaluationByProjectId(p.id!);
+          }
+        }
+      }
+      
+      final pdf = pw.Document();
+      
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          build: (pw.Context context) {
+            final List<pw.Widget> content = [
+              pw.Text('Reporte Global Académico', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+              pw.SizedBox(height: 10),
+              pw.Text('Generado el: ${DateTime.now().toString().split(' ')[0]}'),
+              pw.SizedBox(height: 20),
+            ];
+            
+            if (assignments.isEmpty) {
+               content.add(pw.Text('No hay convocatorias creadas o proyectos recibidos.'));
+               return content;
+            }
+
+            for (var a in assignments) {
+               content.add(
+                 pw.Container(
+                   margin: const pw.EdgeInsets.only(top: 15, bottom: 5),
+                   padding: const pw.EdgeInsets.all(8),
+                   color: PdfColors.grey200,
+                   child: pw.Text(a.title, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold))
+                 )
+               );
+               
+               final projs = assignmentProjects[a.id];
+               if (projs == null || projs.isEmpty) {
+                 content.add(pw.Text('  Sin entregas registradas.', style: pw.TextStyle(color: PdfColors.grey700, fontStyle: pw.FontStyle.italic)));
+                 continue;
+               }
+               
+               for (var p in projs) {
+                  final eval = projectEvals[p.id];
+                  double? score;
+                  if (eval != null) {
+                     score = eval.generalScore ?? (eval.detailedScores?.values.fold(0.0, (sum, v) => (sum as double) + v));
+                  }
+                  final scoreText = score != null ? score.toStringAsFixed(1) : 'Pendiente';
+                  
+                  content.add(
+                    pw.Padding(
+                      padding: const pw.EdgeInsets.only(left: 20, bottom: 4),
+                      child: pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Expanded(child: pw.Text('• ${p.teamName ?? "Alumno desconocido"} - ${p.category ?? ""}')),
+                          pw.Text(scoreText, style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                        ]
+                      )
+                    )
+                  );
+               }
+            }
+            return content;
+          }
+        )
+      );
+      
+      final output = await getTemporaryDirectory();
+      final file = File('${output.path}/reporte_global_$teacherId.pdf');
+      await file.writeAsBytes(await pdf.save());
+      await OpenFilex.open(file.path);
+      
+    } catch (e) {
+       // In case of any silent failure it won't crash the app
     }
   }
 }

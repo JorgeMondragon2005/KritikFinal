@@ -228,11 +228,16 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   }
 
   Widget _buildFileItem(BuildContext context, String title, String url, IconData icon, {bool isVideo = false, bool isImage = false}) {
+    String finalUrl = url;
+    if (finalUrl.startsWith('/')) {
+        finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
+    }
+
     return ListTile(
       leading: Icon(icon, color: AppColors.primaryYellow),
       title: Text(title, style: const TextStyle(fontSize: 14)),
       trailing: const Icon(Icons.open_in_new, size: 18),
-      onTap: () => NativeDocViewer.show(context, url, title, isVideo: isVideo, isImage: isImage),
+      onTap: () => NativeDocViewer.show(context, finalUrl, title, isVideo: isVideo, isImage: isImage),
     );
   }
 }
