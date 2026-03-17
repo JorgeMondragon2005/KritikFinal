@@ -198,7 +198,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                           const SizedBox(height: 12),
                           const Text('Ver video demo oficial', style: TextStyle(fontWeight: FontWeight.bold)),
                           TextButton(
-                            onPressed: () => NativeDocViewer.show(context, widget.project.promoVideoUrl!, 'Video Demo', isVideo: true),
+                            onPressed: () {
+                              String finalUrl = widget.project.promoVideoUrl!;
+                              if (finalUrl.startsWith('/')) {
+                                finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
+                              }
+                              NativeDocViewer.show(context, finalUrl, 'Video Demo', isVideo: true);
+                            },
                             child: const Text('REPRODUCIR AHORA'),
                           ),
                         ],

@@ -1,5 +1,9 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 import '../services/api_service.dart';
 import '../models/project_model.dart';
 import '../models/evaluation_model.dart';
@@ -96,12 +100,72 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     }
   }
 
+  Future<void> _exportReport() async {
+    if (_projects.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay datos para exportar')),
+      );
+      return;
+    }
+
+    try {
+      final dir = await getTemporaryDirectory();
+      final File file = File('${dir.path}/Reporte_Evaluaciones.csv');
+
+      // Create CSV content
+      final buffer = StringBuffer();
+      // Write BOM for Excel UTF-8 compatibility
+      buffer.write('\uFEFF');
+      
+      // Headers
+      buffer.writeln('Proyecto,Equipo,Categoria,Puntaje_Promedio,Estado');
+
+      for (var project in _projects) {
+        final eval = _evaluations.where((e) => e.projectId == project.id).toList();
+        double _score = 0;
+        if (eval.isNotEmpty) {
+          _score = eval.first.generalScore ?? 0.0; // Simplification, get first
+        }
+        
+        // Escape CSV fields
+        final title = '"${(project.title ?? 'Sin Título').replaceAll('"', '""')}"';
+        final team = '"${(project.teamName ?? 'SN').replaceAll('"', '""')}"';
+        final category = '"${(project.category ?? 'N/A').replaceAll('"', '""')}"';
+        final state = eval.isNotEmpty ? '"Evaluado"' : '"Pendiente"';
+        
+        buffer.writeln('$title,$team,$category,$_score,$state');
+      }
+
+      await file.writeAsString(buffer.toString(), encoding: utf8);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Abriendo reporte...')),
+      );
+
+      final result = await OpenFilex.open(file.path);
+      if (result.type != ResultType.done) {
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+             SnackBar(content: Text('No hay app instalada para abrir CSV. ${result.message}')),
+           );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text('Error al generar Excel/CSV: $e')),
+         );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard de Resultados'),
         actions: [
+          IconButton(icon: const Icon(Icons.download), onPressed: _exportReport),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchData),
         ],
       ),
