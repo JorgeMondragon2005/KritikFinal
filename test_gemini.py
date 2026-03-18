@@ -2,8 +2,8 @@ import urllib.request
 import urllib.error
 import json
 
-api_key = "AIzaSyAfwrg7Mw5YliM897Vvt-KANiOF8mSByV8"
-url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+api_key = "AIzaSyB6lv3tsf0773c-H7dXqw5-N9ZY9xqhQTQ"
+url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
 
 data = json.dumps({
     "contents": [{"parts": [{"text": "Dime 'Hola, ya funciono' en espanol."}]}]

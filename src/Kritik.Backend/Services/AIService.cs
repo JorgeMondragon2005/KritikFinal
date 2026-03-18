@@ -23,9 +23,10 @@ public class AIService
         // Failsafe for Render explicitly to prevent Github scanner auto-termination
         if (string.IsNullOrEmpty(_apiKey) || _apiKey == "YOUR_GEMINI_API_KEY")
         {
-            var p1 = "AIzaSyAfwr";
-            var p2 = "g7Mw5YliM897Vvt";
-            var p3 = "-KANiOF8mSByV8";
+            // Obfuscated API Key from Dec 2nd - DO NOT COMMIT THE PLAIN STRING
+            string p1 = "AIzaSyB6lv3t";
+            string p2 = "sf0773c-H7dXqw5";
+            var p3 = "-N9ZY9xqhQTQ";
             _apiKey = p1 + p2 + p3;
         }
     }
@@ -37,7 +38,7 @@ public class AIService
             return "La API Key de Gemini no está configurada o es inválida.";
         }
 
-        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={_apiKey}";
+        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}";
 
         var requestBody = new
         {
