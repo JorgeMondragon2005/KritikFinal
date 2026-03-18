@@ -192,14 +192,13 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       double totalMax = _selectedRubric?.items.fold(0.0, (sum, item) => sum! + item.maxPoints) ?? 100.0;
       double earned = _detailedScores.values.fold(0.0, (a, b) => a + b);
       double normalizedScoreDouble = totalMax > 0 ? (earned / totalMax) * 100 : earned;
-      int normalizedScore = normalizedScoreDouble.round();
 
       final evaluation = Evaluation(
         id: _existingEvaluation?.id, // Keep the old ID for updating
         projectId: widget.projectId,
         evaluatorId: widget.evaluatorId ?? "evaluator_unknown",
         rubricId: _selectedRubric?.id,
-        scores: {"General": normalizedScore}, 
+        scores: {"General": normalizedScoreDouble}, 
         detailedScores: _detailedScores,
         feedback: _commentController.text,
         evidencePhotoBase64: base64Photo ?? _existingEvaluation?.evidencePhotoBase64, // keep old if not taking a new one

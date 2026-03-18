@@ -32,7 +32,7 @@ public class Evaluation
 public class RubricScores
 {
     // Dictionary of Criterion Name/Id -> Score mapping
-    public Dictionary<string, int> Values { get; set; } = new();
+    public Dictionary<string, double> Values { get; set; } = new();
 
     public double Average => Values.Any() ? Values.Values.Average() : 0;
 }

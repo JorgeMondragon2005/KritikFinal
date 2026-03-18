@@ -3,7 +3,7 @@ class Evaluation {
   final String? projectId;
   final String? evaluatorId;
   final String? rubricId;
-  final Map<String, int>? scores;
+  final Map<String, double>? scores;
   final Map<String, int>? detailedScores;
   final String? feedback;
   final String? evidencePhotoBase64;
@@ -30,13 +30,13 @@ class Evaluation {
 
   factory Evaluation.fromJson(Map<String, dynamic> json) {
     // Backend can return scores as an object with a 'values' field (RubricScores)
-    Map<String, int>? parsedScores;
+    Map<String, double>? parsedScores;
     if (json['scores'] != null && json['scores'] is Map) {
       if (json['scores']['values'] != null && json['scores']['values'] is Map) {
-        parsedScores = (json['scores']['values'] as Map).cast<String, int>();
+        parsedScores = (json['scores']['values'] as Map).cast<String, dynamic>().map((key, value) => MapEntry(key, (value as num).toDouble()));
       } else {
         try {
-          parsedScores = (json['scores'] as Map).cast<String, int>();
+          parsedScores = (json['scores'] as Map).cast<String, dynamic>().map((key, value) => MapEntry(key, (value as num).toDouble()));
         } catch (_) {
           // If cast fails, maybe it's not the flat map we expected
         }
