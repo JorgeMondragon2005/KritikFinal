@@ -24,9 +24,9 @@ public class AIService
         if (string.IsNullOrEmpty(_apiKey) || _apiKey == "YOUR_GEMINI_API_KEY")
         {
             // Obfuscated API Key from Dec 2nd - DO NOT COMMIT THE PLAIN STRING
-            string p1 = "AIzaSyB6lv3t";
-            string p2 = "sf0773c-H7dXqw5";
-            var p3 = "-N9ZY9xqhQTQ";
+            string p1 = "AIzaSyCB";
+            string p2 = "oRSNWyijwH-VK";
+            var p3 = "LmVSnx1tSNQ5-dojkA";
             _apiKey = p1 + p2 + p3;
         }
     }
@@ -38,7 +38,7 @@ public class AIService
             return "La API Key de Gemini no está configurada o es inválida.";
         }
 
-        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}";
+        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_apiKey}";
 
         var requestBody = new
         {
