@@ -36,11 +36,11 @@ public class ProjectsController : ControllerBase
                 // Un evaluador da X puntos en total sumando todos sus DetailedScores.
                 // El puntaje del proyecto es el Promedio de los (Puntajes Totales de cada evaluador).
                 var avgScore = projectEvals.Average(e => 
-                    (e.Scores != null && e.Scores.ContainsKey("General"))
-                        ? e.Scores["General"]
+                    (e.Scores != null && e.Scores.Values.ContainsKey("General"))
+                        ? e.Scores.Values["General"]
                         : ((e.DetailedScores != null && e.DetailedScores.Any()) 
                             ? e.DetailedScores.Values.Sum() 
-                            : (e.Scores?.Values.Sum() ?? 0))
+                            : (e.Scores?.Values.Values.Sum() ?? 0))
                 );
                 var integrity = 98.2; // Placeholder for now
 
