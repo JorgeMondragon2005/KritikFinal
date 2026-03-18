@@ -70,7 +70,7 @@ Devuelve tu respuesta ÚNICAMENTE como un JSON válido en el siguiente formato (
             try 
             {
                 using var doc = JsonDocument.Parse(resultText);
-                return Ok(doc.RootElement);
+                return Content(resultText, "application/json");
             }
             catch (JsonException)
             {
@@ -110,7 +110,7 @@ Ejemplo de salida: [""id_1"", ""id_2"", ""id_3""]
             try 
             {
                 using var doc = JsonDocument.Parse(resultText);
-                return Ok(doc.RootElement);
+                return Content(resultText, "application/json");
             }
             catch (JsonException)
             {
