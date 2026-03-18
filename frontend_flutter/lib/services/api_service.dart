@@ -185,6 +185,19 @@ class ApiService {
     }
   }
 
+  Future<Project?> getProjectById(String id) async {
+    try {
+      final response = await _dio.get('projects/$id');
+      if (response.statusCode == 200) {
+        return Project.fromJson(response.data);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error getting project $id: $e');
+      return null;
+    }
+  }
+
   Future<List<Evaluation>> getProjectEvaluations(String projectId) async {
     try {
       final response = await _dio.get('evaluations/project/$projectId');

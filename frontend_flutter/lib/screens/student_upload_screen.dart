@@ -422,6 +422,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                   ? 'El equipo ${_teamNameController.text} actualizó su proyecto "${_titleController.text}" en la tarea "${selectedAssignment.title}".'
                   : 'El equipo ${_teamNameController.text} subió su proyecto "${_titleController.text}" para la tarea "${selectedAssignment.title}".',
                 createdAt: DateTime.now(),
+                actionUrl: wasEditing ? '/project/${_existingProject!.id}' : null,
               ));
             }
           } catch (_) {}

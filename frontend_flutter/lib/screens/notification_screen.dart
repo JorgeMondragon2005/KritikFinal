@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/notification_model.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../screens/student_upload_screen.dart';
+import '../screens/project_detail_screen.dart';
 
 class NotificationScreen extends StatefulWidget {
   final String userId;
@@ -57,6 +59,22 @@ class _NotificationScreenState extends State<NotificationScreen> {
     });
 
     await _apiService.markNotificationAsRead(notification.id!);
+
+    if (notification.actionUrl != null && mounted) {
+      if (notification.actionUrl!.startsWith('/project/')) {
+        final projectId = notification.actionUrl!.split('/').last;
+        final project = await _apiService.getProjectById(projectId);
+        if (project != null && mounted) {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => ProjectDetailScreen(project: project, currentUserId: widget.userId, userRole: "evaluator")));
+        }
+      } else if (notification.actionUrl!.startsWith('/assignment/')) {
+        final assignmentId = notification.actionUrl!.split('/').last;
+        Navigator.push(context, MaterialPageRoute(builder: (_) => StudentUploadScreen(studentId: widget.userId, initialAssignmentId: assignmentId)));
+      } else if (notification.actionUrl!.startsWith('/student_upload/')) {
+        final assignmentId = notification.actionUrl!.split('/').last;
+        Navigator.push(context, MaterialPageRoute(builder: (_) => StudentUploadScreen(studentId: widget.userId, initialAssignmentId: assignmentId)));
+      }
+    }
   }
 
   Future<void> _markAllAsRead() async {

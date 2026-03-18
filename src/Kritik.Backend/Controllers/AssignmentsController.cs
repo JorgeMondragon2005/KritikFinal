@@ -153,7 +153,8 @@ public class AssignmentsController : ControllerBase
                     UserId = studentId,
                     Title = "Nueva Tarea/Convocatoria",
                     Message = $"El profesor {teacherName} ha publicado '{newAssignment.Title}'.",
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    ActionUrl = $"/assignment/{newAssignment.Id}"
                 });
             }
         }

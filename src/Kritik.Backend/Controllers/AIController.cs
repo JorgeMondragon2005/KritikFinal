@@ -54,16 +54,11 @@ Actúa como un evaluador/sinodal estricto pero justo. Tienes el siguiente proyec
 La rúbrica para evaluarlos es:
 {JsonSerializer.Serialize(request.Rubric.Items)}
 
-Por cada criterio en la rúbrica, analízalo con respecto al proyecto y asígnale un puntaje entero (hasta el límite permitido en 'maxPoints' por cada criterio). Luego, genérale un comentario global constructivo.
+Por cada criterio en la rúbrica, analízalo con respecto al proyecto y genérale un comentario global constructivo de retroalimentación. NO le asignes puntuaciones numéricas a los alumnos.
 Devuelve tu respuesta ÚNICAMENTE como un JSON válido en el siguiente formato (no incluyas formato Markdown ```json, solo las llaves):
 {{
-  ""scores"": {{
-    ""Nombre exacto del Criterio 1"": puntaje_entero,
-    ""Nombre exacto del Criterio 2"": puntaje_entero
-  }},
-  ""feedback"": ""Tu retroalimentación general detallada aquí""
+  ""feedback"": ""Tu retroalimentación general detallada aquí evaluando los puntos de la rúbrica""
 }}
-Asegúrate de que las llaves del objeto 'scores' coincidan exactamente con la propiedad 'criteria' de la rúbrica.
 ";
             var resultText = await _aiService.GenerateContentAsync(prompt);
             

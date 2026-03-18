@@ -146,19 +146,18 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
 
       if (mounted) {
         if (success) {
-          // Notify students if it's a new assignment
-          if (_selectedClassId != null) {
+          // Notify students ONLY if it's an update (Backend handles New Assignments)
+          if (widget.assignment != null && _selectedClassId != null) {
             try {
               final members = await _apiService.getClassMembers(_selectedClassId!);
               for (var m in members) {
                 if (m.status.toLowerCase() == 'approved') {
                   await _apiService.createNotification(AppNotification(
                     userId: m.studentId,
-                    title: widget.assignment == null ? '🌟 Nueva Tarea' : '📝 Tarea Actualizada',
-                    message: widget.assignment == null 
-                        ? 'Se ha asignado una nueva tarea: ${_titleController.text}'
-                        : 'El profesor ha modificado la tarea: ${_titleController.text}',
+                    title: '📝 Tarea Actualizada',
+                    message: 'El profesor ha modificado la tarea: ${_titleController.text}',
                     createdAt: DateTime.now(),
+                    actionUrl: '/assignment/${widget.assignment!.id}',
                   ));
                 }
               }

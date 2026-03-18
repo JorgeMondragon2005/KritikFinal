@@ -214,6 +214,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
               title: 'Proyecto Evaluado',
               message: 'El jurado ha evaluado tu proyecto "${_project!.title}". Revisa tu retroalimentación.',
               createdAt: DateTime.now(),
+              actionUrl: '/student_upload/${_project!.assignmentId}',
             ));
           } catch (_) {}
         }
@@ -263,21 +264,12 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
         
-        if (resultMap != null && resultMap['scores'] != null) {
+        if (resultMap != null && resultMap['feedback'] != null) {
           setState(() {
-            final Map<String, dynamic> aiScores = resultMap['scores'];
-            // Match AI keys with our local detailed scores
-            for (var key in _detailedScores.keys.toList()) {
-              if (aiScores.containsKey(key)) {
-                _detailedScores[key] = (aiScores[key] as num).toInt();
-              }
-            }
-            if (resultMap['feedback'] != null) {
-               _commentController.text = resultMap['feedback'].toString();
-            }
+            _commentController.text = resultMap['feedback'].toString();
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('¡Evaluación autocompletada con IA! Revisa y ajusta los valores.')),
+            const SnackBar(content: Text('¡Retroalimentación generada con IA! Revisa y califica manualmente.')),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
