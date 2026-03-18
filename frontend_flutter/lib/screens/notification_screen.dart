@@ -65,7 +65,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         final projectId = notification.actionUrl!.split('/').last;
         final project = await _apiService.getProjectById(projectId);
         if (project != null && mounted) {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => ProjectDetailScreen(project: project, currentUserId: widget.userId, userRole: "evaluator")));
+          Navigator.push(context, MaterialPageRoute(builder: (_) => ProjectDetailScreen(project: project, userId: widget.userId, userRole: "evaluator")));
         }
       } else if (notification.actionUrl!.startsWith('/assignment/')) {
         final assignmentId = notification.actionUrl!.split('/').last;
