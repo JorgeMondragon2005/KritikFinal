@@ -104,7 +104,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
                         ),
                         title: Text(p.teamName ?? p.title ?? 'Sin nombre'),
                         subtitle: Text(isEvaluated 
-                          ? 'Calificado: ${eval.scores?.values.fold(0, (a, b) => a + b) ?? 0} pts'
+                          ? 'Calificado: ${eval.scores?.values.fold(0.0, (a, b) => a + b) ?? 0} pts'
                           : 'Pendiente de calificar'),
                         trailing: ElevatedButton(
                           onPressed: () async {

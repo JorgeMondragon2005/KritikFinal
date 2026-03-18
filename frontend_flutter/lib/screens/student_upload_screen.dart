@@ -574,7 +574,7 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      '${_existingEvaluation!.scores!.values.fold(0, (a, b) => a + b)} pts',
+                      '${_existingEvaluation!.scores!.values.fold(0.0, (a, b) => a + b)} pts',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.greenAccent : Colors.green),
                     ),
                   ),
