@@ -72,6 +72,14 @@ class _RubricManagementScreenState extends State<RubricManagementScreen> {
       builder: (context) => StatefulBuilder(
         builder: (sContext, setModalState) {
           final isDark = Theme.of(context).brightness == Brightness.dark;
+          
+          // Calculate total points
+          int totalPoints = 0;
+          for (var item in items) {
+             totalPoints += (item['maxPoints'] as int? ?? 0);
+          }
+          final bool isPerfectSum = totalPoints == 100;
+
           return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
@@ -156,7 +164,7 @@ class _RubricManagementScreenState extends State<RubricManagementScreen> {
                                       child: TextField(
                                         decoration: const InputDecoration(hintText: 'Pts', isDense: true),
                                         keyboardType: TextInputType.number,
-                                        onChanged: (v) => items[index]['maxPoints'] = int.tryParse(v) ?? 0,
+                                        onChanged: (v) => setModalState(() => items[index]['maxPoints'] = int.tryParse(v) ?? 0),
                                         controller: TextEditingController(text: items[index]['maxPoints'].toString()),
                                       ),
                                     ),
@@ -183,8 +191,40 @@ class _RubricManagementScreenState extends State<RubricManagementScreen> {
                       label: const Text('Añadir Criterio'),
                     ),
                     const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: isPerfectSum ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: isPerfectSum ? Colors.green : Colors.red),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Total de puntos / Porcentaje:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text(
+                            '$totalPoints / 100',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: isPerfectSum ? Colors.green : Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (!isPerfectSum)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8),
+                        child: Text(
+                          'El total de puntos debe ser exactamente 100 para guardar la rúbrica.',
+                          style: TextStyle(color: Colors.red, fontSize: 13),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () async {
+                      onPressed: isPerfectSum ? () async {
                         if (_nameController.text.isEmpty) {
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ponle un nombre a la rúbrica')));
                           return;
@@ -218,12 +258,12 @@ class _RubricManagementScreenState extends State<RubricManagementScreen> {
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al guardar la rúbrica: revisa la conexión.')));
                         }
-                      },
+                      } : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryYellow,
+                        backgroundColor: isPerfectSum ? AppColors.primaryYellow : Colors.grey,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: const Text('Guardar Rúbrica Final'),
+                      child: const Text('Guardar Rúbrica Final', style: TextStyle(color: Colors.white)),
                     ),
                   ],
                 ),
