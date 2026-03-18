@@ -191,8 +191,8 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       
       double totalMax = _selectedRubric?.items.fold(0.0, (sum, item) => sum! + item.maxPoints) ?? 100.0;
       double earned = _detailedScores.values.fold(0.0, (a, b) => a + b);
-      double normalizedScore = totalMax > 0 ? (earned / totalMax) * 100 : earned;
-      normalizedScore = double.parse(normalizedScore.toStringAsFixed(1));
+      double normalizedScoreDouble = totalMax > 0 ? (earned / totalMax) * 100 : earned;
+      int normalizedScore = normalizedScoreDouble.round();
 
       final evaluation = Evaluation(
         id: _existingEvaluation?.id, // Keep the old ID for updating
