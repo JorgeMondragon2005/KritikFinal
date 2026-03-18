@@ -493,9 +493,9 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
           builder: (context) => AlertDialog(
             title: Row(
               children: [
-                const Icon(Icons.auto_awesome, color: Colors.purple),
+                const Icon(Icons.auto_awesome, color: AppColors.primaryYellow),
                 const SizedBox(width: 8),
-                const Text('Sugerencia del Kiosko IA'),
+                const Expanded(child: Text('Sugerencia del Kiosko IA')),
               ],
             ),
             content: SingleChildScrollView(
@@ -1195,10 +1195,10 @@ class _StudentUploadScreenState extends State<StudentUploadScreen> {
                       if ((_existingProject == null || _isEditingProject) && !isExpired) ...[
                         OutlinedButton.icon(
                           onPressed: _isSubmitting ? null : _reviewWithAI,
-                          icon: const Icon(Icons.auto_awesome, color: Colors.purple),
-                          label: const Text('Revisar con IA (Kiosko Mentor)', style: TextStyle(color: Colors.purple)),
+                          icon: const Icon(Icons.auto_awesome, color: AppColors.primaryYellow),
+                          label: const Text('Revisar con IA (Kiosko Mentor)', style: TextStyle(color: AppColors.primaryYellow)),
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Colors.purple),
+                            side: const BorderSide(color: AppColors.primaryYellow),
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
                         ),
