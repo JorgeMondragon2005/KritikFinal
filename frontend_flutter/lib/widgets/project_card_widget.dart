@@ -182,7 +182,7 @@ class ProjectCard extends StatelessWidget {
     final hasVideo = project.promoVideoUrl != null && project.promoVideoUrl!.isNotEmpty;
     // Direct playback only if teacher/evaluator for "premium" review feel, or let anyone play?
     // User said: "vista desde el usuario del profe"
-    final canPlayDirectly = (userRole?.toLowerCase() == 'teacher' || userRole?.toLowerCase() == 'evaluator') && hasVideo;
+    final canPlayDirectly = ((userRole?.toLowerCase() == 'teacher' || userRole?.toLowerCase() == 'profesor') || userRole?.toLowerCase() == 'evaluator') && hasVideo;
 
     return Hero(
       tag: 'project_cover_${project.id}',

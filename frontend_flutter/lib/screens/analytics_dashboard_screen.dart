@@ -57,9 +57,9 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       }
 
       // 2. Filter data depending on Role
-      if (widget.role.toLowerCase() == 'teacher') {
+      if (widget.(role.toLowerCase() == 'teacher' || role.toLowerCase() == 'profesor')) {
         _projects = projects.where((p) => p.assignedTeacherId == widget.userId).toList();
-      } else if (widget.role.toLowerCase() == 'evaluator') {
+      } else if (widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor')) {
         // Evaluators ideally see all, or only ones assigned to them. Assuming they see all published ones for the event.
         _projects = projects.where((p) => p.status?.toLowerCase() != 'pending').toList();
       }

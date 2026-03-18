@@ -33,7 +33,7 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
     setState(() => _isLoading = true);
     debugPrint('Loading classrooms for user: ${widget.userId} with role: ${widget.role}');
     try {
-      final classrooms = (widget.role.toLowerCase() == 'evaluator')
+      final classrooms = (widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor'))
           ? await _apiService.getClassrooms(teacherId: widget.userId)
           : await _apiService.getClassrooms(studentId: widget.userId);
       
@@ -384,7 +384,7 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                       Text('Descripción:', style: Theme.of(context).textTheme.titleSmall),
                       Text(classroom.description, style: const TextStyle(color: Colors.grey)),
                       const SizedBox(height: 16),
-                      if (widget.role.toLowerCase() == 'evaluator') ...[
+                      if (widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor')) ...[
                         Text('Código de Clase (para alumnos):', style: Theme.of(context).textTheme.titleSmall),
                         SelectableText(
                           classroom.accessCode, 
@@ -411,7 +411,7 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                       ],
                       const Divider(height: 32),
                       
-                      if (widget.role.toLowerCase() == 'evaluator') ...[
+                      if (widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor')) ...[
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -591,7 +591,7 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                   leading: const CircleAvatar(child: Icon(Icons.class_)),
                   title: Text(c.name),
                   subtitle: Text(c.description),
-                  trailing: widget.role.toLowerCase() == 'evaluator' 
+                  trailing: widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor') 
                     ? Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -606,7 +606,7 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
               },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: widget.role.toLowerCase() == 'evaluator' ? _showCreateClassDialog : _showJoinClassDialog,
+        onPressed: widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor') ? _showCreateClassDialog : _showJoinClassDialog,
         child: const Icon(Icons.add),
       ),
     );

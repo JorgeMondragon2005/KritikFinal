@@ -136,14 +136,14 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           });
         }
       } else {
-        final teacherId = role == 'evaluator' ? userId : null;
+        final teacherId = (role == 'evaluator' || role == 'profesor') ? userId : null;
         final results = await Future.wait<dynamic>([
           _apiService.getProjects(teacherId: teacherId),
           _apiService.getAssignments(
-             teacherId: (role == 'teacher' || role == 'evaluator') ? userId : null,
-             evaluatorId: role == 'evaluator' ? userId : null,
+             teacherId: ((role == 'teacher' || role == 'profesor') || (role == 'evaluator' || role == 'profesor')) ? userId : null,
+             evaluatorId: (role == 'evaluator' || role == 'profesor') ? userId : null,
           ), // El backend filtra y devuelve la lista exacta.
-          if (role == 'evaluator') _apiService.getEvaluationsByEvaluator(userId!) else Future.value(<Evaluation>[]),
+          if ((role == 'evaluator' || role == 'profesor')) _apiService.getEvaluationsByEvaluator(userId!) else Future.value(<Evaluation>[]),
           _apiService.getClassrooms(), // Fetch all classrooms for grouping names
         ]);
 
@@ -154,7 +154,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         final evals = List<Evaluation>.from(results[2]);
         final classrooms = List<Classroom>.from(results[3]);
         
-        if (role == 'evaluator') {
+        if ((role == 'evaluator' || role == 'profesor')) {
           _evaluatedProjectIds = evals.map((e) => e.projectId ?? '').toSet();
         }
         
@@ -187,7 +187,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   List<Project> get _filteredProjects {
-    final isEvalRole = widget.role.toLowerCase() == 'evaluator';
+    final isEvalRole = widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor');
     
     return _allProjects.where((p) {
       final title = p.title ?? p.teamName ?? '';
@@ -259,7 +259,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                   ),
               ],
             ),
-            if (widget.role.toLowerCase() == 'teacher' || widget.role.toLowerCase() == 'evaluator')
+            if (widget.(role.toLowerCase() == 'teacher' || role.toLowerCase() == 'profesor') || widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor'))
               IconButton(
                 icon: const Icon(Icons.analytics_outlined),
                 tooltip: 'Estadísticas',
@@ -268,12 +268,12 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           ],
         ),
         drawer: _buildDrawer(context),
-        floatingActionButton: (widget.role.toLowerCase() == 'admin' || widget.role.toLowerCase() == 'student' || widget.role.toLowerCase() == 'evaluator')
+        floatingActionButton: (widget.role.toLowerCase() == 'admin' || widget.role.toLowerCase() == 'student' || widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor'))
           ? FloatingActionButton.extended(
               onPressed: () {
                 if (widget.role.toLowerCase() == 'admin') {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
-                } else if (widget.role.toLowerCase() == 'evaluator') {
+                } else if (widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor')) {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => ClassroomManagementScreen(userId: widget.userId ?? '', role: widget.role))).then((_) => _fetchProjects());
                 } else {
                   // Student: Join Class
@@ -679,7 +679,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Alumnos que han entregado:', style: TextStyle(fontWeight: FontWeight.bold)),
-                if (widget.role.toLowerCase() == 'teacher')
+                if (widget.(role.toLowerCase() == 'teacher' || role.toLowerCase() == 'profesor'))
                   TextButton.icon(
                     onPressed: () => _exportToCsv(a),
                     icon: const Icon(Icons.download, size: 18),
@@ -820,13 +820,13 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
 
   IconData _getFabIcon() {
     if (widget.role.toLowerCase() == 'admin') return Icons.dashboard_customize;
-    if (widget.role.toLowerCase() == 'evaluator') return Icons.class_outlined;
+    if (widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor')) return Icons.class_outlined;
     return Icons.group_add_outlined;
   }
 
   String _getFabLabel() {
     if (widget.role.toLowerCase() == 'admin') return 'Admin Panel';
-    if (widget.role.toLowerCase() == 'evaluator') return 'Mis Clases';
+    if (widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor')) return 'Mis Clases';
     return 'Unirme a Clase';
   }
 
@@ -926,7 +926,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       itemCount: projects.length,
       itemBuilder: (context, index) {
         final p = projects[index];
-        final isEvaluated = widget.role.toLowerCase() == 'evaluator' 
+        final isEvaluated = widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor') 
             ? _evaluatedProjectIds.contains(p.id) 
             : p.status?.toLowerCase() == 'evaluado';
 
@@ -1002,7 +1002,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   Widget _buildProjectItem(BuildContext context, Project p) {
     final title = p.title ?? p.teamName ?? 'Sin Título';
     final category = p.category ?? 'General';
-    final isEvaluated = widget.role.toLowerCase() == 'evaluator' 
+    final isEvaluated = (widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor') 
         ? _evaluatedProjectIds.contains(p.id) 
         : p.status?.toLowerCase() == 'evaluado';
 
@@ -1127,7 +1127,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               }
             },
           ),
-          if (widget.role.toLowerCase() == 'evaluator')
+          if (widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor'))
             ListTile(
               leading: const Icon(Icons.list_alt),
               title: const Text('Mis Rúbricas'),
@@ -1138,7 +1138,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             title: const Text('Mis Clases'),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ClassroomManagementScreen(userId: widget.userId ?? '', role: widget.role))),
           ),
-          if (widget.role.toLowerCase() == 'teacher' || widget.role.toLowerCase() == 'evaluator') ...[
+          if (widget.(role.toLowerCase() == 'teacher' || role.toLowerCase() == 'profesor') || widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor')) ...[
             const Divider(),
             ListTile(
               leading: const Icon(Icons.picture_as_pdf, color: Colors.blue),

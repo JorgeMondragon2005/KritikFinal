@@ -57,7 +57,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     final bool isEvaluated = _existingEvaluation != null;
-    final bool canEvaluate = (widget.userRole?.toLowerCase() == 'evaluator' || widget.userRole?.toLowerCase() == 'teacher');
+    final bool canEvaluate = (widget.userRole?.toLowerCase() == 'evaluator' || widget.userRole?.toLowerCase() == 'teacher' || widget.userRole?.toLowerCase() == 'profesor');
 
     Widget? fab;
     if (canEvaluate && !_isLoadingEval) {
