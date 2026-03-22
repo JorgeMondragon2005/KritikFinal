@@ -187,7 +187,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
   }
 
   List<Project> get _filteredProjects {
-    final isEvalRole = widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor');
+    final isEvalRole = (widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor');
     
     return _allProjects.where((p) {
       final title = p.title ?? p.teamName ?? '';
@@ -259,7 +259,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                   ),
               ],
             ),
-            if (widget.(role.toLowerCase() == 'teacher' || role.toLowerCase() == 'profesor') || widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor'))
+            if ((widget.role.toLowerCase() == 'teacher' || widget.role.toLowerCase() == 'profesor') || (widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor'))
               IconButton(
                 icon: const Icon(Icons.analytics_outlined),
                 tooltip: 'Estadísticas',
@@ -268,12 +268,12 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           ],
         ),
         drawer: _buildDrawer(context),
-        floatingActionButton: (widget.role.toLowerCase() == 'admin' || widget.role.toLowerCase() == 'student' || widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor'))
+        floatingActionButton: (widget.role.toLowerCase() == 'admin' || widget.role.toLowerCase() == 'student' || (widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor'))
           ? FloatingActionButton.extended(
               onPressed: () {
                 if (widget.role.toLowerCase() == 'admin') {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
-                } else if (widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor')) {
+                } else if ((widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor')) {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => ClassroomManagementScreen(userId: widget.userId ?? '', role: widget.role))).then((_) => _fetchProjects());
                 } else {
                   // Student: Join Class
@@ -679,7 +679,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Alumnos que han entregado:', style: TextStyle(fontWeight: FontWeight.bold)),
-                if (widget.(role.toLowerCase() == 'teacher' || role.toLowerCase() == 'profesor'))
+                if ((widget.role.toLowerCase() == 'teacher' || widget.role.toLowerCase() == 'profesor'))
                   TextButton.icon(
                     onPressed: () => _exportToCsv(a),
                     icon: const Icon(Icons.download, size: 18),
@@ -820,13 +820,13 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
 
   IconData _getFabIcon() {
     if (widget.role.toLowerCase() == 'admin') return Icons.dashboard_customize;
-    if (widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor')) return Icons.class_outlined;
+    if ((widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor')) return Icons.class_outlined;
     return Icons.group_add_outlined;
   }
 
   String _getFabLabel() {
     if (widget.role.toLowerCase() == 'admin') return 'Admin Panel';
-    if (widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor')) return 'Mis Clases';
+    if ((widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor')) return 'Mis Clases';
     return 'Unirme a Clase';
   }
 
@@ -926,7 +926,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
       itemCount: projects.length,
       itemBuilder: (context, index) {
         final p = projects[index];
-        final isEvaluated = widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor') 
+        final isEvaluated = (widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor') 
             ? _evaluatedProjectIds.contains(p.id) 
             : p.status?.toLowerCase() == 'evaluado';
 
@@ -1127,7 +1127,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               }
             },
           ),
-          if (widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor'))
+          if ((widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor'))
             ListTile(
               leading: const Icon(Icons.list_alt),
               title: const Text('Mis Rúbricas'),
@@ -1138,7 +1138,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
             title: const Text('Mis Clases'),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ClassroomManagementScreen(userId: widget.userId ?? '', role: widget.role))),
           ),
-          if (widget.(role.toLowerCase() == 'teacher' || role.toLowerCase() == 'profesor') || widget.(role.toLowerCase() == 'evaluator' || role.toLowerCase() == 'profesor')) ...[
+          if ((widget.role.toLowerCase() == 'teacher' || widget.role.toLowerCase() == 'profesor') || (widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor')) ...[
             const Divider(),
             ListTile(
               leading: const Icon(Icons.picture_as_pdf, color: Colors.blue),

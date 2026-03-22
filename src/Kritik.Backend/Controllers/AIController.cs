@@ -122,6 +122,28 @@ Ejemplo de salida: [""id_1"", ""id_2"", ""id_3""]
             return StatusCode(500, new { Error = "Error en Matchmaking con IA", Details = ex.Message });
         }
     }
+
+    [HttpPost("grammar/fix")]
+    public async Task<IActionResult> FixGrammar([FromBody] GrammarRequest request)
+    {
+        try
+        {
+            var prompt = $@"
+Actúa como un corrector ortográfico y de estilo impecable.
+Corrige el siguiente texto eliminando faltas de ortografía, mejorando la sintaxis y haciéndolo sonar más profesional, PERO conservando su significado, intención y longitud original.
+No añadas saludos ni explicaciones, SOLO devuelve el texto corregido.
+
+Texto original:
+""{request.Text}""
+";
+            var resultText = await _aiService.GenerateContentAsync(prompt);
+            return Ok(new { correctedText = resultText.Trim() });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Error = "Error corrigiendo texto con IA", Details = ex.Message });
+        }
+    }
 }
 
 public class EvaluationSuggestionRequest
@@ -135,5 +157,10 @@ public class MatchmakingRequest
     public string UserId { get; set; } = string.Empty;
     public string UserRole { get; set; } = string.Empty;
     public List<Project> Projects { get; set; } = new();
+}
+
+public class GrammarRequest
+{
+    public string Text { get; set; } = string.Empty;
 }
 

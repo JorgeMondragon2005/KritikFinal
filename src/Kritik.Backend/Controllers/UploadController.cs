@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
+using MongoDB.Driver.GridFS;
 
 namespace Kritik.Backend.Controllers;
 
@@ -6,11 +8,11 @@ namespace Kritik.Backend.Controllers;
 [Route("api/[controller]")]
 public class UploadController : ControllerBase
 {
-    private readonly IWebHostEnvironment _environment;
+    private readonly IGridFSBucket _gridFS;
 
-    public UploadController(IWebHostEnvironment environment)
+    public UploadController(IGridFSBucket gridFS)
     {
-        _environment = environment;
+        _gridFS = gridFS;
     }
 
     [HttpPost]
@@ -19,12 +21,6 @@ public class UploadController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest("No file uploaded.");
 
-        // Create uploads folder if it doesn't exist
-        var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
-        if (!Directory.Exists(uploadsPath))
-            Directory.CreateDirectory(uploadsPath);
-
-        // Generate unique filename and ensure extension exists
         var ext = Path.GetExtension(file.FileName);
         if (string.IsNullOrEmpty(ext))
         {
@@ -37,15 +33,29 @@ public class UploadController : ControllerBase
             else if (contentType.Contains("pdf")) ext = ".pdf";
         }
         var fileName = $"{Guid.NewGuid()}{ext}";
-        var filePath = Path.Combine(uploadsPath, fileName);
 
-        using (var stream = new FileStream(filePath, FileMode.Create))
+        var options = new GridFSUploadOptions { Metadata = new BsonDocument("contentType", file.ContentType) };
+        var fileId = ObjectId.GenerateNewId();
+
+        using (var stream = file.OpenReadStream())
         {
-            await file.CopyToAsync(stream);
+            await _gridFS.UploadFromStreamAsync(fileId, fileName, stream, options);
         }
 
-        // Return relative URL
-        var url = $"/uploads/{fileName}";
+        var url = $"/api/upload/{fileId}";
         return Ok(new { url });
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetFile(string id)
+    {
+        if (!ObjectId.TryParse(id, out var objectId)) return BadRequest();
+        try 
+        {
+            var stream = await _gridFS.OpenDownloadStreamAsync(objectId);
+            var contentType = stream.FileInfo.Metadata?.GetValue("contentType", "application/octet-stream").AsString ?? "application/octet-stream";
+            return File(stream, contentType, enableRangeProcessing: true);
+        }
+        catch(GridFSFileNotFoundException) { return NotFound(); }
     }
 }

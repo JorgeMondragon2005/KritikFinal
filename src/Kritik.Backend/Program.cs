@@ -1,5 +1,6 @@
 using Kritik.Backend.Settings;
 using MongoDB.Driver;
+using MongoDB.Driver.GridFS;
 using Microsoft.Extensions.Options;
 using Kritik.Backend.Services;
 using Microsoft.Extensions.FileProviders;
@@ -20,6 +21,12 @@ builder.Services.AddSingleton<IMongoDatabase>(sp =>
     var settings = sp.GetRequiredService<IOptions<MongoDBSettings>>().Value;
     var client = new MongoClient(settings.ConnectionString);
     return client.GetDatabase(settings.DatabaseName);
+});
+
+builder.Services.AddSingleton<IGridFSBucket>(sp =>
+{
+    var db = sp.GetRequiredService<IMongoDatabase>();
+    return new GridFSBucket(db);
 });
 
 builder.Services.AddSingleton<ProjectService>();
