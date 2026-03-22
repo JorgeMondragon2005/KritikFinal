@@ -35,11 +35,10 @@ public class UploadController : ControllerBase
         var fileName = $"{Guid.NewGuid()}{ext}";
 
         var options = new GridFSUploadOptions { Metadata = new BsonDocument("contentType", file.ContentType) };
-        var fileId = ObjectId.GenerateNewId();
-
+        ObjectId fileId;
         using (var stream = file.OpenReadStream())
         {
-            await _gridFS.UploadFromStreamAsync(fileId, fileName, stream, options);
+            fileId = await _gridFS.UploadFromStreamAsync(fileName, stream, options);
         }
 
         var url = $"/api/upload/{fileId}";
@@ -69,8 +68,16 @@ public class UploadController : ControllerBase
                     _ => "application/octet-stream"
                 };
             }
+            // Buffer completely to intercept MongoDB NotSupportedException on Seek() which ExoPlayer triggers.
+            // Using a temporary physical file ensures 0 RAM consumption regardless of video size.
+            var tempPath = Path.GetTempFileName();
+            using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                await stream.CopyToAsync(fs);
+            }
             
-            return File(stream, contentType ?? "application/octet-stream", enableRangeProcessing: true);
+            var readStream = new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.DeleteOnClose);
+            return File(readStream, contentType ?? "application/octet-stream", enableRangeProcessing: true);
         }
         catch(GridFSFileNotFoundException) { return NotFound(); }
     }
