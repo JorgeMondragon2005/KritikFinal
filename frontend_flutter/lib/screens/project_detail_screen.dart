@@ -30,6 +30,39 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   final ApiService _apiService = ApiService();
   Evaluation? _existingEvaluation;
   bool _isLoadingEval = true;
+  final TextEditingController _commentController = TextEditingController();
+
+  void _toggleUpvote() {
+    if (widget.userId == null) return;
+    setState(() {
+      if (widget.project.upvotedBy.contains(widget.userId)) {
+        widget.project.upvotedBy.remove(widget.userId);
+      } else {
+        widget.project.upvotedBy.add(widget.userId!);
+      }
+    });
+    _apiService.toggleUpvote(widget.project.id!, widget.userId!);
+  }
+
+  Future<void> _submitComment() async {
+    final text = _commentController.text.trim();
+    if (text.isEmpty || widget.userId == null) return;
+    
+    final newComment = ProjectComment(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      userId: widget.userId,
+      userName: 'Visitante',
+      text: text,
+      createdAt: DateTime.now(),
+    );
+
+    setState(() {
+      widget.project.comments.add(newComment);
+      _commentController.clear();
+    });
+
+    await _apiService.addProjectComment(widget.project.id!, newComment);
+  }
 
   @override
   void initState() {
@@ -113,6 +146,24 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
           SliverAppBar(
             expandedHeight: 250,
             pinned: true,
+            actions: [
+              IconButton(
+                icon: Icon(
+                  widget.project.upvotedBy.contains(widget.userId) ? Icons.favorite : Icons.favorite_border,
+                  color: widget.project.upvotedBy.contains(widget.userId) ? Colors.red : null,
+                ),
+                onPressed: widget.userId != null ? _toggleUpvote : null,
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: Center(
+                  child: Text(
+                    '${widget.project.upvotedBy.length}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              )
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: Hero(
                 tag: 'project_cover_${widget.project.id}',
@@ -385,7 +436,49 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                         ),
                       ),
                     ),
-                  ],
+                  // Comentarios
+                  const SizedBox(height: 32),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  const Text('Foro de Comentarios', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  const SizedBox(height: 12),
+                  ...widget.project.comments.map((c) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blueAccent.withOpacity(0.2),
+                      child: const Icon(Icons.person, color: Colors.blueAccent),
+                    ),
+                    title: Text(c.userName ?? 'Anónimo', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: Text(c.text ?? ''),
+                    trailing: Text(
+                      '${c.createdAt.day}/${c.createdAt.month}/${c.createdAt.year}', 
+                      style: const TextStyle(fontSize: 10, color: Colors.grey)
+                    ),
+                  )),
+                  if (widget.project.comments.isEmpty)
+                    const Text('Sé el primero en felicitar a este equipo.', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
+                  
+                  const SizedBox(height: 16),
+                  if (widget.userId != null)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _commentController,
+                            decoration: const InputDecoration(
+                              hintText: 'Añadir un comentario...',
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.send, color: AppColors.primaryYellow),
+                          onPressed: _submitComment,
+                        ),
+                      ],
+                    ),
 
                   const SizedBox(height: 100), // Bottom padding
                 ],

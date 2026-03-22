@@ -37,6 +37,40 @@ class Document {
   Map<String, dynamic> toJson() => {'title': title, 'url': url, 'type': type};
 }
 
+class ProjectComment {
+  final String id;
+  final String? userId;
+  final String? userName;
+  final String? text;
+  final DateTime createdAt;
+
+  ProjectComment({
+    required this.id,
+    this.userId,
+    this.userName,
+    this.text,
+    required this.createdAt,
+  });
+
+  factory ProjectComment.fromJson(Map<String, dynamic> json) => ProjectComment(
+    id: json['id']?.toString() ?? json['Id']?.toString() ?? '',
+    userId: json['userId']?.toString() ?? json['UserId']?.toString(),
+    userName: json['userName']?.toString() ?? json['UserName']?.toString(),
+    text: json['text']?.toString() ?? json['Text']?.toString(),
+    createdAt: json['createdAt'] != null || json['CreatedAt'] != null
+        ? DateTime.parse((json['createdAt'] ?? json['CreatedAt']).toString())
+        : DateTime.now(),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'userId': userId,
+    'userName': userName,
+    'text': text,
+    'createdAt': createdAt.toIso8601String(),
+  };
+}
+
 class Project {
   final String? id;
   final String? teamName;
@@ -53,7 +87,10 @@ class Project {
   final String? promoVideoUrl;
   final String? pitchVideoUrl;
   final List<Video> videos;
+  final List<Video> videos;
   final List<Document> documents;
+  final List<String> upvotedBy;
+  final List<ProjectComment> comments;
 
   Project({
     this.id,
@@ -72,6 +109,8 @@ class Project {
     this.pitchVideoUrl,
     this.videos = const [],
     this.documents = const [],
+    this.upvotedBy = const [],
+    this.comments = const [],
   });
 
   factory Project.fromJson(Map<String, dynamic> json) => Project(
@@ -117,6 +156,18 @@ class Project {
             ?.map((x) => Document.fromJson(x))
             .toList() ??
         [],
+    upvotedBy:
+        (json['upvotedBy'] as List?)?.cast<String>().toList() ??
+        (json['UpvotedBy'] as List?)?.cast<String>().toList() ??
+        [],
+    comments:
+        (json['comments'] as List?)
+            ?.map((x) => ProjectComment.fromJson(x))
+            .toList() ??
+        (json['Comments'] as List?)
+            ?.map((x) => ProjectComment.fromJson(x))
+            .toList() ??
+        [],
   );
 
   Map<String, dynamic> toJson() => {
@@ -136,5 +187,7 @@ class Project {
     'pitchVideoUrl': pitchVideoUrl,
     'videos': videos.map((v) => v.toJson()).toList(),
     'documents': documents.map((d) => d.toJson()).toList(),
+    'upvotedBy': upvotedBy,
+    'comments': comments.map((c) => c.toJson()).toList(),
   };
 }

@@ -37,10 +37,91 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
   int _totalPending = 0;
   List<Project> _topProjects = [];
 
+  bool _isGeneratingInsights = false;
+
   @override
   void initState() {
     super.initState();
     _fetchData();
+  }
+
+  Future<void> _generateInsights() async {
+    if (_projects.isEmpty) return;
+    setState(() => _isGeneratingInsights = true);
+
+    try {
+      final summaryBuilder = StringBuffer();
+      summaryBuilder.writeln("Resultados de la clase:");
+      summaryBuilder.writeln(
+        "Total de proyectos asignados: ${_projects.length}",
+      );
+      summaryBuilder.writeln(
+        "Proyectos evaluados hasta ahora: $_totalEvaluated",
+      );
+      summaryBuilder.writeln(
+        "Calificacion promedio del grupo: ${_averageScore.toStringAsFixed(1)}/100",
+      );
+
+      summaryBuilder.writeln("\nDesglose por proyecto evaluado:");
+      for (var p in _projects) {
+        final evals = _evaluations.where((e) => e.projectId == p.id).toList();
+        if (evals.isNotEmpty) {
+          final eval = evals.first;
+          summaryBuilder.writeln(
+            "- Proyecto: ${p.title} (${p.category}) -> Calificacion: ${eval.generalScore?.toStringAsFixed(1)}/100",
+          );
+          if (eval.detailedScores != null && eval.detailedScores!.isNotEmpty) {
+            summaryBuilder.writeln("  Rubros:");
+            eval.detailedScores!.forEach((criterio, puntos) {
+              summaryBuilder.writeln("    * $criterio: $puntos pts");
+            });
+          }
+        }
+      }
+
+      final insightsMarkdown = await _apiService.generateAnalyticsInsights(
+        summaryBuilder.toString(),
+      );
+
+      if (!mounted) return;
+      if (insightsMarkdown != null) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.auto_awesome, color: Colors.purple),
+                SizedBox(width: 8),
+                Text('Insights del Grupo (IA)'),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Text(
+                insightsMarkdown,
+                style: const TextStyle(height: 1.5),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cerrar'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al generar insights')),
+        );
+      }
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      if (mounted) setState(() => _isGeneratingInsights = false);
+    }
   }
 
   Future<void> _fetchData() async {
@@ -116,7 +197,10 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
     }
 
     if (mounted) {
-      setState(() => _isLoading = false);
+      setState(() {
+        _evaluations = evaluations;
+        _isLoading = false;
+      });
     }
   }
 
@@ -217,6 +301,40 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
+                    if (widget.role.toLowerCase() == 'teacher' ||
+                        widget.role.toLowerCase() == 'profesor') ...[
+                      OutlinedButton.icon(
+                        onPressed: _isGeneratingInsights
+                            ? null
+                            : _generateInsights,
+                        icon: _isGeneratingInsights
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.auto_awesome,
+                                color: Colors.purple,
+                              ),
+                        label: Text(
+                          _isGeneratingInsights
+                              ? 'Analizando rúbricas...'
+                              : 'Generar Insights del Grupo con IA',
+                          style: const TextStyle(
+                            color: Colors.purple,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.purple),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
                     _buildKPIsRow(),
                     const SizedBox(height: 32),
                     Text(

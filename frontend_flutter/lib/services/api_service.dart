@@ -17,6 +17,8 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:convert';
 
+import 'dart:convert';
+
 class ApiService {
   final Dio _dio;
 
@@ -58,6 +60,49 @@ class ApiService {
       final data = user.toJson();
       data['passwordHash'] =
           password; // Backend expects plain password in register for hashing
+          
+      final response = await _dio.post('auth/register', data: data);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return 'Usuario registrado con éxito.';
+      }
+      return null;
+    } catch (e) {
+      if (e is DioException) {
+        return e.response?.data?['message']?.toString() ?? 'Error al registrar';
+      }
+      return 'Error desconocido: $e';
+    }
+  }
+
+  Future<bool> toggleUpvote(String projectId, String userId) async {
+    try {
+      final response = await _dio.post('projects/$projectId/upvote?userId=$userId');
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> addProjectComment(String projectId, ProjectComment comment) async {
+    try {
+      final response = await _dio.post('projects/$projectId/comment', data: comment.toJson());
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<String?> generateAnalyticsInsights(String dataSummary) async {
+    try {
+      final response = await _dio.post('ai/analytics/insights', data: {'dataSummary': dataSummary});
+      if (response.statusCode == 200) {
+        return response.data['insights']?.toString();
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
 
       final response = await _dio.post('auth/register', data: data);
       if (response.statusCode == 200) {

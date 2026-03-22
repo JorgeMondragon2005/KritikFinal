@@ -53,11 +53,15 @@ class PdfService {
                 children: [
                   pw.SizedBox(height: 20),
                   pw.Text(
-                    'CERTIFICADO DE EXCELENCIA',
+                    (score == 100 || badge != null)
+                        ? 'CERTIFICADO DE EXCELENCIA'
+                        : 'REPORTE DE EVALUACIÓN',
                     style: pw.TextStyle(
-                      fontSize: 32,
+                      fontSize: (score == 100 || badge != null) ? 32 : 28,
                       fontWeight: pw.FontWeight.bold,
-                      color: PdfColor.fromHex('#92400E'),
+                      color: (score == 100 || badge != null)
+                          ? PdfColor.fromHex('#92400E')
+                          : PdfColor.fromHex('#1E3A8A'),
                     ),
                     textAlign: pw.TextAlign.center,
                   ),
@@ -137,6 +141,95 @@ class PdfService {
                   ),
 
                   pw.SizedBox(height: 30),
+
+                  // Breakdown Table
+                  if (evaluation.detailedScores != null &&
+                      evaluation.detailedScores!.isNotEmpty) ...[
+                    pw.Text(
+                      'Desglose de Rúbrica',
+                      style: pw.TextStyle(
+                        fontSize: 16,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.black,
+                      ),
+                    ),
+                    pw.SizedBox(height: 10),
+                    pw.Container(
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border.all(color: PdfColors.grey300),
+                        borderRadius: const pw.BorderRadius.all(
+                          pw.Radius.circular(4),
+                        ),
+                      ),
+                      child: pw.Column(
+                        children: evaluation.detailedScores!.entries.map((e) {
+                          return pw.Container(
+                            padding: const pw.EdgeInsets.all(8),
+                            decoration: const pw.BoxDecoration(
+                              border: pw.Border(
+                                bottom: pw.BorderSide(color: PdfColors.grey200),
+                              ),
+                            ),
+                            child: pw.Row(
+                              mainAxisAlignment:
+                                  pw.MainAxisAlignment.spaceBetween,
+                              children: [
+                                pw.Expanded(
+                                  child: pw.Text(
+                                    e.key,
+                                    style: const pw.TextStyle(fontSize: 12),
+                                  ),
+                                ),
+                                pw.Text(
+                                  '${e.value} pts',
+                                  style: pw.TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: pw.FontWeight.bold,
+                                    color: PdfColor.fromHex('#1E3A8A'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    pw.SizedBox(height: 20),
+                  ],
+
+                  // Feedback
+                  if (evaluation.feedback != null &&
+                      evaluation.feedback!.isNotEmpty) ...[
+                    pw.Text(
+                      'Comentarios del Jurado',
+                      style: pw.TextStyle(
+                        fontSize: 16,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.black,
+                      ),
+                    ),
+                    pw.SizedBox(height: 5),
+                    pw.Container(
+                      width: double.infinity,
+                      padding: const pw.EdgeInsets.all(12),
+                      decoration: pw.BoxDecoration(
+                        color: PdfColors.blue50,
+                        borderRadius: const pw.BorderRadius.all(
+                          pw.Radius.circular(8),
+                        ),
+                      ),
+                      child: pw.Text(
+                        evaluation.feedback!,
+                        style: const pw.TextStyle(
+                          fontSize: 12,
+                          color: PdfColors.black,
+                        ),
+                        textAlign: pw.TextAlign.justify,
+                      ),
+                    ),
+                    pw.SizedBox(height: 20),
+                  ],
+
                   if (badge != null && badge.isNotEmpty) ...[
                     pw.Text(
                       '✦ RECONOCIMIENTO ESPECIAL ✦',
