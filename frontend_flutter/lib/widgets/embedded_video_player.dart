@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 
 class EmbeddedVideoPlayer extends StatefulWidget {
@@ -26,6 +27,12 @@ class _EmbeddedVideoPlayerState extends State<EmbeddedVideoPlayer> {
 
   Future<void> _initializePlayer() async {
     try {
+      if (widget.url.contains('youtube.com') ||
+          widget.url.contains('youtu.be') ||
+          widget.url.contains('vimeo.com')) {
+        throw Exception('Plataforma externa detectada (YouTube/Vimeo).');
+      }
+
       _videoPlayerController = VideoPlayerController.networkUrl(
         Uri.parse(widget.url),
       );
@@ -114,6 +121,25 @@ class _EmbeddedVideoPlayerState extends State<EmbeddedVideoPlayer> {
                   _errorMessage,
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final uri = Uri.parse(widget.url);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  }
+                },
+                icon: const Icon(Icons.open_in_new, size: 16),
+                label: const Text('Abrir Externamente'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryYellow,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                 ),
               ),
             ],
