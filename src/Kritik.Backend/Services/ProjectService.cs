@@ -13,15 +13,6 @@ public class ProjectService
     public ProjectService(IOptions<MongoDBSettings> settings, IMongoDatabase database)
     {
         _projectsCollection = database.GetCollection<Project>("projects");
-
-        // Create indexes for Category and Technologies
-        var indexKeysCategory = Builders<Project>.IndexKeys.Ascending(x => x.Category);
-        var indexKeysTechnologies = Builders<Project>.IndexKeys.Ascending(x => x.Technologies);
-        
-        var indexModelCategory = new CreateIndexModel<Project>(indexKeysCategory);
-        var indexModelTechnologies = new CreateIndexModel<Project>(indexKeysTechnologies);
-        
-        _projectsCollection.Indexes.CreateMany(new[] { indexModelCategory, indexModelTechnologies });
     }
 
     public async Task<List<Project>> GetAsync(string? search = null, string? category = null, string? technology = null, string? studentId = null, string? teacherId = null, string? assignmentId = null)

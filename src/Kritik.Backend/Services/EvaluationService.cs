@@ -12,12 +12,6 @@ public class EvaluationService
     public EvaluationService(IOptions<MongoDBSettings> settings, IMongoDatabase database)
     {
         _evaluationsCollection = database.GetCollection<Evaluation>("evaluations");
-
-        // Create unique compound index for EvaluatorId and ProjectId to prevent duplicate evaluations
-        var indexKeys = Builders<Evaluation>.IndexKeys.Ascending(x => x.EvaluatorId).Ascending(x => x.ProjectId);
-        var indexOptions = new CreateIndexOptions { Unique = true };
-        var indexModel = new CreateIndexModel<Evaluation>(indexKeys, indexOptions);
-        _evaluationsCollection.Indexes.CreateOne(indexModel);
     }
 
     public async Task<List<Evaluation>> GetAsync() =>
