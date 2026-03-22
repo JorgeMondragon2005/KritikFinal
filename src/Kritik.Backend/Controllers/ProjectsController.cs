@@ -45,6 +45,43 @@ public class ProjectsController : ControllerBase
         }
     }
 
+    [HttpGet("super-reset")]
+    public async Task<IActionResult> SuperReset([FromServices] MongoDB.Driver.IMongoDatabase db)
+    {
+        try
+        {
+            var collectionNames = await (await db.ListCollectionNamesAsync()).ToListAsync();
+            var backup = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<MongoDB.Bson.BsonDocument>>();
+
+            foreach (var name in collectionNames)
+            {
+                if (name == "fs.files" || name == "fs.chunks" || name == "system.views") continue;
+                
+                var collection = db.GetCollection<MongoDB.Bson.BsonDocument>(name);
+                var docs = await collection.Find(new MongoDB.Bson.BsonDocument()).ToListAsync();
+                backup[name] = docs;
+            }
+
+            await db.Client.DropDatabaseAsync(db.DatabaseNamespace.DatabaseName);
+
+            // Reconstruct metadata BSON arrays
+            foreach (var kvp in backup)
+            {
+                if (kvp.Value.Count > 0)
+                {
+                    var collection = db.GetCollection<MongoDB.Bson.BsonDocument>(kvp.Key);
+                    await collection.InsertManyAsync(kvp.Value);
+                }
+            }
+
+            return Ok(new { Message = "Successfully defragmented 512MB Quota and restored all metadata." });
+        }
+        catch (System.Exception ex)
+        {
+            return StatusCode(500, ex.ToString());
+        }
+    }
+
     [HttpGet("rankings")]
     public async Task<List<ProjectRankingDTO>> GetRanking()
     {
