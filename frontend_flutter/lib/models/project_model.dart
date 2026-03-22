@@ -86,6 +86,7 @@ class Project {
   final String? assignmentId;
   final String? promoVideoUrl;
   final String? pitchVideoUrl;
+  final List<Video> videos;
   final List<String>? members;
   final List<Document> documents;
   final List<String> upvotedBy;

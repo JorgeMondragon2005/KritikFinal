@@ -127,11 +127,12 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
 
+    List<Evaluation> fetchedEvaluations = [];
+
     try {
       // 1. Fetch raw data
       final projects = await _apiService.getProjects();
-      final List<Evaluation> evaluations =
-          []; // We need a way to fetch all evaluations or fetch by project iteratively.
+      fetchedEvaluations = []; 
 
       // Let's grab evaluations for all projects (could be heavy in a real prod app without a direct endpoint, but ok for now)
       for (var p in projects) {
@@ -182,6 +183,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
 
       // Top Projects (Sort by score DESC)
       final allEvalsScored = evaluations
+      final allEvalsScored = fetchedEvaluations
           .where((e) => _projects.any((p) => p.id == e.projectId))
           .toList();
       allEvalsScored.sort(
@@ -192,13 +194,14 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
           .take(3)
           .map((e) => _projects.firstWhere((p) => p.id == e.projectId))
           .toList();
+
+      _evaluations = fetchedEvaluations;
     } catch (e) {
       debugPrint('Error loading analytics: $e');
     }
 
     if (mounted) {
       setState(() {
-        _evaluations = evaluations;
         _isLoading = false;
       });
     }

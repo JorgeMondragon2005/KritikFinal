@@ -3,7 +3,7 @@ import '../models/notification_model.dart';
 import '../theme/app_theme.dart';
 
 class NotificationBell extends StatelessWidget {
-  final List<NotificationModel> notifications;
+  final List<AppNotification> notifications;
   final VoidCallback onClearAll;
 
   const NotificationBell({
@@ -129,7 +129,7 @@ class NotificationBell extends StatelessWidget {
                       ),
                       subtitle: Text(n.message),
                       trailing: Text(
-                        '${n.timestamp.hour}:${n.timestamp.minute}',
+                        '${n.createdAt.hour}:${n.createdAt.minute}',
                         style: const TextStyle(
                           fontSize: 10,
                           color: Colors.grey,
