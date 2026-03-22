@@ -88,4 +88,21 @@ public class UploadController : ControllerBase
         }
         catch(GridFSFileNotFoundException) { return NotFound(); }
     }
+
+    [HttpGet("wipe-db")]
+    public async Task<IActionResult> WipeGridFS([FromServices] IMongoDatabase db)
+    {
+        try
+        {
+            await db.DropCollectionAsync("fs.files");
+            await db.DropCollectionAsync("fs.chunks");
+            await db.CreateCollectionAsync("fs.files");
+            await db.CreateCollectionAsync("fs.chunks");
+            return Ok("Wiped GridFS completely, recovered 512MB quota.");
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, e.ToString());
+        }
+    }
 }
