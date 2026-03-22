@@ -4,6 +4,15 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Kritik.Shared.Models;
 
+public class Comment
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    public string? UserId { get; set; }
+    public string? UserName { get; set; }
+    public string? Text { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
 [BsonIgnoreExtraElements]
 public class Project
 {
@@ -31,4 +40,7 @@ public class Project
     public string? IconUrl { get; set; }
     public string? PromoVideoUrl { get; set; }
     public string? PitchVideoUrl { get; set; }
+    
+    public List<string> UpvotedBy { get; set; } = new();
+    public List<Comment> Comments { get; set; } = new();
 }
