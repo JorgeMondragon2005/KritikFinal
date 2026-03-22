@@ -139,7 +139,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         if (p.id != null) {
           final eval = await _apiService.getEvaluationByProjectId(p.id!);
           if (eval != null) {
-            evaluations.add(eval);
+            fetchedEvaluations.add(eval);
           }
         }
       }
@@ -163,12 +163,14 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       double sumScores = 0;
 
       // Relate projects to evaluations
-      final evaluatedProjectIds = evaluations.map((e) => e.projectId).toSet();
+      final evaluatedProjectIds = fetchedEvaluations
+          .map((e) => e.projectId)
+          .toSet();
 
       for (var proj in _projects) {
         if (evaluatedProjectIds.contains(proj.id)) {
           _totalEvaluated++;
-          final projEval = evaluations.firstWhere(
+          final projEval = fetchedEvaluations.firstWhere(
             (e) => e.projectId == proj.id,
           );
           sumScores += projEval.generalScore ?? 0.0;
