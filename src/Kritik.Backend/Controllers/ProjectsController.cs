@@ -114,6 +114,34 @@ public class ProjectsController : ControllerBase
         return Ok(new { count = projects.Count() });
     }
 
+    [HttpPost("{id:length(24)}/upvote")]
+    public async Task<IActionResult> ToggleUpvote(string id, [FromQuery] string userId)
+    {
+        var project = await _projectService.GetAsync(id);
+        if (project is null) return NotFound();
+
+        project.UpvotedBy ??= new List<string>();
+        if (project.UpvotedBy.Contains(userId)) project.UpvotedBy.Remove(userId);
+        else project.UpvotedBy.Add(userId);
+
+        await _projectService.UpdateAsync(id, project);
+        return Ok(project);
+    }
+
+    [HttpPost("{id:length(24)}/comment")]
+    public async Task<IActionResult> AddComment(string id, Comment comment)
+    {
+        var project = await _projectService.GetAsync(id);
+        if (project is null) return NotFound();
+
+        project.Comments ??= new List<Comment>();
+        comment.CreatedAt = DateTime.UtcNow;
+        project.Comments.Add(comment);
+
+        await _projectService.UpdateAsync(id, project);
+        return Ok(project);
+    }
+
     [HttpPut("{id:length(24)}")]
     public async Task<IActionResult> Update(string id, Project updatedProject)
     {

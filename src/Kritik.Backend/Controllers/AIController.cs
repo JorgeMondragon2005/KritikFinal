@@ -144,6 +144,27 @@ Texto original:
             return StatusCode(500, new { Error = "Error corrigiendo texto con IA", Details = ex.Message });
         }
     }
+
+    [HttpPost("analytics/insights")]
+    public async Task<IActionResult> GenerateAnalyticsInsights([FromBody] AnalyticsRequest req)
+    {
+        try
+        {
+            var prompt = $@"
+Actúa como un experto consultor académico. Te daré los datos resumen de las evaluaciones de mi clase de este semestre. 
+Quiero que me des 1 párrafo corto felicitando lo bueno, y luego 3 puntos con balas (bullet points usando '-') destacando las mayores áreas de oportunidad basándote en dónde salieron más bajos los alumnos, ofreciendo en cada punto un consejo práctico y accionable para mejorar mi clase el próximo semestre. Usa pura sintaxis Markdown.
+
+Datos de mi clase:
+{req.DataSummary}
+";
+            var insights = await _aiService.GenerateContentAsync(prompt);
+            return Ok(new { insights });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Error = "Error generando analíticas con IA", Details = ex.Message });
+        }
+    }
 }
 
 public class EvaluationSuggestionRequest
@@ -162,5 +183,15 @@ public class MatchmakingRequest
 public class GrammarRequest
 {
     public string Text { get; set; } = string.Empty;
+}
+
+public class AnalyticsRequest
+{
+    public string DataSummary { get; set; } = string.Empty;
+}
+
+public class AnalyticsRequest
+{
+    public string DataSummary { get; set; } = string.Empty;
 }
 
