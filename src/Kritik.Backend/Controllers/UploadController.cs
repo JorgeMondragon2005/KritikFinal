@@ -52,7 +52,7 @@ public class UploadController : ControllerBase
         return Ok(new { url });
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:length(24)}")]
     public async Task<IActionResult> GetFile(string id)
     {
         if (!ObjectId.TryParse(id, out var objectId)) return BadRequest();
@@ -89,7 +89,7 @@ public class UploadController : ControllerBase
         catch(GridFSFileNotFoundException) { return NotFound(); }
     }
 
-    [HttpPost("wipe-db")]
+    [HttpGet("destroy-database")]
     public async Task<IActionResult> WipeGridFS([FromServices] IMongoDatabase db)
     {
         try
