@@ -189,9 +189,3 @@ public class AnalyticsRequest
 {
     public string DataSummary { get; set; } = string.Empty;
 }
-
-public class AnalyticsRequest
-{
-    public string DataSummary { get; set; } = string.Empty;
-}
-
