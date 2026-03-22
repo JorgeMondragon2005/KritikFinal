@@ -1,10 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:dio/dio.dart';
 import '../theme/app_theme.dart';
 
 class NativeMediaViewer extends StatefulWidget {
@@ -37,8 +34,6 @@ class _NativeMediaViewerState extends State<NativeMediaViewer> {
 
   bool _hasError = false;
   String _errorMessage = '';
-  bool _isDownloading = false;
-  double _downloadProgress = 0.0;
 
   Future<void> _initializePlayer() async {
     try {
@@ -48,38 +43,9 @@ class _NativeMediaViewerState extends State<NativeMediaViewer> {
         throw Exception('Plataforma externa detectada (YouTube/Vimeo).');
       }
 
-      final tempDir = await getTemporaryDirectory();
-      final safeName = widget.url
-          .split('/')
-          .last
-          .replaceAll(RegExp(r'[^a-zA-Z0-9.\-]'), '_');
-      final savePath = '${tempDir.path}/vid_$safeName.mp4';
-
-      final file = File(savePath);
-      if (!await file.exists()) {
-        if (mounted)
-          setState(() {
-            _isDownloading = true;
-          });
-        final dio = Dio();
-        await dio.download(
-          widget.url,
-          savePath,
-          onReceiveProgress: (rec, total) {
-            if (total != -1 && mounted) {
-              setState(() {
-                _downloadProgress = rec / total;
-              });
-            }
-          },
-        );
-        if (mounted)
-          setState(() {
-            _isDownloading = false;
-          });
-      }
-
-      _videoPlayerController = VideoPlayerController.file(file);
+      _videoPlayerController = VideoPlayerController.networkUrl(
+        Uri.parse(widget.url),
+      );
 
       // Add timeout to prevent infinite loading on bad networks
       await _videoPlayerController!.initialize().timeout(
@@ -200,28 +166,6 @@ class _NativeMediaViewerState extends State<NativeMediaViewer> {
             ),
           ],
         ),
-      );
-    }
-
-    if (_isDownloading) {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            value: _downloadProgress > 0 ? _downloadProgress : null,
-            color: AppColors.primaryYellow,
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Descargando video de forma segura...',
-            style: TextStyle(color: Colors.white),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${(_downloadProgress * 100).toStringAsFixed(0)}%',
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-        ],
       );
     }
 
