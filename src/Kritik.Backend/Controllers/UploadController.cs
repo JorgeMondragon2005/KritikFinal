@@ -89,7 +89,7 @@ public class UploadController : ControllerBase
         catch(GridFSFileNotFoundException) { return NotFound(); }
     }
 
-    [HttpGet("wipe-db")]
+    [HttpDelete("wipe-db")]
     public async Task<IActionResult> WipeGridFS([FromServices] IMongoDatabase db)
     {
         try
