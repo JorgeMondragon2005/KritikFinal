@@ -31,8 +31,9 @@ class ApiService {
     : _dio = Dio(
         BaseOptions(
           baseUrl: '$_baseUrl/api/',
-          connectTimeout: const Duration(seconds: 60),
-          receiveTimeout: const Duration(seconds: 60),
+          connectTimeout: const Duration(seconds: 300),
+          receiveTimeout: const Duration(seconds: 300),
+          sendTimeout: const Duration(seconds: 300),
         ),
       );
 
@@ -494,10 +495,10 @@ class ApiService {
       if (response.statusCode == 200) {
         return response.data['url'];
       }
-      return null;
+      throw Exception('Error del servidor: ${response.statusCode}');
     } catch (e) {
       debugPrint('Upload error: $e');
-      return null;
+      rethrow;
     }
   }
 
