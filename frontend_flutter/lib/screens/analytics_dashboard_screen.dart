@@ -90,7 +90,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
           builder: (context) => AlertDialog(
             title: const Row(
               children: [
-                Icon(Icons.auto_awesome, color: Colors.purple),
+                Icon(Icons.auto_awesome, color: AppColors.primaryYellow),
                 SizedBox(width: 8),
                 Text('Insights del Grupo (IA)'),
               ],
@@ -317,19 +317,21 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
                               )
                             : const Icon(
                                 Icons.auto_awesome,
-                                color: Colors.purple,
+                                color: AppColors.primaryYellow,
                               ),
                         label: Text(
                           _isGeneratingInsights
                               ? 'Analizando rúbricas...'
                               : 'Generar Insights del Grupo con IA',
                           style: const TextStyle(
-                            color: Colors.purple,
+                            color: AppColors.primaryYellow,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.purple),
+                          side: const BorderSide(
+                            color: AppColors.primaryYellow,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                       ),

@@ -390,14 +390,16 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                         onPressed: _isSubmitting ? null : _autofillWithAI,
                         icon: const Icon(
                           Icons.auto_awesome,
-                          color: Colors.purple,
+                          color: AppColors.primaryYellow,
                         ),
                         label: const Text(
                           'Autocompletar con IA',
-                          style: TextStyle(color: Colors.purple),
+                          style: TextStyle(color: AppColors.primaryYellow),
                         ),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.purple),
+                          side: const BorderSide(
+                            color: AppColors.primaryYellow,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                       ),
