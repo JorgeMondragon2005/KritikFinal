@@ -86,5 +86,6 @@ public class UploadController : ControllerBase
             var readStream = new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.DeleteOnClose);
             return File(readStream, contentType ?? "application/octet-stream", enableRangeProcessing: true);
         }
+        catch(GridFSFileNotFoundException) { return NotFound(); }
     }
 }
