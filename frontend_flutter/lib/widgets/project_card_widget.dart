@@ -318,8 +318,12 @@ class _VideoPreviewWidgetState extends State<_VideoPreviewWidget> {
     if (finalUrl.startsWith('/')) {
       finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
     }
-    _controller = VideoPlayerController.networkUrl(Uri.parse(finalUrl))
-      ..initialize().then((_) {
+    _controller = VideoPlayerController.networkUrl(
+      Uri.parse(finalUrl),
+      httpHeaders: const {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+    )..initialize().then((_) {
         _controller!.setVolume(_isMuted ? 0.0 : 1.0);
         _controller!.setLooping(true);
         _controller!.play();

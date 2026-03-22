@@ -60,7 +60,8 @@ public class UploadController : ControllerBase
         if (!ObjectId.TryParse(id, out var objectId)) return BadRequest();
         try 
         {
-            var stream = await _gridFS.OpenDownloadStreamAsync(objectId);
+            var options = new GridFSDownloadOptions { Seekable = true };
+            var stream = await _gridFS.OpenDownloadStreamAsync(objectId, options);
             var contentType = stream.FileInfo.Metadata?.GetValue("contentType", "application/octet-stream").AsString;
             
             if (string.IsNullOrEmpty(contentType) || contentType == "application/octet-stream" || contentType == "application/x-www-form-urlencoded")
@@ -77,16 +78,8 @@ public class UploadController : ControllerBase
                     _ => "application/octet-stream"
                 };
             }
-            // Buffer completely to intercept MongoDB NotSupportedException on Seek() which ExoPlayer triggers.
-            // Using a temporary physical file ensures 0 RAM consumption regardless of video size.
-            var tempPath = Path.GetTempFileName();
-            using (var fs = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                await stream.CopyToAsync(fs);
-            }
             
-            var readStream = new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.DeleteOnClose);
-            return File(readStream, contentType ?? "application/octet-stream", enableRangeProcessing: true);
+            return File(stream, contentType ?? "application/octet-stream", enableRangeProcessing: true);
         }
         catch(GridFSFileNotFoundException) { return NotFound(); }
     }
