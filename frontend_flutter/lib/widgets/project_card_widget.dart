@@ -205,8 +205,11 @@ class ProjectCard extends StatelessWidget {
       coverUrl = 'https://kritikfinal.onrender.com$coverUrl';
     }
 
-    final hasVideo = project.promoVideoUrl != null && project.promoVideoUrl!.isNotEmpty;
-    final canPlayDirectly = hasVideo;
+    final canPlayDirectly =
+        ((userRole?.toLowerCase() == 'teacher' ||
+                userRole?.toLowerCase() == 'profesor') ||
+            userRole?.toLowerCase() == 'evaluator') &&
+        hasVideo;
 
     return Hero(
       tag: 'project_cover_${project.id}',

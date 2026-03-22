@@ -38,9 +38,9 @@ class _EmbeddedVideoPlayerState extends State<EmbeddedVideoPlayer> {
       );
 
       await _videoPlayerController!.initialize().timeout(
-        const Duration(seconds: 15),
+        const Duration(seconds: 60),
         onTimeout: () {
-          throw Exception('Tiempo de espera agotado al cargar el video');
+          throw Exception('Red inestable: Tiempo de espera agotado (60s).');
         },
       );
 
