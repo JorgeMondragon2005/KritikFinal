@@ -17,7 +17,12 @@ class EvaluationScreen extends StatefulWidget {
   final String projectName;
   final String? evaluatorId;
 
-  const EvaluationScreen({super.key, this.projectId, required this.projectName, this.evaluatorId});
+  const EvaluationScreen({
+    super.key,
+    this.projectId,
+    required this.projectName,
+    this.evaluatorId,
+  });
 
   @override
   State<EvaluationScreen> createState() => _EvaluationScreenState();
@@ -27,14 +32,14 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
   final ApiService _apiService = ApiService();
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _commentController = TextEditingController();
-  
+
   List<Rubric> _rubrics = [];
   Rubric? _selectedRubric;
   Map<String, int> _detailedScores = {};
   Project? _project;
   bool _isLoadingProject = false;
   Evaluation? _existingEvaluation;
-  
+
   String? _evidencePath;
   bool _isSubmitting = false;
 
@@ -43,7 +48,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
     'Mejor Innovación',
     'Diseño Impecable',
     'Mejor Pitch',
-    'Excelente Viabilidad'
+    'Excelente Viabilidad',
   ];
   String? _selectedBadge = 'Ninguno';
 
@@ -59,19 +64,29 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
     setState(() => _isLoadingProject = true);
     try {
       final projects = await _apiService.getProjects();
-      final evaluation = await _apiService.getEvaluationByProjectId(widget.projectId!);
+      final evaluation = await _apiService.getEvaluationByProjectId(
+        widget.projectId!,
+      );
       if (mounted) {
         setState(() {
           _project = projects.firstWhere((p) => p.id == widget.projectId);
-          if (evaluation != null && evaluation.evaluatorId == widget.evaluatorId) {
+          if (evaluation != null &&
+              evaluation.evaluatorId == widget.evaluatorId) {
             _existingEvaluation = evaluation;
             _commentController.text = evaluation.feedback ?? '';
             _selectedBadge = evaluation.badgeEarned ?? 'Ninguno';
-            if (_rubrics.isNotEmpty && _selectedRubric == null && evaluation.rubricId != null) {
-                _selectedRubric = _rubrics.firstWhere((r) => r.id == evaluation.rubricId, orElse: () => _rubrics.first);
+            if (_rubrics.isNotEmpty &&
+                _selectedRubric == null &&
+                evaluation.rubricId != null) {
+              _selectedRubric = _rubrics.firstWhere(
+                (r) => r.id == evaluation.rubricId,
+                orElse: () => _rubrics.first,
+              );
             }
             if (evaluation.detailedScores != null) {
-                _detailedScores = Map<String, int>.from(evaluation.detailedScores!);
+              _detailedScores = Map<String, int>.from(
+                evaluation.detailedScores!,
+              );
             }
           }
           _isLoadingProject = false;
@@ -89,11 +104,16 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
     return t == 'jpg' || t == 'jpeg' || t == 'png' || t == 'gif' || t == 'webp';
   }
 
-  Future<void> _openFileExternally(String url, String fileName, {bool isVideo = false, bool isImage = false}) async {
+  Future<void> _openFileExternally(
+    String url,
+    String fileName, {
+    bool isVideo = false,
+    bool isImage = false,
+  }) async {
     // Fix relative URLs from backend
     String finalUrl = url;
     if (finalUrl.startsWith('/')) {
-        finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
+      finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
     }
 
     if (isVideo || isImage) {
@@ -109,13 +129,20 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
 
     try {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Descargando $fileName...'), duration: const Duration(seconds: 1)),
+        SnackBar(
+          content: Text('Descargando $fileName...'),
+          duration: const Duration(seconds: 1),
+        ),
       );
       await _apiService.downloadAndOpenFile(finalUrl, fileName);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo abrir $fileName: ${e.toString().replaceAll("Exception: ", "")}')),
+        SnackBar(
+          content: Text(
+            'No se pudo abrir $fileName: ${e.toString().replaceAll("Exception: ", "")}',
+          ),
+        ),
       );
     }
   }
@@ -127,12 +154,15 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
         _rubrics = rubrics;
         if (_rubrics.isNotEmpty) {
           if (_existingEvaluation?.rubricId != null) {
-              _selectedRubric = _rubrics.firstWhere((r) => r.id == _existingEvaluation!.rubricId, orElse: () => _rubrics.first);
+            _selectedRubric = _rubrics.firstWhere(
+              (r) => r.id == _existingEvaluation!.rubricId,
+              orElse: () => _rubrics.first,
+            );
           } else {
-              _selectedRubric = _rubrics.first;
+            _selectedRubric = _rubrics.first;
           }
           if (_detailedScores.isEmpty) {
-             _initializeScores();
+            _initializeScores();
           }
         }
       });
@@ -141,11 +171,17 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
 
   void _initializeScores() {
     if (_selectedRubric != null) {
-      if (_existingEvaluation != null && _existingEvaluation!.detailedScores != null && _existingEvaluation!.rubricId == _selectedRubric!.id) {
-          _detailedScores = Map<String,int>.from(_existingEvaluation!.detailedScores!);
+      if (_existingEvaluation != null &&
+          _existingEvaluation!.detailedScores != null &&
+          _existingEvaluation!.rubricId == _selectedRubric!.id) {
+        _detailedScores = Map<String, int>.from(
+          _existingEvaluation!.detailedScores!,
+        );
       } else {
-          final items = _selectedRubric!.items;
-          _detailedScores = { for (var item in items) item.criteria : item.maxPoints };
+        final items = _selectedRubric!.items;
+        _detailedScores = {
+          for (var item in items) item.criteria: item.maxPoints,
+        };
       }
     }
   }
@@ -156,7 +192,7 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
         source: ImageSource.camera,
         imageQuality: 70, // Optimize size
       );
-      
+
       if (photo != null) {
         setState(() {
           _evidencePath = photo.path;
@@ -164,16 +200,18 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al abrir la cámara: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al abrir la cámara: $e')));
     }
   }
 
   Future<void> _submit() async {
     if (widget.projectId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error: No se encontró el ID del proyecto')),
+        const SnackBar(
+          content: Text('Error: No se encontró el ID del proyecto'),
+        ),
       );
       return;
     }
@@ -188,24 +226,34 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       }
 
       if (!mounted) return;
-      
-      double totalMax = _selectedRubric?.items.fold(0.0, (sum, item) => sum! + item.maxPoints) ?? 100.0;
+
+      double totalMax =
+          _selectedRubric?.items.fold(
+            0.0,
+            (sum, item) => sum! + item.maxPoints,
+          ) ??
+          100.0;
       double earned = _detailedScores.values.fold(0.0, (a, b) => a + b);
-      double normalizedScoreDouble = totalMax > 0 ? (earned / totalMax) * 100 : earned;
+      double normalizedScoreDouble = totalMax > 0
+          ? (earned / totalMax) * 100
+          : earned;
 
       final evaluation = Evaluation(
         id: _existingEvaluation?.id, // Keep the old ID for updating
         projectId: widget.projectId,
         evaluatorId: widget.evaluatorId ?? "evaluator_unknown",
         rubricId: _selectedRubric?.id,
-        scores: {"General": normalizedScoreDouble}, 
+        scores: {"General": normalizedScoreDouble},
         detailedScores: _detailedScores,
         feedback: _commentController.text,
-        evidencePhotoBase64: base64Photo ?? _existingEvaluation?.evidencePhotoBase64, // keep old if not taking a new one
+        evidencePhotoBase64:
+            base64Photo ??
+            _existingEvaluation
+                ?.evidencePhotoBase64, // keep old if not taking a new one
         badgeEarned: _selectedBadge == 'Ninguno' ? null : _selectedBadge,
       );
 
-      final success = _existingEvaluation != null 
+      final success = _existingEvaluation != null
           ? await _apiService.updateEvaluation(evaluation)
           : await _apiService.submitEvaluation(evaluation);
 
@@ -214,13 +262,16 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       if (success) {
         if (_project != null) {
           try {
-            await _apiService.createNotification(AppNotification(
-              userId: _project!.studentId ?? '',
-              title: 'Proyecto Evaluado',
-              message: 'El jurado ha evaluado tu proyecto "${_project!.title}". Revisa tu retroalimentación.',
-              createdAt: DateTime.now(),
-              actionUrl: '/student_upload/${_project!.assignmentId}',
-            ));
+            await _apiService.createNotification(
+              AppNotification(
+                userId: _project!.studentId ?? '',
+                title: 'Proyecto Evaluado',
+                message:
+                    'El jurado ha evaluado tu proyecto "${_project!.title}". Revisa tu retroalimentación.',
+                createdAt: DateTime.now(),
+                actionUrl: '/student_upload/${_project!.assignmentId}',
+              ),
+            );
           } catch (_) {}
         }
         ScaffoldMessenger.of(context).showSnackBar(
@@ -234,7 +285,9 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -244,7 +297,11 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
   Future<void> _autofillWithAI() async {
     if (_project == null || _selectedRubric == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Asegúrate de que el proyecto y la rúbrica estén cargados.')),
+        const SnackBar(
+          content: Text(
+            'Asegúrate de que el proyecto y la rúbrica estén cargados.',
+          ),
+        ),
       );
       return;
     }
@@ -257,37 +314,50 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
           children: [
             CircularProgressIndicator(),
             SizedBox(width: 16),
-            Expanded(child: Text("La IA está leyendo el proyecto y evaluando con la rúbrica...")),
+            Expanded(
+              child: Text(
+                "La IA está leyendo el proyecto y evaluando con la rúbrica...",
+              ),
+            ),
           ],
         ),
       ),
     );
 
     try {
-      final resultMap = await _apiService.suggestEvaluationResultsWithAI(_project!, _selectedRubric!);
-      
+      final resultMap = await _apiService.suggestEvaluationResultsWithAI(
+        _project!,
+        _selectedRubric!,
+      );
+
       if (mounted) {
         Navigator.pop(context); // Close loading dialog
-        
+
         if (resultMap != null && resultMap['feedback'] != null) {
           setState(() {
             _commentController.text = resultMap['feedback'].toString();
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('¡Retroalimentación generada con IA! Revisa y califica manualmente.')),
+            const SnackBar(
+              content: Text(
+                '¡Retroalimentación generada con IA! Revisa y califica manualmente.',
+              ),
+            ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('La IA no devolvió un formato válido.')),
+            const SnackBar(
+              content: Text('La IA no devolvió un formato válido.'),
+            ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error AI: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error AI: $e')));
       }
     }
   }
@@ -295,134 +365,235 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Evaluar Proyecto'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Evaluar Proyecto'), elevation: 0),
       body: SafeArea(
-        child: _isSubmitting 
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(widget.projectName, style: Theme.of(context).textTheme.headlineMedium),
-                  const SizedBox(height: 16),
-                  
-                  if (_isLoadingProject)
-                    const LinearProgressIndicator(),
+        child: _isSubmitting
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      widget.projectName,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 16),
 
-                  // AI Autocomplete Button
-                  if (!_isLoadingProject && _project != null && _selectedRubric != null) ...[
-                    OutlinedButton.icon(
-                      onPressed: _isSubmitting ? null : _autofillWithAI,
-                      icon: const Icon(Icons.auto_awesome, color: Colors.purple),
-                      label: const Text('Autocompletar con IA', style: TextStyle(color: Colors.purple)),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Colors.purple),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                    if (_isLoadingProject) const LinearProgressIndicator(),
+
+                    // AI Autocomplete Button
+                    if (!_isLoadingProject &&
+                        _project != null &&
+                        _selectedRubric != null) ...[
+                      OutlinedButton.icon(
+                        onPressed: _isSubmitting ? null : _autofillWithAI,
+                        icon: const Icon(
+                          Icons.auto_awesome,
+                          color: Colors.purple,
+                        ),
+                        label: const Text(
+                          'Autocompletar con IA',
+                          style: TextStyle(color: Colors.purple),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.purple),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ] else ...[
+                      const SizedBox(height: 24),
+                    ],
+
+                    // Rubric Selection
+                    const Text(
+                      'Lista de Cotejo / Rúbrica',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<Rubric>(
+                      value: _selectedRubric,
+                      dropdownColor: Theme.of(context).colorScheme.surface,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                      ),
+                      items: _rubrics
+                          .map<DropdownMenuItem<Rubric>>(
+                            (r) => DropdownMenuItem(
+                              value: r,
+                              child: Text(r.name ?? 'Sin nombre'),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedRubric = val;
+                          _initializeScores();
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 32),
+                    if (_selectedRubric != null) ...[
+                      const Text(
+                        'Criterios de Evaluación',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ..._selectedRubric!.items.map((item) {
+                        final criteria = item.criteria;
+                        final maxPoints = item.maxPoints;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    criteria,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  '${_detailedScores[criteria] ?? 0} / $maxPoints',
+                                  style: const TextStyle(
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Slider(
+                              value: (_detailedScores[criteria] ?? 0)
+                                  .toDouble(),
+                              min: 0,
+                              max: maxPoints.toDouble(),
+                              divisions: maxPoints,
+                              onChanged: (val) => setState(
+                                () => _detailedScores[criteria] = val.toInt(),
+                              ),
+                            ),
+                            Text(
+                              item.description,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        );
+                      }),
+                    ] else ...[
+                      const Center(child: Text('Cargando rúbricas...')),
+                    ],
+
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Evidencia y Comentarios',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildPhotoSection(),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _commentController,
+                      maxLines: 3,
+                      textAlign: TextAlign.justify,
+                      decoration: InputDecoration(
+                        hintText: 'Retroalimentación para el alumno...',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: const Icon(
+                            Icons.auto_fix_high,
+                            color: AppColors.primaryYellow,
+                          ),
+                          tooltip: 'Mejorar redacción con IA',
+                          onPressed: () async {
+                            if (_commentController.text.trim().isEmpty) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Kiosko IA corrigiendo ortografía...',
+                                ),
+                              ),
+                            );
+                            final fixedText = await _apiService
+                                .fixTextGrammarWithAI(_commentController.text);
+                            if (fixedText != null && mounted) {
+                              setState(
+                                () => _commentController.text = fixedText,
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('¡Texto mejorado por IA!'),
+                                ),
+                              );
+                            }
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
-                  ] else ...[
-                    const SizedBox(height: 24),
-                  ],
 
-                  // Rubric Selection
-                  const Text('Lista de Cotejo / Rúbrica', style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<Rubric>(
-                    value: _selectedRubric,
-                    dropdownColor: Theme.of(context).colorScheme.surface,
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
-                    items: _rubrics.map<DropdownMenuItem<Rubric>>((r) => DropdownMenuItem(
-                      value: r,
-                      child: Text(r.name ?? 'Sin nombre'),
-                    )).toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedRubric = val;
-                        _initializeScores();
-                      });
-                    },
-                  ),
-                  
-                  const SizedBox(height: 32),
-                  if (_selectedRubric != null) ...[
-                    const Text('Criterios de Evaluación', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                    const SizedBox(height: 16),
-                    ..._selectedRubric!.items.map((item) {
-                      final criteria = item.criteria;
-                      final maxPoints = item.maxPoints;
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(child: Text(criteria, style: const TextStyle(fontWeight: FontWeight.w600))),
-                              Text('${_detailedScores[criteria] ?? 0} / $maxPoints', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          Slider(
-                            value: (_detailedScores[criteria] ?? 0).toDouble(),
-                            min: 0,
-                            max: maxPoints.toDouble(),
-                            divisions: maxPoints,
-                            onChanged: (val) => setState(() => _detailedScores[criteria] = val.toInt()),
-                          ),
-                          Text(item.description, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                          const SizedBox(height: 20),
-                        ],
-                      );
-                    }),
-                  ] else ...[
-                    const Center(child: Text('Cargando rúbricas...')),
-                  ],
-
-                  const SizedBox(height: 16),
-                  const Text('Evidencia y Comentarios', style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  _buildPhotoSection(),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _commentController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(hintText: 'Retroalimentación para el alumno...', border: OutlineInputBorder()),
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  // Award Selection
-                  const Text('🏆 Reconocimiento Especial (Opcional)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    value: _selectedBadge,
-                    dropdownColor: Theme.of(context).colorScheme.surface,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.star_border, color: Colors.amber),
+                    // Award Selection
+                    const Text(
+                      '🏆 Reconocimiento Especial (Opcional)',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amber,
+                      ),
                     ),
-                    items: _availableBadges.map((badge) => DropdownMenuItem(
-                      value: badge,
-                      child: Text(badge),
-                    )).toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedBadge = val;
-                      });
-                    },
-                  ),
-                  
-                  const SizedBox(height: 48),
-                  ElevatedButton(
-                    onPressed: _isSubmitting ? null : _submit,
-                    style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryYellow, padding: const EdgeInsets.symmetric(vertical: 16)),
-                    child: Text(_existingEvaluation != null ? 'Actualizar Calificación' : 'Confirmar Calificación', style: const TextStyle(fontSize: 16)),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      value: _selectedBadge,
+                      dropdownColor: Theme.of(context).colorScheme.surface,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(
+                          Icons.star_border,
+                          color: Colors.amber,
+                        ),
+                      ),
+                      items: _availableBadges
+                          .map(
+                            (badge) => DropdownMenuItem(
+                              value: badge,
+                              child: Text(badge),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedBadge = val;
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 48),
+                    ElevatedButton(
+                      onPressed: _isSubmitting ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryYellow,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: Text(
+                        _existingEvaluation != null
+                            ? 'Actualizar Calificación'
+                            : 'Confirmar Calificación',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
       ),
     );
   }
@@ -452,7 +623,10 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
               child: GestureDetector(
                 onTap: () => setState(() => _evidencePath = null),
                 child: Container(
-                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
                   padding: const EdgeInsets.all(4),
                   child: const Icon(Icons.close, color: Colors.white, size: 20),
                 ),
@@ -474,7 +648,14 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
     );
   }
 
-  Widget _buildFileCard(String title, String url, IconData icon, Color color, {bool isVideo = false, bool isImage = false}) {
+  Widget _buildFileCard(
+    String title,
+    String url,
+    IconData icon,
+    Color color, {
+    bool isVideo = false,
+    bool isImage = false,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -501,7 +682,12 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
           ),
           const SizedBox(height: 8),
           ElevatedButton.icon(
-            onPressed: () => _openFileExternally(url, title, isVideo: isVideo, isImage: isImage),
+            onPressed: () => _openFileExternally(
+              url,
+              title,
+              isVideo: isVideo,
+              isImage: isImage,
+            ),
             icon: const Icon(Icons.open_in_new, size: 18),
             label: Text(isVideo || isImage ? 'Ver Archivo' : 'Abrir Documento'),
             style: ElevatedButton.styleFrom(
@@ -509,7 +695,9 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
               foregroundColor: Colors.white,
               minimumSize: const Size(double.infinity, 36),
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
           ),
         ],
@@ -521,14 +709,18 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
     if (url == null) return Icons.insert_drive_file;
     final ext = url.split('.').last.toLowerCase();
     switch (ext) {
-      case 'pdf': return Icons.picture_as_pdf;
+      case 'pdf':
+        return Icons.picture_as_pdf;
       case 'mp4':
       case 'mov':
-      case 'avi': return Icons.video_file;
+      case 'avi':
+        return Icons.video_file;
       case 'jpg':
       case 'jpeg':
-      case 'png': return Icons.image;
-      default: return Icons.insert_drive_file;
+      case 'png':
+        return Icons.image;
+      default:
+        return Icons.insert_drive_file;
     }
   }
 }

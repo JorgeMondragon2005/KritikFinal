@@ -6,28 +6,40 @@ import '../screens/native_media_viewer.dart';
 import '../theme/app_theme.dart';
 
 class NativeDocViewer {
-  static Future<void> show(BuildContext context, String url, String title, {bool isVideo = false, bool isImage = false}) async {
+  static Future<void> show(
+    BuildContext context,
+    String url,
+    String title, {
+    bool isVideo = false,
+    bool isImage = false,
+  }) async {
     // Si no es un video ni una imagen, queremos forzar descarga / apertura externa
     if (!isVideo && !isImage) {
       try {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Descargando archivo para abrirlo...')),
+            const SnackBar(
+              content: Text('Descargando archivo para abrirlo...'),
+            ),
           );
         }
-        
+
         final tempDir = await getTemporaryDirectory();
         final fileName = url.split('/').last;
         final savePath = '${tempDir.path}/$fileName';
-        
+
         final dio = Dio();
         await dio.download(url, savePath);
-        
+
         final result = await OpenFilex.open(savePath);
-        
+
         if (result.type != ResultType.done && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No hay app instalada para este archivo. ${result.message}')),
+            SnackBar(
+              content: Text(
+                'No hay app instalada para este archivo. ${result.message}',
+              ),
+            ),
           );
         }
       } catch (e) {
@@ -37,7 +49,7 @@ class NativeDocViewer {
           );
         }
       }
-      return; 
+      return;
     }
     showModalBottomSheet(
       context: context,
@@ -55,24 +67,37 @@ class NativeDocViewer {
           child: Column(
             children: [
               const SizedBox(height: 12),
-              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(2))),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
                     Expanded(
                       child: Text(
-                        title, 
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.download), 
+                      icon: const Icon(Icons.download),
                       onPressed: () {
                         // Future: implement download
-                      }
+                      },
                     ),
                   ],
                 ),

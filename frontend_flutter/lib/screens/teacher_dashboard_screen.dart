@@ -33,8 +33,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   Future<void> _fetchStats() async {
     setState(() => _isLoading = true);
     try {
-      final projects = await _apiService.getProjects(teacherId: widget.teacherId);
-      
+      final projects = await _apiService.getProjects(
+        teacherId: widget.teacherId,
+      );
+
       int evaluated = 0;
       double sumAverage = 0;
       Map<String, int> techs = {};
@@ -58,18 +60,25 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             }
             final assignment = assignmentCache[p.assignmentId!];
 
-            if (assignment != null && assignment.jurors != null && assignment.jurors!.isNotEmpty) {
+            if (assignment != null &&
+                assignment.jurors != null &&
+                assignment.jurors!.isNotEmpty) {
               double weightedScore = 0;
               double totalWeightUsed = 0;
               for (var e in evals) {
                 var jurorWeight = 0;
                 try {
-                  final juror = assignment.jurors!.firstWhere((j) => j.userId == e.evaluatorId);
+                  final juror = assignment.jurors!.firstWhere(
+                    (j) => j.userId == e.evaluatorId,
+                  );
                   jurorWeight = juror.weightPercentage;
                 } catch (_) {}
 
                 if (jurorWeight > 0 && e.scores != null) {
-                  double eScore = e.scores!.values.fold<double>(0.0, (prev, el) => prev + ((el ?? 0) as num).toDouble());
+                  double eScore = e.scores!.values.fold<double>(
+                    0.0,
+                    (prev, el) => prev + ((el ?? 0) as num).toDouble(),
+                  );
                   weightedScore += eScore * (jurorWeight / 100.0);
                   totalWeightUsed += jurorWeight;
                 }
@@ -78,31 +87,40 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 projectFinalScore = weightedScore / (totalWeightUsed / 100.0);
               } else {
                 double fallback = evals.fold<double>(0.0, (prev, e) {
-                   double eScore = e.generalScore ?? 0.0;
-                   if (eScore == 0.0 && e.scores != null) {
-                       eScore = e.scores!.values.fold<double>(0.0, (p, el) => p + ((el ?? 0) as num).toDouble());
-                   }
-                   return prev + eScore;
+                  double eScore = e.generalScore ?? 0.0;
+                  if (eScore == 0.0 && e.scores != null) {
+                    eScore = e.scores!.values.fold<double>(
+                      0.0,
+                      (p, el) => p + ((el ?? 0) as num).toDouble(),
+                    );
+                  }
+                  return prev + eScore;
                 });
                 projectFinalScore = fallback / evals.length;
               }
             } else {
               double fallback = evals.fold<double>(0.0, (prev, e) {
-                   double eScore = e.generalScore ?? 0.0;
-                   if (eScore == 0.0 && e.scores != null) {
-                       eScore = e.scores!.values.fold<double>(0.0, (p, el) => p + ((el ?? 0) as num).toDouble());
-                   }
-                   return prev + eScore;
+                double eScore = e.generalScore ?? 0.0;
+                if (eScore == 0.0 && e.scores != null) {
+                  eScore = e.scores!.values.fold<double>(
+                    0.0,
+                    (p, el) => p + ((el ?? 0) as num).toDouble(),
+                  );
+                }
+                return prev + eScore;
               });
               projectFinalScore = fallback / evals.length;
             }
           } else {
             double fallback = evals.fold<double>(0.0, (prev, e) {
-                   double eScore = e.generalScore ?? 0.0;
-                   if (eScore == 0.0 && e.scores != null) {
-                       eScore = e.scores!.values.fold<double>(0.0, (p, el) => p + ((el ?? 0) as num).toDouble());
-                   }
-                   return prev + eScore;
+              double eScore = e.generalScore ?? 0.0;
+              if (eScore == 0.0 && e.scores != null) {
+                eScore = e.scores!.values.fold<double>(
+                  0.0,
+                  (p, el) => p + ((el ?? 0) as num).toDouble(),
+                );
+              }
+              return prev + eScore;
             });
             projectFinalScore = fallback / evals.length;
           }
@@ -127,25 +145,22 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Panel de Estadísticas'),
-        elevation: 0,
-      ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : RefreshIndicator(
-            onRefresh: _fetchStats,
-            child: ListView(
-              padding: const EdgeInsets.all(24),
-              children: [
-                _buildSummaryCards(),
-                const SizedBox(height: 32),
-                _buildTechUsageSection(),
-                const SizedBox(height: 32),
-                _buildExportButton(),
-              ],
+      appBar: AppBar(title: const Text('Panel de Estadísticas'), elevation: 0),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _fetchStats,
+              child: ListView(
+                padding: const EdgeInsets.all(24),
+                children: [
+                  _buildSummaryCards(),
+                  const SizedBox(height: 32),
+                  _buildTechUsageSection(),
+                  const SizedBox(height: 32),
+                  _buildExportButton(),
+                ],
+              ),
             ),
-          ),
     );
   }
 
@@ -154,18 +169,40 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       children: [
         Row(
           children: [
-            _buildStatCard('Proyectos', _totalProjects.toString(), Icons.folder_special, Colors.blue),
+            _buildStatCard(
+              'Proyectos',
+              _totalProjects.toString(),
+              Icons.folder_special,
+              Colors.blue,
+            ),
             const SizedBox(width: 16),
-            _buildStatCard('Evaluados', '$_evaluatedCount/$_totalProjects', Icons.check_circle, Colors.green),
+            _buildStatCard(
+              'Evaluados',
+              '$_evaluatedCount/$_totalProjects',
+              Icons.check_circle,
+              Colors.green,
+            ),
           ],
         ),
         const SizedBox(height: 16),
-        _buildStatCard('Promedio General', _averageScore.toStringAsFixed(1), Icons.star, AppColors.primaryYellow, isWide: true),
+        _buildStatCard(
+          'Promedio General',
+          _averageScore.toStringAsFixed(1),
+          Icons.star,
+          AppColors.primaryYellow,
+          isWide: true,
+        ),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, {bool isWide = false}) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color, {
+    bool isWide = false,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       flex: isWide ? 2 : 1,
@@ -174,15 +211,26 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(icon, color: color, size: 28),
             const SizedBox(height: 12),
-            Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            Text(title, style: TextStyle(color: isDark ? Colors.white60 : Colors.black54, fontSize: 13)),
+            Text(
+              value,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              title,
+              style: TextStyle(
+                color: isDark ? Colors.white60 : Colors.black54,
+                fontSize: 13,
+              ),
+            ),
           ],
         ),
       ),
@@ -197,30 +245,41 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Tecnologías más usadas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const Text(
+          'Tecnologías más usadas',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 16),
-        ...sortedTechs.take(5).map((e) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(e.key),
-                  Text('${e.value} proyectos', style: const TextStyle(fontWeight: FontWeight.bold)),
-                ],
+        ...sortedTechs
+            .take(5)
+            .map(
+              (e) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(e.key),
+                        Text(
+                          '${e.value} proyectos',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: _totalProjects > 0 ? e.value / _totalProjects : 0,
+                      backgroundColor: isDark ? Colors.white10 : Colors.black12,
+                      color: AppColors.primaryYellow,
+                      minHeight: 8,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-              LinearProgressIndicator(
-                value: _totalProjects > 0 ? e.value / _totalProjects : 0,
-                backgroundColor: isDark ? Colors.white10 : Colors.black12,
-                color: AppColors.primaryYellow,
-                minHeight: 8,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ],
-          ),
-        )).toList(),
+            )
+            .toList(),
       ],
     );
   }
@@ -253,49 +312,62 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       final dir = await getTemporaryDirectory();
       final File file = File('${dir.path}/Estadisticas_Profesor.csv');
       final buffer = StringBuffer();
-      
-      buffer.write('\uFEFF'); // UTF-8 BOM
-      buffer.writeln('ID Proyecto,Equipo/Alumno,Categoria,Status,Puntaje_Promedio');
 
-      final projects = await _apiService.getProjects(teacherId: widget.teacherId);
-      
+      buffer.write('\uFEFF'); // UTF-8 BOM
+      buffer.writeln(
+        'ID Proyecto,Equipo/Alumno,Categoria,Status,Puntaje_Promedio',
+      );
+
+      final projects = await _apiService.getProjects(
+        teacherId: widget.teacherId,
+      );
+
       for (var p in projects) {
         String scoreStr = 'N/A';
         if (p.status?.toLowerCase() == 'evaluado') {
           final evals = await _apiService.getProjectEvaluations(p.id!);
           if (evals.isNotEmpty) {
-            double finalScore = evals.fold<double>(0.0, (prev, e) {
-               double eScore = e.generalScore ?? 0.0;
-               if (eScore == 0.0 && e.scores != null) {
-                   eScore = e.scores!.values.fold<double>(0.0, (acc, el) => acc + ((el ?? 0) as num).toDouble());
-               }
-               return prev + eScore;
-            }) / evals.length;
+            double finalScore =
+                evals.fold<double>(0.0, (prev, e) {
+                  double eScore = e.generalScore ?? 0.0;
+                  if (eScore == 0.0 && e.scores != null) {
+                    eScore = e.scores!.values.fold<double>(
+                      0.0,
+                      (acc, el) => acc + ((el ?? 0) as num).toDouble(),
+                    );
+                  }
+                  return prev + eScore;
+                }) /
+                evals.length;
             scoreStr = finalScore.toStringAsFixed(1);
           }
         }
-        
+
         final safeTeam = p.teamName?.replaceAll(',', ';') ?? 'S/N';
         final safeCat = p.category?.replaceAll(',', ';') ?? 'N/A';
         final idStr = p.id ?? 'Unknown';
-        
-        buffer.writeln('$idStr,$safeTeam,$safeCat,${p.status ?? "Pendiente"},$scoreStr');
+
+        buffer.writeln(
+          '$idStr,$safeTeam,$safeCat,${p.status ?? "Pendiente"},$scoreStr',
+        );
       }
 
       await file.writeAsString(buffer.toString(), encoding: utf8);
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reporte generado. Abriendo archivo...')),
+          const SnackBar(
+            content: Text('Reporte generado. Abriendo archivo...'),
+          ),
         );
       }
 
       await OpenFilex.open(file.path);
     } catch (e) {
       if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Error al generar CSV: $e')),
-         );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al generar CSV: $e')));
       }
     }
   }

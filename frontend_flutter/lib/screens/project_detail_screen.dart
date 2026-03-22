@@ -14,9 +14,9 @@ class ProjectDetailScreen extends StatefulWidget {
   final Project project;
   final String? userRole;
   final String? userId;
-  
+
   const ProjectDetailScreen({
-    super.key, 
+    super.key,
     required this.project,
     this.userRole,
     this.userId,
@@ -40,7 +40,9 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   Future<void> _fetchEvaluation() async {
     if (widget.project.id == null) return;
     try {
-      final eval = await _apiService.getEvaluationByProjectId(widget.project.id!);
+      final eval = await _apiService.getEvaluationByProjectId(
+        widget.project.id!,
+      );
       if (mounted) {
         setState(() {
           _existingEvaluation = eval;
@@ -55,9 +57,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final bool isEvaluated = _existingEvaluation != null;
-    final bool canEvaluate = (widget.userRole?.toLowerCase() == 'evaluator' || widget.userRole?.toLowerCase() == 'teacher' || widget.userRole?.toLowerCase() == 'profesor');
+    final bool canEvaluate =
+        (widget.userRole?.toLowerCase() == 'evaluator' ||
+        widget.userRole?.toLowerCase() == 'teacher' ||
+        widget.userRole?.toLowerCase() == 'profesor');
 
     Widget? fab;
     if (canEvaluate && !_isLoadingEval) {
@@ -65,25 +70,37 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => EvaluationScreen(
-              projectId: widget.project.id ?? '',
-              projectName: widget.project.title ?? 'Proyecto',
-              evaluatorId: widget.userId,
-            )),
-          ).then((acted) { if (acted == true) _fetchEvaluation(); });
+            MaterialPageRoute(
+              builder: (_) => EvaluationScreen(
+                projectId: widget.project.id ?? '',
+                projectName: widget.project.title ?? 'Proyecto',
+                evaluatorId: widget.userId,
+              ),
+            ),
+          ).then((acted) {
+            if (acted == true) _fetchEvaluation();
+          });
         },
         icon: Icon(isEvaluated ? Icons.edit : Icons.star, color: Colors.white),
-        label: Text(isEvaluated ? 'Editar Evaluación' : 'Evaluar Proyecto', style: const TextStyle(color: Colors.white)),
+        label: Text(
+          isEvaluated ? 'Editar Evaluación' : 'Evaluar Proyecto',
+          style: const TextStyle(color: Colors.white),
+        ),
         backgroundColor: AppColors.primaryColor,
       );
-    } else if (isEvaluated && !_isLoadingEval && widget.userRole?.toLowerCase() == 'student') {
+    } else if (isEvaluated &&
+        !_isLoadingEval &&
+        widget.userRole?.toLowerCase() == 'student') {
       fab = FloatingActionButton.extended(
         onPressed: () => PdfService.generateAndShowCertificate(
-          project: widget.project, 
-          evaluation: _existingEvaluation!
+          project: widget.project,
+          evaluation: _existingEvaluation!,
         ),
         icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
-        label: const Text('Certificado PDF', style: TextStyle(color: Colors.white)),
+        label: const Text(
+          'Certificado PDF',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.green.shade600,
       );
     }
@@ -101,12 +118,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 tag: 'project_cover_${widget.project.id}',
                 child: widget.project.coverImageUrl != null
                     ? CachedNetworkImage(
-                        imageUrl: widget.project.coverImageUrl!.startsWith('/') 
+                        imageUrl: widget.project.coverImageUrl!.startsWith('/')
                             ? 'https://kritikfinal.onrender.com${widget.project.coverImageUrl}'
                             : widget.project.coverImageUrl!,
                         fit: BoxFit.cover,
                       )
-                    : Container(color: AppColors.primaryYellow.withOpacity(0.1)),
+                    : Container(
+                        color: AppColors.primaryYellow.withOpacity(0.1),
+                      ),
               ),
             ),
           ),
@@ -121,47 +140,73 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                   // Title and Category
                   Text(
                     widget.project.title ?? 'Sin título',
-                    style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 28),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.displayLarge?.copyWith(fontSize: 28),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '${widget.project.category} • ${widget.project.teamName}',
-                    style: const TextStyle(color: AppColors.primaryYellow, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: AppColors.primaryYellow,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
 
                   // Demo Video Section (Moved to the absolute top)
-                  if (widget.project.promoVideoUrl != null && widget.project.promoVideoUrl!.isNotEmpty) ...[
+                  if (widget.project.promoVideoUrl != null &&
+                      widget.project.promoVideoUrl!.isNotEmpty) ...[
                     const SizedBox(height: 24),
-                    const Text('Video Demo Principal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    const Text(
+                      'Video Demo Principal',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Builder(
                       builder: (context) {
                         String finalUrl = widget.project.promoVideoUrl!;
                         if (finalUrl.startsWith('/')) {
-                          finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
+                          finalUrl =
+                              'https://kritikfinal.onrender.com$finalUrl';
                         }
                         return EmbeddedVideoPlayer(url: finalUrl);
                       },
                     ),
                   ],
-                  
+
                   if (_existingEvaluation?.badgeEarned != null) ...[
                     const SizedBox(height: 16),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.amber.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.amber.withOpacity(0.5)),
+                        border: Border.all(
+                          color: Colors.amber.withOpacity(0.5),
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.military_tech, color: Colors.amber, size: 24),
+                          const Icon(
+                            Icons.military_tech,
+                            color: Colors.amber,
+                            size: 24,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             _existingEvaluation!.badgeEarned!,
-                            style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 16),
+                            style: const TextStyle(
+                              color: Colors.amber,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                         ],
                       ),
@@ -172,40 +217,111 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
 
                   // Technologies
                   if (widget.project.technologies.isNotEmpty) ...[
-                    const Text('Tecnologías', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    const Text(
+                      'Tecnologías',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: widget.project.technologies.map((tech) => Chip(
-                        label: Text(tech),
-                        backgroundColor: isDark ? AppColors.techChipBgDark : AppColors.techChipBg,
-                        side: BorderSide.none,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      )).toList(),
+                      children: widget.project.technologies
+                          .map(
+                            (tech) => Chip(
+                              label: Text(tech),
+                              backgroundColor: isDark
+                                  ? AppColors.techChipBgDark
+                                  : AppColors.techChipBg,
+                              side: BorderSide.none,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          )
+                          .toList(),
                     ),
-                    const SizedBox(height: 24),
                   ],
 
+                  if (widget.project.members != null &&
+                      widget.project.members!.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Integrantes del Equipo',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: widget.project.members!
+                          .map(
+                            (member) => Chip(
+                              avatar: CircleAvatar(
+                                backgroundColor: AppColors.primaryYellow,
+                                child: Text(
+                                  member.substring(0, 1).toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                              label: Text(member),
+                              backgroundColor: isDark
+                                  ? AppColors.techChipBgDark
+                                  : AppColors.techChipBg,
+                              side: BorderSide.none,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+
+                  const SizedBox(height: 24),
+
                   // Description
-                  const Text('Sobre el proyecto', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  const Text(
+                    'Sobre el proyecto',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
                   const SizedBox(height: 12),
                   Text(
                     widget.project.description ?? 'Sin descripción.',
-                    style: TextStyle(height: 1.6, color: isDark ? Colors.white70 : Colors.black87),
+                    textAlign: TextAlign.justify,
+                    style: TextStyle(
+                      height: 1.6,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
                   ),
 
                   const SizedBox(height: 32),
 
                   // Pitch Video Section (At the bottom, replacing the old Promocional)
-                  if (widget.project.pitchVideoUrl != null && widget.project.pitchVideoUrl!.isNotEmpty) ...[
-                    const Text('Video Pitch', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  if (widget.project.pitchVideoUrl != null &&
+                      widget.project.pitchVideoUrl!.isNotEmpty) ...[
+                    const Text(
+                      'Video Pitch',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Builder(
                       builder: (context) {
                         String finalUrl = widget.project.pitchVideoUrl!;
                         if (finalUrl.startsWith('/')) {
-                          finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
+                          finalUrl =
+                              'https://kritikfinal.onrender.com$finalUrl';
                         }
                         return EmbeddedVideoPlayer(url: finalUrl);
                       },
@@ -214,27 +330,59 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                   ],
 
                   // Deliverables
-                  const Text('Documentación y Archivos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  const Text(
+                    'Documentación y Archivos',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
                   const SizedBox(height: 12),
-                  ...widget.project.videos.map((v) => _buildFileItem(context, v.title, v.url, Icons.video_file, isVideo: true)),
-                  ...widget.project.documents.map((d) => _buildFileItem(context, d.title, d.url, Icons.description, isImage: _isImage(d.type))),
-                  
+                  ...widget.project.videos.map(
+                    (v) => _buildFileItem(
+                      context,
+                      v.title,
+                      v.url,
+                      Icons.video_file,
+                      isVideo: true,
+                    ),
+                  ),
+                  ...widget.project.documents.map(
+                    (d) => _buildFileItem(
+                      context,
+                      d.title,
+                      d.url,
+                      Icons.description,
+                      isImage: _isImage(d.type),
+                    ),
+                  ),
+
                   // Evaluation Feedback
-                  if (_existingEvaluation?.feedback != null && _existingEvaluation!.feedback!.isNotEmpty) ...[
+                  if (_existingEvaluation?.feedback != null &&
+                      _existingEvaluation!.feedback!.isNotEmpty) ...[
                     const SizedBox(height: 32),
-                    const Text('Feedback del Evaluador', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    const Text(
+                      'Feedback del Evaluador',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.surfaceDark : Colors.grey[100],
+                        color: isDark
+                            ? AppColors.surfaceDark
+                            : Colors.grey[100],
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.grey.withOpacity(0.3)),
                       ),
                       child: Text(
                         _existingEvaluation!.feedback!,
-                        style: TextStyle(height: 1.5, color: isDark ? Colors.white70 : Colors.black87),
+                        textAlign: TextAlign.justify,
+                        style: TextStyle(
+                          height: 1.5,
+                          color: isDark ? Colors.white70 : Colors.black87,
+                        ),
                       ),
                     ),
                   ],
@@ -253,17 +401,30 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     return ['JPG', 'JPEG', 'PNG', 'WEBP'].contains(type.toUpperCase());
   }
 
-  Widget _buildFileItem(BuildContext context, String title, String url, IconData icon, {bool isVideo = false, bool isImage = false}) {
+  Widget _buildFileItem(
+    BuildContext context,
+    String title,
+    String url,
+    IconData icon, {
+    bool isVideo = false,
+    bool isImage = false,
+  }) {
     String finalUrl = url;
     if (finalUrl.startsWith('/')) {
-        finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
+      finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
     }
 
     return ListTile(
       leading: Icon(icon, color: AppColors.primaryYellow),
       title: Text(title, style: const TextStyle(fontSize: 14)),
       trailing: const Icon(Icons.open_in_new, size: 18),
-      onTap: () => NativeDocViewer.show(context, finalUrl, title, isVideo: isVideo, isImage: isImage),
+      onTap: () => NativeDocViewer.show(
+        context,
+        finalUrl,
+        title,
+        isVideo: isVideo,
+        isImage: isImage,
+      ),
     );
   }
 }

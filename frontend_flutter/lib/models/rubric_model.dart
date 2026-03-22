@@ -16,20 +16,20 @@ class Rubric {
   });
 
   factory Rubric.fromJson(Map<String, dynamic> json) => Rubric(
-        id: json['id']?.toString() ?? json['_id']?.toString(),
-        name: json['name'] as String?,
-        items: (json['items'] as List<dynamic>? ?? [])
-            .map((item) => Criterion.fromJson(item as Map<String, dynamic>))
-            .toList(),
-        isGlobal: json['isGlobal'] as bool? ?? false,
-        creatorId: json['creatorId'] as String?,
-      );
+    id: json['id']?.toString() ?? json['_id']?.toString(),
+    name: json['name'] as String?,
+    items: (json['items'] as List<dynamic>? ?? [])
+        .map((item) => Criterion.fromJson(item as Map<String, dynamic>))
+        .toList(),
+    isGlobal: json['isGlobal'] as bool? ?? false,
+    creatorId: json['creatorId'] as String?,
+  );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'items': items.map((item) => item.toJson()).toList(),
-        'isGlobal': isGlobal,
-        'creatorId': creatorId,
-      };
+    'id': id,
+    'name': name,
+    'items': items.map((item) => item.toJson()).toList(),
+    'isGlobal': isGlobal,
+    'creatorId': creatorId,
+  };
 }

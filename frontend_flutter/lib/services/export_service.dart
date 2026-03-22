@@ -8,16 +8,18 @@ import 'package:flutter/foundation.dart';
 class ExportService {
   Future<String> generateCsv(List<Map<String, dynamic>> results) async {
     final StringBuffer csv = StringBuffer();
-    
+
     // Header
     csv.writeln('Posicion,Equipo,Categoria,Puntaje Promedio,Votos');
-    
+
     int index = 1;
     for (var r in results) {
-      csv.writeln('$index,${r['teamName']},${r['category']},${r['averageScore']},${r['totalVotes']}');
+      csv.writeln(
+        '$index,${r['teamName']},${r['category']},${r['averageScore']},${r['totalVotes']}',
+      );
       index++;
     }
-    
+
     return csv.toString();
   }
 

@@ -4,7 +4,6 @@ import '../models/project_model.dart';
 import '../services/api_service.dart';
 import 'admin_users_screen.dart' as admin_users;
 
-
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
 
@@ -32,42 +31,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     });
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Panel Administrativo', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Panel Administrativo',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
-          )
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData),
         ],
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildAdminOptionsCard(),
-                const SizedBox(height: 30),
-                Text('Proyectos Cargados (${_projects?.length ?? 0})', 
-                  style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 15),
-                if (_projects == null || _projects!.isEmpty)
-                  _buildEmptyState()
-                else
-                  ..._projects!.map((p) => _buildProjectTile(p)),
-              ],
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildAdminOptionsCard(),
+                  const SizedBox(height: 30),
+                  Text(
+                    'Proyectos Cargados (${_projects?.length ?? 0})',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 15),
+                  if (_projects == null || _projects!.isEmpty)
+                    _buildEmptyState()
+                  else
+                    ..._projects!.map((p) => _buildProjectTile(p)),
+                ],
+              ),
             ),
-          ),
     );
   }
 
@@ -87,12 +86,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         children: [
           const Icon(Icons.shield_outlined, size: 48, color: Colors.orange),
           const SizedBox(height: 16),
-          const Text('Acciones de Administrador', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          const Text('Configura los roles de los usuarios registrados del evento.', textAlign: TextAlign.center),
+          const Text(
+            'Acciones de Administrador',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          const Text(
+            'Configura los roles de los usuarios registrados del evento.',
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 20),
           ElevatedButton.icon(
             onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const admin_users.AdminUsersScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const admin_users.AdminUsersScreen(),
+                ),
+              );
             },
             icon: const Icon(Icons.people_outline),
             label: const Text('Gestión de Usuarios (Roles)'),
@@ -115,7 +125,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           backgroundColor: Colors.yellow.shade700,
           child: const Icon(Icons.groups, color: Colors.white),
         ),
-        title: Text(project.title ?? 'Sin Nombre', style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          project.title ?? 'Sin Nombre',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Text(project.category ?? 'Sin Categoría'),
         trailing: const Icon(Icons.chevron_right),
       ),
@@ -130,7 +143,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           children: [
             Icon(Icons.inbox, size: 64, color: Colors.grey),
             SizedBox(height: 16),
-            Text('No hay proyectos registrados', style: TextStyle(color: Colors.grey)),
+            Text(
+              'No hay proyectos registrados',
+              style: TextStyle(color: Colors.grey),
+            ),
           ],
         ),
       ),

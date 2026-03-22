@@ -12,10 +12,15 @@ import 'submission_list_screen.dart';
 class ClassroomManagementScreen extends StatefulWidget {
   final String userId;
   final String role;
-  const ClassroomManagementScreen({super.key, required this.userId, required this.role});
+  const ClassroomManagementScreen({
+    super.key,
+    required this.userId,
+    required this.role,
+  });
 
   @override
-  State<ClassroomManagementScreen> createState() => _ClassroomManagementScreenState();
+  State<ClassroomManagementScreen> createState() =>
+      _ClassroomManagementScreenState();
 }
 
 class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
@@ -31,24 +36,30 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
 
   Future<void> _loadClassrooms() async {
     setState(() => _isLoading = true);
-    debugPrint('Loading classrooms for user: ${widget.userId} with role: ${widget.role}');
+    debugPrint(
+      'Loading classrooms for user: ${widget.userId} with role: ${widget.role}',
+    );
     try {
-      final classrooms = ((widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor'))
+      final classrooms =
+          ((widget.role.toLowerCase() == 'evaluator' ||
+              widget.role.toLowerCase() == 'profesor'))
           ? await _apiService.getClassrooms(teacherId: widget.userId)
           : await _apiService.getClassrooms(studentId: widget.userId);
-      
+
       setState(() {
         _classrooms = classrooms;
         _isLoading = false;
       });
-      debugPrint('Loaded ${_classrooms.length} classrooms. IDs: ${_classrooms.map((c) => c.id).join(', ')}');
+      debugPrint(
+        'Loaded ${_classrooms.length} classrooms. IDs: ${_classrooms.map((c) => c.id).join(', ')}',
+      );
     } catch (e) {
       debugPrint('Error loading classrooms: $e');
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar clases: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al cargar clases: $e')));
       }
     }
   }
@@ -56,7 +67,7 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
   void _showCreateClassDialog() {
     final nameController = TextEditingController();
     final descController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -64,12 +75,23 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Nombre de la Clase')),
-            TextField(controller: descController, decoration: const InputDecoration(labelText: 'Descripción')),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Nombre de la Clase',
+              ),
+            ),
+            TextField(
+              controller: descController,
+              decoration: const InputDecoration(labelText: 'Descripción'),
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
           ElevatedButton(
             onPressed: () async {
               if (nameController.text.isNotEmpty) {
@@ -77,25 +99,31 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                   name: nameController.text,
                   description: descController.text,
                   teacherId: widget.userId,
-                  accessCode: (DateTime.now().millisecondsSinceEpoch % 1000000).toString(),
+                  accessCode: (DateTime.now().millisecondsSinceEpoch % 1000000)
+                      .toString(),
                 );
-                
+
                 setState(() => _isLoading = true);
                 final result = await _apiService.createClassroom(newClass);
                 debugPrint('DEBUG: Create classroom result: $result');
-                
+
                 if (mounted) {
                   if (result is Classroom) {
                     Navigator.pop(context);
                     _loadClassrooms();
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Clase creada correctamente')),
+                      const SnackBar(
+                        content: Text('Clase creada correctamente'),
+                      ),
                     );
                   } else {
                     setState(() => _isLoading = false);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(result?.toString() ?? 'Error al crear la clase. Intenta de nuevo.'),
+                        content: Text(
+                          result?.toString() ??
+                              'Error al crear la clase. Intenta de nuevo.',
+                        ),
                         backgroundColor: Colors.red,
                         duration: const Duration(seconds: 5),
                       ),
@@ -104,17 +132,17 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                 }
               }
             },
-            child: const Text('Crear')
+            child: const Text('Crear'),
           ),
         ],
-      )
+      ),
     );
   }
 
   void _showEditClassDialog(Classroom classroom) {
     final nameController = TextEditingController(text: classroom.name);
     final descController = TextEditingController(text: classroom.description);
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -122,12 +150,23 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Nombre de la Clase')),
-            TextField(controller: descController, decoration: const InputDecoration(labelText: 'Descripción')),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Nombre de la Clase',
+              ),
+            ),
+            TextField(
+              controller: descController,
+              decoration: const InputDecoration(labelText: 'Descripción'),
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
           ElevatedButton(
             onPressed: () async {
               final updatedClass = Classroom(
@@ -137,26 +176,30 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                 teacherId: classroom.teacherId,
                 accessCode: classroom.accessCode,
               );
-                final result = await _apiService.updateClassroom(updatedClass);
-                if (mounted) {
-                  if (result == true) {
-                    Navigator.pop(context);
-                    _loadClassrooms();
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clase actualizada')));
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(result?.toString() ?? 'Error al actualizar la clase'),
-                        backgroundColor: Colors.red,
+              final result = await _apiService.updateClassroom(updatedClass);
+              if (mounted) {
+                if (result == true) {
+                  Navigator.pop(context);
+                  _loadClassrooms();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Clase actualizada')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        result?.toString() ?? 'Error al actualizar la clase',
                       ),
-                    );
-                  }
+                      backgroundColor: Colors.red,
+                    ),
+                  );
                 }
+              }
             },
-            child: const Text('Guardar')
+            child: const Text('Guardar'),
           ),
         ],
-      )
+      ),
     );
   }
 
@@ -165,9 +208,14 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('¿Eliminar Clase?'),
-        content: const Text('Esta acción no se puede deshacer y eliminará todas las convocatorias asociadas.'),
+        content: const Text(
+          'Esta acción no se puede deshacer y eliminará todas las convocatorias asociadas.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
@@ -181,7 +229,9 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
       if (mounted) {
         if (result == true) {
           _loadClassrooms();
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clase eliminada')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Clase eliminada')));
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -199,9 +249,14 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('¿Salir de la Clase?'),
-        content: const Text('Ya no podrás ver las tareas ni subir proyectos a esta clase a menos que vuelvas a unirte.'),
+        content: const Text(
+          'Ya no podrás ver las tareas ni subir proyectos a esta clase a menos que vuelvas a unirte.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Salir', style: TextStyle(color: Colors.red)),
@@ -214,20 +269,35 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
       if (widget.userId == null || widget.userId!.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Acceso de invitado: No puedes salir de clases en modo invitado.'), backgroundColor: Colors.orange)
+            const SnackBar(
+              content: Text(
+                'Acceso de invitado: No puedes salir de clases en modo invitado.',
+              ),
+              backgroundColor: Colors.orange,
+            ),
           );
         }
         return;
       }
 
-      final success = await _apiService.leaveClassroom(widget.userId!, classroomId);
+      final success = await _apiService.leaveClassroom(
+        widget.userId!,
+        classroomId,
+      );
       if (mounted) {
         if (success) {
           Navigator.pop(context); // Close details sheet
           _loadClassrooms();
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Has salido de la clase')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Has salido de la clase')),
+          );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al salir de la clase'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error al salir de la clase'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       }
     }
@@ -238,9 +308,14 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('¿Eliminar Convocatoria?'),
-        content: const Text('Esta acción eliminará la convocatoria y todos los proyectos subidos a ella.'),
+        content: const Text(
+          'Esta acción eliminará la convocatoria y todos los proyectos subidos a ella.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
@@ -253,7 +328,10 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
       final success = await _apiService.deleteAssignment(id);
       if (success) {
         onDeleted();
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Convocatoria eliminada')));
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Convocatoria eliminada')),
+          );
       }
     }
   }
@@ -264,20 +342,32 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Unirse a Clase'),
-        content: TextField(controller: codeController, decoration: const InputDecoration(labelText: 'Código de Clase')),
+        content: TextField(
+          controller: codeController,
+          decoration: const InputDecoration(labelText: 'Código de Clase'),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
           ElevatedButton(
             onPressed: () async {
               if (widget.userId == null || widget.userId!.isEmpty) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Acceso de Invitado: Debes iniciar sesión para unirte a una clase.'))
+                    const SnackBar(
+                      content: Text(
+                        'Acceso de Invitado: Debes iniciar sesión para unirte a una clase.',
+                      ),
+                    ),
                   );
                 }
                 return;
               }
-              final classroom = await _apiService.getClassroomByCode(codeController.text);
+              final classroom = await _apiService.getClassroomByCode(
+                codeController.text,
+              );
               if (classroom != null) {
                 final enrollment = ClassEnrollment(
                   classroomId: classroom.id!,
@@ -287,25 +377,33 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                 final result = await _apiService.enrollInClass(enrollment);
                 if (mounted) {
                   if (result is bool && result == true) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Solicitud enviada correctamente')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Solicitud enviada correctamente'),
+                      ),
+                    );
                     Navigator.pop(context);
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Error: $result'), 
-                      backgroundColor: Colors.red
-                    ));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: $result'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
                   }
                 }
               } else {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Código no válido')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Código no válido')),
+                  );
                 }
               }
             },
-            child: const Text('Unirse')
+            child: const Text('Unirse'),
           ),
         ],
-      )
+      ),
     );
   }
 
@@ -320,42 +418,60 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
       debugPrint('DEBUG: Calling loadData for classroom: ${classroom.id}');
       setState(() => loadingDetails = true);
       Future.wait([
-        _apiService.getClassMembers(classroom.id ?? ''),
-        _apiService.getAssignmentsByClassroom(classroom.id ?? ''),
-        if (widget.role.toLowerCase() == 'student') _apiService.getProjects(studentId: widget.userId ?? '') else Future.value(<Project>[]),
-      ]).then((results) {
-        if (mounted) {
-          final fetchedMembers = List<ClassEnrollment>.from(results[0]);
-          debugPrint('DEBUG: Loaded ${fetchedMembers.length} members/requests for this classroom');
-          for (var m in fetchedMembers) {
-            debugPrint('DEBUG: Request from StudentID: ${m.studentId}, Name: ${m.studentName}, Status: ${m.status}');
-          }
-          setState(() {
-            members = fetchedMembers;
-            assignments = List<Assignment>.from(results[1]);
-            studentProjects = List<Project>.from(results[2]);
-            loadingDetails = false;
+            _apiService.getClassMembers(classroom.id ?? ''),
+            _apiService.getAssignmentsByClassroom(classroom.id ?? ''),
+            if (widget.role.toLowerCase() == 'student')
+              _apiService.getProjects(studentId: widget.userId ?? '')
+            else
+              Future.value(<Project>[]),
+          ])
+          .then((results) {
+            if (mounted) {
+              final fetchedMembers = List<ClassEnrollment>.from(results[0]);
+              debugPrint(
+                'DEBUG: Loaded ${fetchedMembers.length} members/requests for this classroom',
+              );
+              for (var m in fetchedMembers) {
+                debugPrint(
+                  'DEBUG: Request from StudentID: ${m.studentId}, Name: ${m.studentName}, Status: ${m.status}',
+                );
+              }
+              setState(() {
+                members = fetchedMembers;
+                assignments = List<Assignment>.from(results[1]);
+                studentProjects = List<Project>.from(results[2]);
+                loadingDetails = false;
+              });
+              debugPrint(
+                'DEBUG: Loaded ${assignments.length} assignments for this classroom',
+              );
+            }
+          })
+          .catchError((e) {
+            debugPrint('DEBUG: Error in loadData: $e');
+            if (mounted) {
+              setState(() => loadingDetails = false);
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text('Error: $e')));
+            }
           });
-          debugPrint('DEBUG: Loaded ${assignments.length} assignments for this classroom');
-        }
-      }).catchError((e) {
-        debugPrint('DEBUG: Error in loadData: $e');
-        if (mounted) {
-          setState(() => loadingDetails = false);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-        }
-      });
     }
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) {
           if (loadingDetails) {
             loadData(setModalState);
-            return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
+            return const SizedBox(
+              height: 200,
+              child: Center(child: CircularProgressIndicator()),
+            );
           }
 
           return DraggableScrollableSheet(
@@ -373,7 +489,10 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                       icon: const Icon(Icons.refresh),
                       onPressed: () => loadData(setModalState),
                     ),
-                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
                   ],
                 ),
                 Expanded(
@@ -381,14 +500,29 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                     controller: scrollController,
                     padding: const EdgeInsets.all(16),
                     children: [
-                      Text('Descripción:', style: Theme.of(context).textTheme.titleSmall),
-                      Text(classroom.description, style: const TextStyle(color: Colors.grey)),
+                      Text(
+                        'Descripción:',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      Text(
+                        classroom.description,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
                       const SizedBox(height: 16),
-                      if ((widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor')) ...[
-                        Text('Código de Clase (para alumnos):', style: Theme.of(context).textTheme.titleSmall),
+                      if ((widget.role.toLowerCase() == 'evaluator' ||
+                          widget.role.toLowerCase() == 'profesor')) ...[
+                        Text(
+                          'Código de Clase (para alumnos):',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
                         SelectableText(
-                          classroom.accessCode, 
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 4, color: AppColors.primaryYellow)
+                          classroom.accessCode,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 4,
+                            color: AppColors.primaryYellow,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
@@ -410,12 +544,16 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                         ),
                       ],
                       const Divider(height: 32),
-                      
-                      if ((widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor')) ...[
+
+                      if ((widget.role.toLowerCase() == 'evaluator' ||
+                          widget.role.toLowerCase() == 'profesor')) ...[
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Tareas en esta Clase:', style: Theme.of(context).textTheme.titleSmall),
+                            Text(
+                              'Tareas en esta Clase:',
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
                             IconButton(
                               icon: const Icon(Icons.refresh, size: 20),
                               onPressed: () => loadData(setModalState),
@@ -425,124 +563,238 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                         ),
                         if (assignments.isEmpty) const Text('No hay tareas.'),
                         if (assignments.isEmpty) const Text('No hay tareas.'),
-                        ...assignments.map((a) => ListTile(
-                          title: Text(a.title),
-                          subtitle: Text(a.description),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.inventory_2_outlined, color: Colors.blue, size: 20),
-                                tooltip: 'Ver Entregas',
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => SubmissionListScreen(
-                                        assignmentId: a.id!,
-                                        assignmentTitle: a.title,
-                                        userId: widget.userId,
+                        ...assignments.map(
+                          (a) => ListTile(
+                            title: Text(a.title),
+                            subtitle: Text(a.description),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.inventory_2_outlined,
+                                    color: Colors.blue,
+                                    size: 20,
+                                  ),
+                                  tooltip: 'Ver Entregas',
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => SubmissionListScreen(
+                                          assignmentId: a.id!,
+                                          assignmentTitle: a.title,
+                                          userId: widget.userId,
+                                        ),
                                       ),
+                                    );
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.edit_outlined,
+                                    size: 20,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            AssignmentCreationScreen(
+                                              teacherId: widget.userId ?? '',
+                                              assignment: a,
+                                            ),
+                                      ),
+                                    ).then(
+                                      (_) => setModalState(
+                                        () => loadingDetails = true,
+                                      ),
+                                    );
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.red,
+                                    size: 20,
+                                  ),
+                                  onPressed: () => _deleteAssignment(
+                                    a.id!,
+                                    () => setModalState(
+                                      () => loadingDetails = true,
                                     ),
-                                  );
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.edit_outlined, size: 20),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => AssignmentCreationScreen(teacherId: widget.userId ?? '', assignment: a))
-                                  ).then((_) => setModalState(() => loadingDetails = true));
-                                },
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                                onPressed: () => _deleteAssignment(a.id!, () => setModalState(() => loadingDetails = true)),
-                              ),
-                            ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        )),
+                        ),
                         const Divider(height: 32),
-                        const Text('Miembros / Solicitudes:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const Text(
+                          'Miembros / Solicitudes:',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         const SizedBox(height: 8),
-                        if (members.isEmpty) const Text('No hay solicitudes de alumnos.'),
-                        ...members.map((m) => ListTile(
-                          leading: const CircleAvatar(child: Icon(Icons.person_outline)),
-                          title: Text(m.studentName ?? m.studentId),
-                          subtitle: Text('Estado: ${m.status}'),
-                          trailing: m.status == 'Pending' 
-                            ? Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.check, color: Colors.green),
-                                    onPressed: () async {
-                                      final success = await _apiService.updateEnrollmentStatus(m.id!, 'Accepted');
-                                      if (success) loadData(setModalState);
-                                    },
-                                    tooltip: 'Aceptar',
+                        if (members.isEmpty)
+                          const Text('No hay solicitudes de alumnos.'),
+                        ...members.map(
+                          (m) => ListTile(
+                            leading: const CircleAvatar(
+                              child: Icon(Icons.person_outline),
+                            ),
+                            title: Text(m.studentName ?? m.studentId),
+                            subtitle: Text('Estado: ${m.status}'),
+                            trailing: m.status == 'Pending'
+                                ? Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.check,
+                                          color: Colors.green,
+                                        ),
+                                        onPressed: () async {
+                                          final success = await _apiService
+                                              .updateEnrollmentStatus(
+                                                m.id!,
+                                                'Accepted',
+                                              );
+                                          if (success) loadData(setModalState);
+                                        },
+                                        tooltip: 'Aceptar',
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.close,
+                                          color: Colors.red,
+                                        ),
+                                        onPressed: () async {
+                                          final success = await _apiService
+                                              .updateEnrollmentStatus(
+                                                m.id!,
+                                                'Rejected',
+                                              );
+                                          if (success) loadData(setModalState);
+                                        },
+                                        tooltip: 'Rechazar',
+                                      ),
+                                    ],
+                                  )
+                                : Icon(
+                                    m.status == 'Accepted'
+                                        ? Icons.check_circle
+                                        : Icons.cancel,
+                                    color: m.status == 'Accepted'
+                                        ? Colors.green
+                                        : Colors.red,
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.close, color: Colors.red),
-                                    onPressed: () async {
-                                      final success = await _apiService.updateEnrollmentStatus(m.id!, 'Rejected');
-                                      if (success) loadData(setModalState);
-                                    },
-                                    tooltip: 'Rechazar',
-                                  ),
-                                ],
-                              )
-                            : Icon(
-                                m.status == 'Accepted' ? Icons.check_circle : Icons.cancel,
-                                color: m.status == 'Accepted' ? Colors.green : Colors.red,
-                              ),
-                        )),
+                          ),
+                        ),
                       ] else ...[
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Tareas de la Clase:', style: Theme.of(context).textTheme.titleSmall),
+                            Text(
+                              'Tareas de la Clase:',
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
                             DropdownButton<String>(
                               value: filter,
-                              items: ['Todos', 'Entregados', 'Vencidos', 'Pendientes'].map((f) => DropdownMenuItem(value: f, child: Text(f))).toList(),
-                              onChanged: (val) => setModalState(() => filter = val!),
+                              items:
+                                  [
+                                        'Todos',
+                                        'Entregados',
+                                        'Vencidos',
+                                        'Pendientes',
+                                      ]
+                                      .map(
+                                        (f) => DropdownMenuItem(
+                                          value: f,
+                                          child: Text(f),
+                                        ),
+                                      )
+                                      .toList(),
+                              onChanged: (val) =>
+                                  setModalState(() => filter = val!),
                             ),
                           ],
                         ),
-                        if (assignments.isEmpty) const Text('No hay tareas publicadas.'),
-                        ...assignments.where((a) {
-                          final isSubmitted = studentProjects.any((p) => p.assignmentId == a.id);
-                          final isExpired = a.dueDate != null && a.dueDate!.isBefore(DateTime.now());
-                          if (filter == 'Entregados') return isSubmitted;
-                          if (filter == 'Vencidos') return !isSubmitted && isExpired;
-                          if (filter == 'Pendientes') return !isSubmitted && !isExpired;
-                          return true;
-                        }).map((a) {
-                          final isSubmitted = studentProjects.any((p) => p.assignmentId == a.id);
-                          final isExpired = a.dueDate != null && a.dueDate!.isBefore(DateTime.now());
-                          return ListTile(
-                            title: Text(a.title, style: TextStyle(fontWeight: isSubmitted ? FontWeight.normal : FontWeight.bold)),
-                            subtitle: Text(a.dueDate != null ? 'Vence: ${a.dueDate!.day}/${a.dueDate!.month} ${a.dueDate!.hour.toString().padLeft(2, '0')}:${a.dueDate!.minute.toString().padLeft(2, '0')}' : 'Sin fecha'),
-                            trailing: isSubmitted 
-                              ? const Icon(Icons.check_circle, color: Colors.green)
-                              : isExpired 
-                                ? const Icon(Icons.error_outline, color: Colors.red)
-                                : const Icon(Icons.upload_file),
-                            onTap: (isSubmitted || isExpired) ? null : () {
-                               Navigator.pop(context);
-                               Navigator.push(context, MaterialPageRoute(builder: (_) => StudentUploadScreen(
-                                 studentId: widget.userId ?? '',
-                                 initialAssignmentId: a.id,
-                               )));
-                            },
-                          );
-                        }),
+                        if (assignments.isEmpty)
+                          const Text('No hay tareas publicadas.'),
+                        ...assignments
+                            .where((a) {
+                              final isSubmitted = studentProjects.any(
+                                (p) => p.assignmentId == a.id,
+                              );
+                              final isExpired =
+                                  a.dueDate != null &&
+                                  a.dueDate!.isBefore(DateTime.now());
+                              if (filter == 'Entregados') return isSubmitted;
+                              if (filter == 'Vencidos')
+                                return !isSubmitted && isExpired;
+                              if (filter == 'Pendientes')
+                                return !isSubmitted && !isExpired;
+                              return true;
+                            })
+                            .map((a) {
+                              final isSubmitted = studentProjects.any(
+                                (p) => p.assignmentId == a.id,
+                              );
+                              final isExpired =
+                                  a.dueDate != null &&
+                                  a.dueDate!.isBefore(DateTime.now());
+                              return ListTile(
+                                title: Text(
+                                  a.title,
+                                  style: TextStyle(
+                                    fontWeight: isSubmitted
+                                        ? FontWeight.normal
+                                        : FontWeight.bold,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  a.dueDate != null
+                                      ? 'Vence: ${a.dueDate!.day}/${a.dueDate!.month} ${a.dueDate!.hour.toString().padLeft(2, '0')}:${a.dueDate!.minute.toString().padLeft(2, '0')}'
+                                      : 'Sin fecha',
+                                ),
+                                trailing: isSubmitted
+                                    ? const Icon(
+                                        Icons.check_circle,
+                                        color: Colors.green,
+                                      )
+                                    : isExpired
+                                    ? const Icon(
+                                        Icons.error_outline,
+                                        color: Colors.red,
+                                      )
+                                    : const Icon(Icons.upload_file),
+                                onTap: (isSubmitted || isExpired)
+                                    ? null
+                                    : () {
+                                        Navigator.pop(context);
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => StudentUploadScreen(
+                                              studentId: widget.userId ?? '',
+                                              initialAssignmentId: a.id,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                              );
+                            }),
                         const Divider(height: 32),
                         ElevatedButton.icon(
                           onPressed: () => _leaveClassroom(classroom.id!),
-                          icon: const Icon(Icons.exit_to_app, color: Colors.white),
-                          label: const Text('Salir de la Clase', style: TextStyle(color: Colors.white)),
+                          icon: const Icon(
+                            Icons.exit_to_app,
+                            color: Colors.white,
+                          ),
+                          label: const Text(
+                            'Salir de la Clase',
+                            style: TextStyle(color: Colors.white),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red.shade400,
                             minimumSize: const Size(double.infinity, 44),
@@ -565,16 +817,23 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Mis Clases')),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : _classrooms.isEmpty 
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _classrooms.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.class_outlined, size: 64, color: Colors.grey),
+                  const Icon(
+                    Icons.class_outlined,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(height: 16),
-                  const Text('No hay clases registradas', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                  const Text(
+                    'No hay clases registradas',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _loadClassrooms,
@@ -591,22 +850,37 @@ class _ClassroomManagementScreenState extends State<ClassroomManagementScreen> {
                   leading: const CircleAvatar(child: Icon(Icons.class_)),
                   title: Text(c.name),
                   subtitle: Text(c.description),
-                  trailing: (widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor') 
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => _showEditClassDialog(c)),
-                          IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red), onPressed: () => _deleteClassroom(c.id!)),
-                          const Icon(Icons.chevron_right),
-                        ],
-                      )
-                    : const Icon(Icons.chevron_right),
+                  trailing:
+                      (widget.role.toLowerCase() == 'evaluator' ||
+                          widget.role.toLowerCase() == 'profesor')
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit_outlined),
+                              onPressed: () => _showEditClassDialog(c),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                              ),
+                              onPressed: () => _deleteClassroom(c.id!),
+                            ),
+                            const Icon(Icons.chevron_right),
+                          ],
+                        )
+                      : const Icon(Icons.chevron_right),
                   onTap: () => _showClassDetail(c),
                 );
               },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: (widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor') ? _showCreateClassDialog : _showJoinClassDialog,
+        onPressed:
+            (widget.role.toLowerCase() == 'evaluator' ||
+                widget.role.toLowerCase() == 'profesor')
+            ? _showCreateClassDialog
+            : _showJoinClassDialog,
         child: const Icon(Icons.add),
       ),
     );

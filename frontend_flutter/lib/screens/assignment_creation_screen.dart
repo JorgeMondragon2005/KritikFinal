@@ -11,10 +11,16 @@ class AssignmentCreationScreen extends StatefulWidget {
   final String teacherId;
   final String? initialClassroomId;
   final Assignment? assignment;
-  const AssignmentCreationScreen({super.key, required this.teacherId, this.initialClassroomId, this.assignment});
+  const AssignmentCreationScreen({
+    super.key,
+    required this.teacherId,
+    this.initialClassroomId,
+    this.assignment,
+  });
 
   @override
-  State<AssignmentCreationScreen> createState() => _AssignmentCreationScreenState();
+  State<AssignmentCreationScreen> createState() =>
+      _AssignmentCreationScreenState();
 }
 
 class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
@@ -22,7 +28,7 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final ApiService _apiService = ApiService();
-  
+
   List<Rubric> _rubrics = [];
   String? _selectedRubricId;
   bool _isLoadingRubrics = true;
@@ -53,15 +59,14 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
   }
 
   Future<void> _fetchData() async {
-    await Future.wait([
-      _fetchRubrics(),
-      _fetchClasses(),
-    ]);
+    await Future.wait([_fetchRubrics(), _fetchClasses()]);
   }
 
   Future<void> _fetchClasses() async {
     try {
-      final classes = await _apiService.getClassrooms(teacherId: widget.teacherId);
+      final classes = await _apiService.getClassrooms(
+        teacherId: widget.teacherId,
+      );
       setState(() {
         _classes = classes;
         _isLoadingClasses = false;
@@ -82,9 +87,9 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
     } catch (e) {
       debugPrint('Error fetching rubrics: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar rúbricas: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al cargar rúbricas: $e')));
       }
       setState(() => _isLoadingRubrics = false);
     }
@@ -101,9 +106,11 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
       if (!mounted) return;
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
-        initialTime: TimeOfDay.fromDateTime(_selectedDate ?? DateTime.now().copyWith(hour: 23, minute: 59)),
+        initialTime: TimeOfDay.fromDateTime(
+          _selectedDate ?? DateTime.now().copyWith(hour: 23, minute: 59),
+        ),
       );
-      
+
       if (pickedTime != null) {
         setState(() {
           _selectedDate = DateTime(
@@ -120,7 +127,10 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
 
   String _generateAccessCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    return List.generate(6, (index) => chars[DateTime.now().microsecond % chars.length]).join();
+    return List.generate(
+      6,
+      (index) => chars[DateTime.now().microsecond % chars.length],
+    ).join();
   }
 
   Future<void> _saveAssignment() async {
@@ -140,34 +150,39 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
         jurors: _jurors.isNotEmpty ? _jurors : null,
       );
 
-      final success = widget.assignment != null 
-        ? await _apiService.updateAssignment(assignment)
-        : await _apiService.createAssignment(assignment);
+      final success = widget.assignment != null
+          ? await _apiService.updateAssignment(assignment)
+          : await _apiService.createAssignment(assignment);
 
       if (mounted) {
         if (success) {
           // Notify students ONLY if it's an update (Backend handles New Assignments)
           if (widget.assignment != null && _selectedClassId != null) {
             try {
-              final members = await _apiService.getClassMembers(_selectedClassId!);
+              final members = await _apiService.getClassMembers(
+                _selectedClassId!,
+              );
               for (var m in members) {
                 if (m.status.toLowerCase() == 'approved') {
-                  await _apiService.createNotification(AppNotification(
-                    userId: m.studentId,
-                    title: '📝 Tarea Actualizada',
-                    message: 'El profesor ha modificado la tarea: ${_titleController.text}',
-                    createdAt: DateTime.now(),
-                    actionUrl: '/assignment/${widget.assignment!.id}',
-                  ));
+                  await _apiService.createNotification(
+                    AppNotification(
+                      userId: m.studentId,
+                      title: '📝 Tarea Actualizada',
+                      message:
+                          'El profesor ha modificado la tarea: ${_titleController.text}',
+                      createdAt: DateTime.now(),
+                      actionUrl: '/assignment/${widget.assignment!.id}',
+                    ),
+                  );
                 }
               }
             } catch (_) {}
           }
 
           if (widget.assignment != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Tarea actualizada')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('Tarea actualizada')));
             Navigator.pop(context, true);
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -177,15 +192,19 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
           }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al ${widget.assignment != null ? 'actualizar' : 'crear'} la convocatoria')),
+            SnackBar(
+              content: Text(
+                'Error al ${widget.assignment != null ? 'actualizar' : 'crear'} la convocatoria',
+              ),
+            ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -195,7 +214,9 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.assignment != null ? 'Editar Tarea' : 'Nueva Tarea')),
+      appBar: AppBar(
+        title: Text(widget.assignment != null ? 'Editar Tarea' : 'Nueva Tarea'),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Form(
@@ -227,57 +248,82 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
                 validator: (v) => v!.isEmpty ? 'Campo requerido' : null,
               ),
               const SizedBox(height: 24),
-              _isLoadingRubrics 
-                ? const LinearProgressIndicator()
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedRubricId,
-                        decoration: InputDecoration(
-                          labelText: 'Seleccionar Rúbrica de Evaluación',
-                          prefixIcon: const Icon(Icons.rule),
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.refresh),
-                            onPressed: _fetchRubrics,
+              _isLoadingRubrics
+                  ? const LinearProgressIndicator()
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          initialValue: _selectedRubricId,
+                          decoration: InputDecoration(
+                            labelText: 'Seleccionar Rúbrica de Evaluación',
+                            prefixIcon: const Icon(Icons.rule),
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.refresh),
+                              onPressed: _fetchRubrics,
+                            ),
                           ),
+                          items: _rubrics
+                              .map(
+                                (r) => DropdownMenuItem(
+                                  value: r.id,
+                                  child: Text(r.name ?? 'Rúbrica sin nombre'),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: _rubrics.isEmpty
+                              ? null
+                              : (val) =>
+                                    setState(() => _selectedRubricId = val),
+                          validator: (val) =>
+                              val == null ? 'Selecciona una rúbrica' : null,
                         ),
-                        items: _rubrics.map((r) => DropdownMenuItem(
-                          value: r.id,
-                          child: Text(r.name ?? 'Rúbrica sin nombre'),
-                        )).toList(),
-                        onChanged: _rubrics.isEmpty ? null : (val) => setState(() => _selectedRubricId = val),
-                        validator: (val) => val == null ? 'Selecciona una rúbrica' : null,
-                      ),
-                      if (_rubrics.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            'Aviso: Debes crear al menos una rúbrica antes de publicar una tarea.',
-                            style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold),
+                        if (_rubrics.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              'Aviso: Debes crear al menos una rúbrica antes de publicar una tarea.',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
-                    ],
-                  ),
+                      ],
+                    ),
               const SizedBox(height: 16),
               _isLoadingClasses
-                ? const LinearProgressIndicator()
-                : DropdownButtonFormField<String>(
-                    value: _selectedClassId,
-                    decoration: InputDecoration(
-                      labelText: 'Vincular a Clase',
-                      prefixIcon: const Icon(Icons.class_outlined),
-                      helperText: widget.initialClassroomId != null ? 'Clase seleccionada automáticamente' : null,
+                  ? const LinearProgressIndicator()
+                  : DropdownButtonFormField<String>(
+                      value: _selectedClassId,
+                      decoration: InputDecoration(
+                        labelText: 'Vincular a Clase',
+                        prefixIcon: const Icon(Icons.class_outlined),
+                        helperText: widget.initialClassroomId != null
+                            ? 'Clase seleccionada automáticamente'
+                            : null,
+                      ),
+                      items: _classes
+                          .map(
+                            (c) => DropdownMenuItem(
+                              value: c.id,
+                              child: Text(c.name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: widget.initialClassroomId != null
+                          ? null
+                          : (val) => setState(() => _selectedClassId = val),
+                      validator: (val) => val == null
+                          ? 'Vincular a una clase es obligatorio'
+                          : null,
                     ),
-                    items: _classes.map((c) => DropdownMenuItem(
-                      value: c.id,
-                      child: Text(c.name),
-                    )).toList(),
-                    onChanged: widget.initialClassroomId != null ? null : (val) => setState(() => _selectedClassId = val),
-                    validator: (val) => val == null ? 'Vincular a una clase es obligatorio' : null,
-                  ),
               const SizedBox(height: 16),
-              const Text('Jurados Asignados (Opcional)', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Jurados Asignados (Opcional)',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -316,21 +362,36 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
                         final weightText = _jurorWeightController.text.trim();
                         if (email.isEmpty || weightText.isEmpty) return;
                         if (!email.contains('@')) {
-                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Correo inválido')));
-                           return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Correo inválido')),
+                          );
+                          return;
                         }
                         final weight = int.tryParse(weightText) ?? 0;
                         if (weight <= 0 || weight > 100) {
-                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Porcentaje inválido')));
-                           return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Porcentaje inválido'),
+                            ),
+                          );
+                          return;
                         }
                         setState(() {
-                          _jurors.add(JurorAssignment(email: email, weightPercentage: weight));
+                          _jurors.add(
+                            JurorAssignment(
+                              email: email,
+                              weightPercentage: weight,
+                            ),
+                          );
                           _jurorEmailController.clear();
                           _jurorWeightController.text = '100'; // Reset
                         });
                       },
-                      icon: const Icon(Icons.add_circle, size: 36, color: AppColors.primaryYellow),
+                      icon: const Icon(
+                        Icons.add_circle,
+                        size: 36,
+                        color: AppColors.primaryYellow,
+                      ),
                     ),
                   ),
                 ],
@@ -352,13 +413,28 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
                       return ListTile(
                         leading: const CircleAvatar(
                           backgroundColor: AppColors.backgroundWhite,
-                          child: Icon(Icons.person_outline, color: AppColors.primaryYellow),
+                          child: Icon(
+                            Icons.person_outline,
+                            color: AppColors.primaryYellow,
+                          ),
                         ),
-                        title: Text(j.email, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        subtitle: Text('Peso de calificación general: ${j.weightPercentage}%'),
+                        title: Text(
+                          j.email,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Peso de calificación general: ${j.weightPercentage}%',
+                        ),
                         trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.red),
-                          onPressed: () => setState(() => _jurors.removeAt(index)),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                          ),
+                          onPressed: () =>
+                              setState(() => _jurors.removeAt(index)),
                         ),
                       );
                     },
@@ -366,9 +442,11 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
                 ),
               const SizedBox(height: 24),
               ListTile(
-                title: Text(_selectedDate == null 
-                  ? 'Fecha y Hora de Entrega (Opcional)' 
-                  : 'Entrega: ${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year} ${_selectedDate!.hour.toString().padLeft(2, '0')}:${_selectedDate!.minute.toString().padLeft(2, '0')}'),
+                title: Text(
+                  _selectedDate == null
+                      ? 'Fecha y Hora de Entrega (Opcional)'
+                      : 'Entrega: ${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year} ${_selectedDate!.hour.toString().padLeft(2, '0')}:${_selectedDate!.minute.toString().padLeft(2, '0')}',
+                ),
                 leading: const Icon(Icons.calendar_today),
                 trailing: const Icon(Icons.edit),
                 onTap: () => _selectDate(context),
@@ -384,9 +462,14 @@ class _AssignmentCreationScreenState extends State<AssignmentCreationScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   backgroundColor: AppColors.primaryYellow,
                 ),
-                child: _isSaving 
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : Text(widget.assignment != null ? 'Guardar Cambios' : 'Publicar Tarea', style: const TextStyle(fontSize: 18)),
+                child: _isSaving
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        widget.assignment != null
+                            ? 'Guardar Cambios'
+                            : 'Publicar Tarea',
+                        style: const TextStyle(fontSize: 18),
+                      ),
               ),
             ],
           ),

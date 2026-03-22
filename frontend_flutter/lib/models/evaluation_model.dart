@@ -25,7 +25,9 @@ class Evaluation {
 
   double? get generalScore {
     if (detailedScores == null || detailedScores!.isEmpty) return null;
-    return detailedScores!.values.fold(0, (sum, score) => sum + score).toDouble();
+    return detailedScores!.values
+        .fold(0, (sum, score) => sum + score)
+        .toDouble();
   }
 
   factory Evaluation.fromJson(Map<String, dynamic> json) {
@@ -33,10 +35,14 @@ class Evaluation {
     Map<String, double>? parsedScores;
     if (json['scores'] != null && json['scores'] is Map) {
       if (json['scores']['values'] != null && json['scores']['values'] is Map) {
-        parsedScores = (json['scores']['values'] as Map).cast<String, dynamic>().map((key, value) => MapEntry(key, (value as num).toDouble()));
+        parsedScores = (json['scores']['values'] as Map)
+            .cast<String, dynamic>()
+            .map((key, value) => MapEntry(key, (value as num).toDouble()));
       } else {
         try {
-          parsedScores = (json['scores'] as Map).cast<String, dynamic>().map((key, value) => MapEntry(key, (value as num).toDouble()));
+          parsedScores = (json['scores'] as Map).cast<String, dynamic>().map(
+            (key, value) => MapEntry(key, (value as num).toDouble()),
+          );
         } catch (_) {
           // If cast fails, maybe it's not the flat map we expected
         }
@@ -44,17 +50,23 @@ class Evaluation {
     }
 
     return Evaluation(
-      id: json['id']?.toString() ?? json['Id']?.toString() ?? json['_id']?.toString(),
+      id:
+          json['id']?.toString() ??
+          json['Id']?.toString() ??
+          json['_id']?.toString(),
       projectId: json['projectId']?.toString() ?? json['ProjectId']?.toString(),
-      evaluatorId: json['evaluatorId']?.toString() ?? json['EvaluatorId']?.toString(),
+      evaluatorId:
+          json['evaluatorId']?.toString() ?? json['EvaluatorId']?.toString(),
       rubricId: json['rubricId']?.toString() ?? json['RubricId']?.toString(),
       scores: parsedScores,
-      detailedScores: (json['detailedScores'] as Map?)?.cast<String, int>() ?? 
-                      (json['DetailedScores'] as Map?)?.cast<String, int>(),
+      detailedScores:
+          (json['detailedScores'] as Map?)?.cast<String, int>() ??
+          (json['DetailedScores'] as Map?)?.cast<String, int>(),
       feedback: json['feedback']?.toString() ?? json['Feedback']?.toString(),
       evidencePhotoBase64: json['evidencePhotoBase64']?.toString(),
       signatureBase64: json['signatureBase64']?.toString(),
-      badgeEarned: json['badgeEarned']?.toString() ?? json['BadgeEarned']?.toString(),
+      badgeEarned:
+          json['badgeEarned']?.toString() ?? json['BadgeEarned']?.toString(),
     );
   }
 

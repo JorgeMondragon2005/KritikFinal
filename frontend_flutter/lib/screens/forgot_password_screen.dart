@@ -31,21 +31,33 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       if (mounted) {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Se ha enviado un código de recuperación a tu correo.')),
+            const SnackBar(
+              content: Text(
+                'Se ha enviado un código de recuperación a tu correo.',
+              ),
+            ),
           );
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => ResetPasswordScreen(email: email)),
+            MaterialPageRoute(
+              builder: (_) => ResetPasswordScreen(email: email),
+            ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No se pudo enviar el correo. Revisa que el flujo SMTP esté activo o la cuenta exista.')),
+            const SnackBar(
+              content: Text(
+                'No se pudo enviar el correo. Revisa que el flujo SMTP esté activo o la cuenta exista.',
+              ),
+            ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error de conexión: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error de conexión: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -62,11 +74,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.lock_reset, size: 80, color: AppColors.primaryYellow),
+            const Icon(
+              Icons.lock_reset,
+              size: 80,
+              color: AppColors.primaryYellow,
+            ),
             const SizedBox(height: 24),
             Text(
               '¿Olvidaste tu contraseña?',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
@@ -93,7 +111,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       backgroundColor: AppColors.primaryYellow,
                     ),
-                    child: const Text('Enviar Código', style: TextStyle(fontSize: 16)),
+                    child: const Text(
+                      'Enviar Código',
+                      style: TextStyle(fontSize: 16),
+                    ),
                   ),
           ],
         ),

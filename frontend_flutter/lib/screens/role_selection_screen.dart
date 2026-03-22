@@ -65,7 +65,12 @@ class AnimatedRoleCard extends StatefulWidget {
   final String role;
   final IconData icon;
 
-  const AnimatedRoleCard({super.key, required this.title, required this.role, required this.icon});
+  const AnimatedRoleCard({
+    super.key,
+    required this.title,
+    required this.role,
+    required this.icon,
+  });
 
   @override
   State<AnimatedRoleCard> createState() => _AnimatedRoleCardState();
@@ -105,9 +110,11 @@ class _AnimatedRoleCardState extends State<AnimatedRoleCard>
       onTapDown: (_) => _controller.forward(),
       onTapUp: (_) {
         _controller.reverse();
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => ProjectListScreen(role: widget.role)));
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ProjectListScreen(role: widget.role),
+          ),
+        );
       },
       onTapCancel: () => _controller.reverse(),
       child: AnimatedBuilder(

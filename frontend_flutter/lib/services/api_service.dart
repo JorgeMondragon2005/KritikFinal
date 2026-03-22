@@ -47,7 +47,7 @@ class ApiService {
     } catch (e) {
       debugPrint('Login error caught: $e');
       if (e is DioException) {
-          debugPrint('DioException details: ${e.response?.data}');
+        debugPrint('DioException details: ${e.response?.data}');
       }
       rethrow;
     }
@@ -56,8 +56,9 @@ class ApiService {
   Future<String?> register(User user, String password) async {
     try {
       final data = user.toJson();
-      data['passwordHash'] = password; // Backend expects plain password in register for hashing
-      
+      data['passwordHash'] =
+          password; // Backend expects plain password in register for hashing
+
       final response = await _dio.post('auth/register', data: data);
       if (response.statusCode == 200) {
         return response.data;
@@ -78,7 +79,9 @@ class ApiService {
         'POST',
         Uri.parse('$_baseUrl/users/$userId/banner'),
       );
-      request.files.add(await http.MultipartFile.fromPath('banner', imageFile.path));
+      request.files.add(
+        await http.MultipartFile.fromPath('banner', imageFile.path),
+      );
       final response = await request.send();
       return response.statusCode == 200;
     } catch (e) {
@@ -98,7 +101,9 @@ class ApiService {
       if (response.statusCode == 200) {
         return true;
       } else {
-        debugPrint('Error recuperacion: ${response.statusCode} - ${response.body}');
+        debugPrint(
+          'Error recuperacion: ${response.statusCode} - ${response.body}',
+        );
         return false;
       }
     } catch (e) {
@@ -107,7 +112,11 @@ class ApiService {
     }
   }
 
-  Future<bool> resetPassword(String email, String token, String newPassword) async {
+  Future<bool> resetPassword(
+    String email,
+    String token,
+    String newPassword,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/reset-password'),
@@ -121,7 +130,9 @@ class ApiService {
       if (response.statusCode == 200) {
         return true;
       } else {
-        debugPrint('Error al restablecer contraseña: ${response.statusCode} - ${response.body}');
+        debugPrint(
+          'Error al restablecer contraseña: ${response.statusCode} - ${response.body}',
+        );
         return false;
       }
     } catch (e) {
@@ -132,10 +143,10 @@ class ApiService {
 
   Future<bool> verifyEmail(String email, String code) async {
     try {
-      final response = await _dio.post('auth/verify', data: {
-        'email': email,
-        'code': code,
-      });
+      final response = await _dio.post(
+        'auth/verify',
+        data: {'email': email, 'code': code},
+      );
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Verify error: $e');
@@ -143,14 +154,22 @@ class ApiService {
     }
   }
 
-  Future<List<Project>> getProjects({String? studentId, String? teacherId, String? assignmentId, String? search}) async {
+  Future<List<Project>> getProjects({
+    String? studentId,
+    String? teacherId,
+    String? assignmentId,
+    String? search,
+  }) async {
     try {
-      final response = await _dio.get('projects', queryParameters: {
-        if (studentId != null) 'studentId': studentId,
-        if (teacherId != null) 'teacherId': teacherId,
-        if (assignmentId != null) 'assignmentId': assignmentId,
-        if (search != null) 'search': search,
-      });
+      final response = await _dio.get(
+        'projects',
+        queryParameters: {
+          if (studentId != null) 'studentId': studentId,
+          if (teacherId != null) 'teacherId': teacherId,
+          if (assignmentId != null) 'assignmentId': assignmentId,
+          if (search != null) 'search': search,
+        },
+      );
       if (response.statusCode == 200 && response.data is List) {
         final List<dynamic> data = response.data;
         List<Project> projects = [];
@@ -202,7 +221,9 @@ class ApiService {
     try {
       final response = await _dio.get('evaluations/project/$projectId');
       if (response.statusCode == 200 && response.data is List) {
-        return (response.data as List).map((x) => Evaluation.fromJson(x)).toList();
+        return (response.data as List)
+            .map((x) => Evaluation.fromJson(x))
+            .toList();
       }
       return [];
     } catch (e) {
@@ -224,11 +245,16 @@ class ApiService {
     }
   }
 
-  Future<Evaluation?> getEvaluationByProjectId(String projectId, {String? evaluatorId}) async {
+  Future<Evaluation?> getEvaluationByProjectId(
+    String projectId, {
+    String? evaluatorId,
+  }) async {
     try {
       final response = await _dio.get('evaluations/project/$projectId');
       if (response.statusCode == 200 && response.data is List) {
-        final evals = (response.data as List).map((x) => Evaluation.fromJson(x)).toList();
+        final evals = (response.data as List)
+            .map((x) => Evaluation.fromJson(x))
+            .toList();
         if (evals.isEmpty) return null;
         if (evaluatorId != null) {
           try {
@@ -258,9 +284,10 @@ class ApiService {
 
   Future<List<Rubric>> getRubrics({String? creatorId}) async {
     try {
-      final response = await _dio.get('rubrics', queryParameters: {
-        if (creatorId != null) 'creatorId': creatorId,
-      });
+      final response = await _dio.get(
+        'rubrics',
+        queryParameters: {if (creatorId != null) 'creatorId': creatorId},
+      );
       if (response.statusCode == 200) {
         return (response.data as List).map((x) => Rubric.fromJson(x)).toList();
       }
@@ -285,8 +312,8 @@ class ApiService {
     try {
       final response = await _dio.get('users');
       if (response.statusCode == 200) {
-         final list = response.data as List;
-         return list.map((e) => User.fromJson(e)).toList();
+        final list = response.data as List;
+        return list.map((e) => User.fromJson(e)).toList();
       }
       return [];
     } catch (e) {
@@ -297,7 +324,10 @@ class ApiService {
 
   Future<bool> updateUserRole(String userId, String newRole) async {
     try {
-      final response = await _dio.put('users/$userId/role', data: {'role': newRole});
+      final response = await _dio.put(
+        'users/$userId/role',
+        data: {'role': newRole},
+      );
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       debugPrint('Error updating user role: $e');
@@ -358,7 +388,9 @@ class ApiService {
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       if (e is DioException) {
-          throw Exception('Backend Error: ${e.response?.statusCode} - ${e.response?.data}');
+        throw Exception(
+          'Backend Error: ${e.response?.statusCode} - ${e.response?.data}',
+        );
       }
       throw Exception(e.toString());
     }
@@ -418,14 +450,23 @@ class ApiService {
   }
 
   // Assignments
-  Future<List<Assignment>> getAssignments({String? teacherId, String? studentId, String? evaluatorId}) async {
+  Future<List<Assignment>> getAssignments({
+    String? teacherId,
+    String? studentId,
+    String? evaluatorId,
+  }) async {
     try {
-      debugPrint('DEBUG: Calling getAssignments with teacherId: $teacherId, studentId: $studentId, evaluatorId: $evaluatorId');
-      final response = await _dio.get('Assignments', queryParameters: {
-        if (teacherId != null) 'teacherId': teacherId,
-        if (studentId != null) 'studentId': studentId,
-        if (evaluatorId != null) 'evaluatorId': evaluatorId,
-      });
+      debugPrint(
+        'DEBUG: Calling getAssignments with teacherId: $teacherId, studentId: $studentId, evaluatorId: $evaluatorId',
+      );
+      final response = await _dio.get(
+        'Assignments',
+        queryParameters: {
+          if (teacherId != null) 'teacherId': teacherId,
+          if (studentId != null) 'studentId': studentId,
+          if (evaluatorId != null) 'evaluatorId': evaluatorId,
+        },
+      );
       if (response.statusCode == 200 && response.data is List) {
         final List<dynamic> data = response.data;
         debugPrint('DEBUG: getAssignments returned ${data.length} items');
@@ -454,7 +495,9 @@ class ApiService {
       final response = await _dio.get('Assignments/classroom/$classroomId');
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        debugPrint('DEBUG: Found ${data.length} assignments for classroom $classroomId');
+        debugPrint(
+          'DEBUG: Found ${data.length} assignments for classroom $classroomId',
+        );
         return data.map((json) => Assignment.fromJson(json)).toList();
       }
       return <Assignment>[];
@@ -492,7 +535,10 @@ class ApiService {
 
   Future<bool> createAssignment(Assignment assignment) async {
     try {
-      final response = await _dio.post('Assignments', data: assignment.toJson());
+      final response = await _dio.post(
+        'Assignments',
+        data: assignment.toJson(),
+      );
       return response.statusCode == 201 || response.statusCode == 200;
     } catch (e) {
       debugPrint('Create assignment error: $e');
@@ -502,7 +548,10 @@ class ApiService {
 
   Future<bool> updateAssignment(Assignment assignment) async {
     try {
-      final response = await _dio.put('Assignments/${assignment.id}', data: assignment.toJson());
+      final response = await _dio.put(
+        'Assignments/${assignment.id}',
+        data: assignment.toJson(),
+      );
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       debugPrint('Update assignment error: $e');
@@ -512,7 +561,10 @@ class ApiService {
 
   Future<bool> updateProject(Project project) async {
     try {
-      final response = await _dio.put('Projects/${project.id}', data: project.toJson());
+      final response = await _dio.put(
+        'Projects/${project.id}',
+        data: project.toJson(),
+      );
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       debugPrint('Update project error: $e');
@@ -522,7 +574,10 @@ class ApiService {
 
   Future<bool> updateEvaluation(Evaluation evaluation) async {
     try {
-      final response = await _dio.put('Evaluations/${evaluation.id}', data: evaluation.toJson());
+      final response = await _dio.put(
+        'Evaluations/${evaluation.id}',
+        data: evaluation.toJson(),
+      );
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       debugPrint('Update evaluation error: $e');
@@ -570,7 +625,9 @@ class ApiService {
       return response.statusCode == 204 || response.statusCode == 200;
     } catch (e) {
       if (e is DioException) {
-          throw Exception('Backend Error: ${e.response?.statusCode} - ${e.response?.data}');
+        throw Exception(
+          'Backend Error: ${e.response?.statusCode} - ${e.response?.data}',
+        );
       }
       throw Exception(e.toString());
     }
@@ -594,7 +651,9 @@ class ApiService {
     try {
       final response = await _dio.get('Notifications/user/$userId');
       if (response.statusCode == 200) {
-        return (response.data as List).map((x) => AppNotification.fromJson(x)).toList();
+        return (response.data as List)
+            .map((x) => AppNotification.fromJson(x))
+            .toList();
       }
       return [];
     } catch (e) {
@@ -605,7 +664,10 @@ class ApiService {
 
   Future<bool> createNotification(AppNotification notification) async {
     try {
-      final response = await _dio.post('Notifications', data: notification.toJson());
+      final response = await _dio.post(
+        'Notifications',
+        data: notification.toJson(),
+      );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       debugPrint('Error creating notification: $e');
@@ -647,12 +709,18 @@ class ApiService {
   }
 
   // Classrooms
-  Future<List<Classroom>> getClassrooms({String? teacherId, String? studentId}) async {
+  Future<List<Classroom>> getClassrooms({
+    String? teacherId,
+    String? studentId,
+  }) async {
     try {
-      final response = await _dio.get('Classrooms', queryParameters: {
-        if (teacherId != null) 'teacherId': teacherId,
-        if (studentId != null) 'studentId': studentId,
-      });
+      final response = await _dio.get(
+        'Classrooms',
+        queryParameters: {
+          if (teacherId != null) 'teacherId': teacherId,
+          if (studentId != null) 'studentId': studentId,
+        },
+      );
       if (response.statusCode == 200 && response.data is List) {
         final List<dynamic> data = response.data;
         List<Classroom> classrooms = [];
@@ -709,7 +777,10 @@ class ApiService {
 
   Future<dynamic> updateClassroom(Classroom classroom) async {
     try {
-      final response = await _dio.put('Classrooms/${classroom.id}', data: classroom.toJson());
+      final response = await _dio.put(
+        'Classrooms/${classroom.id}',
+        data: classroom.toJson(),
+      );
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       debugPrint('Update classroom error (ID: ${classroom.id}): $e');
@@ -735,7 +806,10 @@ class ApiService {
 
   Future<dynamic> enrollInClass(ClassEnrollment enrollment) async {
     try {
-      final response = await _dio.post('Classrooms/enroll', data: enrollment.toJson());
+      final response = await _dio.post(
+        'Classrooms/enroll',
+        data: enrollment.toJson(),
+      );
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       if (e is DioException) {
@@ -753,7 +827,9 @@ class ApiService {
     try {
       final response = await _dio.get('Classrooms/$classroomId/members');
       if (response.statusCode == 200) {
-        return (response.data as List).map((x) => ClassEnrollment.fromJson(x)).toList();
+        return (response.data as List)
+            .map((x) => ClassEnrollment.fromJson(x))
+            .toList();
       }
       return <ClassEnrollment>[];
     } catch (e) {
@@ -762,9 +838,15 @@ class ApiService {
     }
   }
 
-  Future<bool> updateEnrollmentStatus(String enrollmentId, String status) async {
+  Future<bool> updateEnrollmentStatus(
+    String enrollmentId,
+    String status,
+  ) async {
     try {
-      final response = await _dio.patch('Classrooms/enroll/$enrollmentId/status', queryParameters: {'status': status});
+      final response = await _dio.patch(
+        'Classrooms/enroll/$enrollmentId/status',
+        queryParameters: {'status': status},
+      );
       return response.statusCode == 204 || response.statusCode == 200;
     } catch (e) {
       debugPrint('Update enrollment status error: $e');
@@ -774,7 +856,9 @@ class ApiService {
 
   Future<bool> leaveClassroom(String studentId, String classroomId) async {
     try {
-      final response = await _dio.delete('Classrooms/enroll/$studentId/$classroomId');
+      final response = await _dio.delete(
+        'Classrooms/enroll/$studentId/$classroomId',
+      );
       return response.statusCode == 204 || response.statusCode == 200;
     } catch (e) {
       debugPrint('Leave classroom error: $e');
@@ -782,20 +866,23 @@ class ApiService {
     }
   }
 
-
   /// Descarga un archivo y lo abre usando la aplicación nativa correspondiente
   Future<void> downloadAndOpenFile(String url, String fileName) async {
     try {
-      final finalUrl = url.startsWith('/') ? 'https://kritikfinal.onrender.com$url' : url;
-      
+      final finalUrl = url.startsWith('/')
+          ? 'https://kritikfinal.onrender.com$url'
+          : url;
+
       final dir = await getTemporaryDirectory();
       final filePath = '${dir.path}/$fileName';
-      
+
       await _dio.download(finalUrl, filePath);
-      
+
       final result = await OpenFilex.open(filePath);
       if (result.type != ResultType.done) {
-        throw Exception('No se encontró una aplicación para abrir este archivo.');
+        throw Exception(
+          'No se encontró una aplicación para abrir este archivo.',
+        );
       }
     } catch (e) {
       debugPrint('Download/Open error: $e');
@@ -806,7 +893,10 @@ class ApiService {
   // --- AI INTEGRATION EXPERIMENTAL ---
   Future<String?> getProjectMentorReview(Project project) async {
     try {
-      final response = await _dio.post('AI/mentor/review', data: project.toJson());
+      final response = await _dio.post(
+        'AI/mentor/review',
+        data: project.toJson(),
+      );
       if (response.statusCode == 200) {
         return response.data['suggestion'];
       }
@@ -817,12 +907,28 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>?> suggestEvaluationResultsWithAI(Project project, Rubric rubric) async {
+  Future<String?> fixTextGrammarWithAI(String text) async {
     try {
-      final response = await _dio.post('AI/evaluation/suggest', data: {
-        'project': project.toJson(),
-        'rubric': rubric.toJson(),
-      });
+      final response = await _dio.post('AI/grammar/fix', data: {'text': text});
+      if (response.statusCode == 200) {
+        return response.data['correctedText'];
+      }
+      return null;
+    } catch (e) {
+      debugPrint('AI Grammar error: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> suggestEvaluationResultsWithAI(
+    Project project,
+    Rubric rubric,
+  ) async {
+    try {
+      final response = await _dio.post(
+        'AI/evaluation/suggest',
+        data: {'project': project.toJson(), 'rubric': rubric.toJson()},
+      );
       if (response.statusCode == 200) {
         return response.data;
       }
@@ -833,13 +939,20 @@ class ApiService {
     }
   }
 
-  Future<List<String>> getMatchmakingRecommendations(String userId, String userRole, List<Project> projects) async {
+  Future<List<String>> getMatchmakingRecommendations(
+    String userId,
+    String userRole,
+    List<Project> projects,
+  ) async {
     try {
-      final response = await _dio.post('AI/matchmaking', data: {
-        'userId': userId,
-        'userRole': userRole,
-        'projects': projects.map((p) => p.toJson()).toList(),
-      });
+      final response = await _dio.post(
+        'AI/matchmaking',
+        data: {
+          'userId': userId,
+          'userRole': userRole,
+          'projects': projects.map((p) => p.toJson()).toList(),
+        },
+      );
       if (response.statusCode == 200) {
         final List<dynamic> ids = response.data;
         return ids.map((id) => id.toString()).toList();
@@ -851,4 +964,3 @@ class ApiService {
     }
   }
 }
-

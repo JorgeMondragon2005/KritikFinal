@@ -22,7 +22,7 @@ class ProjectCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Get a thumbnail/cover image
     String? coverUrl = project.coverImageUrl;
     if (coverUrl != null && coverUrl.startsWith('/')) {
@@ -54,124 +54,150 @@ class ProjectCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            // 1. Cover Image / Video Thumbnail
-            Stack(
-              children: [
-                _buildMediaInterface(isDark),
-                
-                // Evaluation Badge
-                if (isEvaluated)
-                  Positioned(
-                    top: 12,
-                    right: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.successGreen.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'EVALUADO',
-                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            
-            // 2. Project Info
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              // 1. Cover Image / Video Thumbnail
+              Stack(
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Team Icon/Thumbnail
-                      Container(
-                        width: 40,
-                        height: 40,
+                  _buildMediaInterface(isDark),
+
+                  // Evaluation Badge
+                  if (isEvaluated)
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryYellow.withOpacity(0.2),
-                          shape: BoxShape.circle,
+                          color: AppColors.successGreen.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        child: const Icon(Icons.psychology, color: AppColors.primaryYellow),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              project.title ?? 'Sin título',
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${project.teamName ?? "Equipo S/N"} • ${project.category ?? "General"}',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
+                        child: const Text(
+                          'EVALUADO',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  // Technologies chips
-                  if (project.technologies.isNotEmpty)
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: project.technologies.map((tech) => Container(
-                          margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isDark ? AppColors.techChipBgDark : AppColors.techChipBg,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
-                          ),
-                          child: Text(
-                            tech,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.white70 : Colors.black87,
-                            ),
-                          ),
-                        )).toList(),
-                      ),
                     ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  // Short Description
-                  Text(
-                    project.description ?? 'Sin descripción disponible.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontSize: 14,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
                 ],
               ),
-            ),
-          ],
+
+              // 2. Project Info
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Team Icon/Thumbnail
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryYellow.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.psychology,
+                            color: AppColors.primaryYellow,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                project.title ?? 'Sin título',
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${project.teamName ?? "Equipo S/N"} • ${project.category ?? "General"}',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.copyWith(fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Technologies chips
+                    if (project.technologies.isNotEmpty)
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: project.technologies
+                              .map(
+                                (tech) => Container(
+                                  margin: const EdgeInsets.only(right: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isDark
+                                        ? AppColors.techChipBgDark
+                                        : AppColors.techChipBg,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isDark
+                                          ? Colors.white10
+                                          : Colors.black.withOpacity(0.05),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    tech,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark
+                                          ? Colors.white70
+                                          : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+
+                    const SizedBox(height: 12),
+
+                    // Short Description
+                    Text(
+                      project.description ?? 'Sin descripción disponible.',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(fontSize: 14),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildMediaInterface(bool isDark) {
     String? coverUrl = project.coverImageUrl;
@@ -179,10 +205,15 @@ class ProjectCard extends StatelessWidget {
       coverUrl = 'https://kritikfinal.onrender.com$coverUrl';
     }
 
-    final hasVideo = project.promoVideoUrl != null && project.promoVideoUrl!.isNotEmpty;
+    final hasVideo =
+        project.promoVideoUrl != null && project.promoVideoUrl!.isNotEmpty;
     // Direct playback only if teacher/evaluator for "premium" review feel, or let anyone play?
     // User said: "vista desde el usuario del profe"
-    final canPlayDirectly = ((userRole?.toLowerCase() == 'teacher' || userRole?.toLowerCase() == 'profesor') || userRole?.toLowerCase() == 'evaluator') && hasVideo;
+    final canPlayDirectly =
+        ((userRole?.toLowerCase() == 'teacher' ||
+                userRole?.toLowerCase() == 'profesor') ||
+            userRole?.toLowerCase() == 'evaluator') &&
+        hasVideo;
 
     return Hero(
       tag: 'project_cover_${project.id}',
@@ -192,9 +223,12 @@ class ProjectCard extends StatelessWidget {
           constraints: const BoxConstraints(maxHeight: 400),
           width: double.infinity,
           color: isDark ? Colors.black26 : Colors.black12,
-          child: canPlayDirectly 
-            ? _VideoPreviewWidget(url: project.promoVideoUrl!, isDark: isDark)
-            : SizedBox(height: 200, child: _buildThumbnail(coverUrl, hasVideo, isDark)),
+          child: canPlayDirectly
+              ? _VideoPreviewWidget(url: project.promoVideoUrl!, isDark: isDark)
+              : SizedBox(
+                  height: 200,
+                  child: _buildThumbnail(coverUrl, hasVideo, isDark),
+                ),
         ),
       ),
     );
@@ -204,14 +238,16 @@ class ProjectCard extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        coverUrl != null 
-          ? CachedNetworkImage(
-              imageUrl: coverUrl,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => const SkeletonLoader(height: 200),
-              errorWidget: (context, url, error) => _buildPlaceholderCover(isDark),
-            )
-          : _buildPlaceholderCover(isDark),
+        coverUrl != null
+            ? CachedNetworkImage(
+                imageUrl: coverUrl,
+                fit: BoxFit.cover,
+                placeholder: (context, url) =>
+                    const SkeletonLoader(height: 200),
+                errorWidget: (context, url, error) =>
+                    _buildPlaceholderCover(isDark),
+              )
+            : _buildPlaceholderCover(isDark),
         if (hasVideo)
           Center(
             child: Container(
@@ -220,7 +256,11 @@ class ProjectCard extends StatelessWidget {
                 color: Colors.black.withOpacity(0.5),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.play_arrow, color: Colors.white, size: 32),
+              child: const Icon(
+                Icons.play_arrow,
+                color: Colors.white,
+                size: 32,
+              ),
             ),
           ),
       ],
@@ -231,7 +271,9 @@ class ProjectCard extends StatelessWidget {
     return Container(
       height: 200,
       width: double.infinity,
-      color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+      color: isDark
+          ? Colors.white.withOpacity(0.05)
+          : Colors.black.withOpacity(0.05),
       child: Center(
         child: Icon(
           Icons.image_outlined,
@@ -261,13 +303,27 @@ class _VideoPreviewWidgetState extends State<_VideoPreviewWidget> {
   @override
   void initState() {
     super.initState();
+    _initializeVideo();
+  }
+
+  @override
+  void didUpdateWidget(covariant _VideoPreviewWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.url != widget.url) {
+      _controller?.dispose();
+      _isInitialized = false;
+      _initializeVideo();
+    }
+  }
+
+  void _initializeVideo() {
     String finalUrl = widget.url;
     if (finalUrl.startsWith('/')) {
       finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
     }
     _controller = VideoPlayerController.networkUrl(Uri.parse(finalUrl))
       ..initialize().then((_) {
-        _controller!.setVolume(0.0); // Muted by default for autoplay feeds
+        _controller!.setVolume(_isMuted ? 0.0 : 1.0);
         _controller!.setLooping(true);
         _controller!.play();
         if (mounted) setState(() => _isInitialized = true);
@@ -295,7 +351,9 @@ class _VideoPreviewWidgetState extends State<_VideoPreviewWidget> {
         GestureDetector(
           onTap: () {
             setState(() {
-              _controller!.value.isPlaying ? _controller!.pause() : _controller!.play();
+              _controller!.value.isPlaying
+                  ? _controller!.pause()
+                  : _controller!.play();
             });
           },
           child: Container(

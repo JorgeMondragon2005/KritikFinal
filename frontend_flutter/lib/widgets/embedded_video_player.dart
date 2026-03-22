@@ -26,15 +26,17 @@ class _EmbeddedVideoPlayerState extends State<EmbeddedVideoPlayer> {
 
   Future<void> _initializePlayer() async {
     try {
-      _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(widget.url));
-      
+      _videoPlayerController = VideoPlayerController.networkUrl(
+        Uri.parse(widget.url),
+      );
+
       await _videoPlayerController!.initialize().timeout(
         const Duration(seconds: 15),
         onTimeout: () {
           throw Exception('Tiempo de espera agotado al cargar el video');
         },
       );
-      
+
       _chewieController = ChewieController(
         videoPlayerController: _videoPlayerController!,
         autoPlay: false,
@@ -58,14 +60,14 @@ class _EmbeddedVideoPlayerState extends State<EmbeddedVideoPlayer> {
           );
         },
       );
-      
+
       await _videoPlayerController!.setVolume(1.0);
     } catch (e) {
       if (mounted) {
         setState(() {
           _hasError = true;
-          _errorMessage = e.toString().contains('Exception:') 
-              ? e.toString().split('Exception: ')[1] 
+          _errorMessage = e.toString().contains('Exception:')
+              ? e.toString().split('Exception: ')[1]
               : 'El video no pudo ser reproducido.';
         });
       }
@@ -100,7 +102,10 @@ class _EmbeddedVideoPlayerState extends State<EmbeddedVideoPlayer> {
               const SizedBox(height: 8),
               Text(
                 'Error al cargar',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 4),
               Padding(
@@ -117,7 +122,8 @@ class _EmbeddedVideoPlayerState extends State<EmbeddedVideoPlayer> {
       );
     }
 
-    if (_chewieController != null && _chewieController!.videoPlayerController.value.isInitialized) {
+    if (_chewieController != null &&
+        _chewieController!.videoPlayerController.value.isInitialized) {
       return Container(
         decoration: BoxDecoration(
           color: Colors.black,
@@ -143,7 +149,10 @@ class _EmbeddedVideoPlayerState extends State<EmbeddedVideoPlayer> {
           children: [
             CircularProgressIndicator(color: AppColors.primaryYellow),
             SizedBox(height: 16),
-            Text('Cargando reproductor...', style: TextStyle(color: Colors.white)),
+            Text(
+              'Cargando reproductor...',
+              style: TextStyle(color: Colors.white),
+            ),
           ],
         ),
       ),

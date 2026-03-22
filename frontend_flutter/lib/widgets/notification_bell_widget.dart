@@ -7,7 +7,7 @@ class NotificationBell extends StatelessWidget {
   final VoidCallback onClearAll;
 
   const NotificationBell({
-    super.key, 
+    super.key,
     required this.notifications,
     required this.onClearAll,
   });
@@ -35,7 +35,11 @@ class NotificationBell extends StatelessWidget {
               constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
               child: Text(
                 '$unreadCount',
-                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -57,14 +61,27 @@ class NotificationBell extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 12),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey[400], borderRadius: BorderRadius.circular(2))),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[400],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Notificaciones', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  TextButton(onPressed: onClearAll, child: const Text('Limpiar todo')),
+                  const Text(
+                    'Notificaciones',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  TextButton(
+                    onPressed: onClearAll,
+                    child: const Text('Limpiar todo'),
+                  ),
                 ],
               ),
             ),
@@ -73,15 +90,24 @@ class NotificationBell extends StatelessWidget {
                 padding: EdgeInsets.symmetric(vertical: 40),
                 child: Column(
                   children: [
-                    Icon(Icons.notifications_off_outlined, size: 48, color: Colors.grey),
+                    Icon(
+                      Icons.notifications_off_outlined,
+                      size: 48,
+                      color: Colors.grey,
+                    ),
                     SizedBox(height: 12),
-                    Text('No tienes notificaciones nuevas', style: TextStyle(color: Colors.grey)),
+                    Text(
+                      'No tienes notificaciones nuevas',
+                      style: TextStyle(color: Colors.grey),
+                    ),
                   ],
                 ),
               )
             else
               ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.4),
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.4,
+                ),
                 child: ListView.builder(
                   shrinkWrap: true,
                   itemCount: notifications.length,
@@ -89,14 +115,25 @@ class NotificationBell extends StatelessWidget {
                     final n = notifications[index];
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: AppColors.primaryYellow.withOpacity(0.1),
-                        child: const Icon(Icons.info_outline, color: AppColors.primaryYellow),
+                        backgroundColor: AppColors.primaryYellow.withOpacity(
+                          0.1,
+                        ),
+                        child: const Icon(
+                          Icons.info_outline,
+                          color: AppColors.primaryYellow,
+                        ),
                       ),
-                      title: Text(n.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(
+                        n.title,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       subtitle: Text(n.message),
                       trailing: Text(
                         '${n.timestamp.hour}:${n.timestamp.minute}',
-                        style: const TextStyle(fontSize: 10, color: Colors.grey),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey,
+                        ),
                       ),
                       onTap: () {
                         // Handle deep link logic

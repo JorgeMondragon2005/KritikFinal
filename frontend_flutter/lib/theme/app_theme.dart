@@ -122,29 +122,30 @@ class AppTheme {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme).copyWith(
-        displayLarge: GoogleFonts.poppins(
-          fontWeight: FontWeight.w800,
-          color: AppColors.textPrimaryDark,
-          fontSize: 42,
-        ),
-        headlineLarge: GoogleFonts.poppins(
-          fontWeight: FontWeight.w700,
-          color: AppColors.textPrimaryDark,
-        ),
-        headlineMedium: GoogleFonts.poppins(
-          fontWeight: FontWeight.w700,
-          color: AppColors.textPrimaryDark,
-        ),
-        bodyLarge: GoogleFonts.poppins(
-          fontWeight: FontWeight.w500,
-          color: AppColors.textPrimaryDark,
-        ),
-        bodyMedium: GoogleFonts.poppins(
-          fontWeight: FontWeight.w400,
-          color: AppColors.textSecondaryDark,
-        ),
-      ),
+      textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme)
+          .copyWith(
+            displayLarge: GoogleFonts.poppins(
+              fontWeight: FontWeight.w800,
+              color: AppColors.textPrimaryDark,
+              fontSize: 42,
+            ),
+            headlineLarge: GoogleFonts.poppins(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimaryDark,
+            ),
+            headlineMedium: GoogleFonts.poppins(
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimaryDark,
+            ),
+            bodyLarge: GoogleFonts.poppins(
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimaryDark,
+            ),
+            bodyMedium: GoogleFonts.poppins(
+              fontWeight: FontWeight.w400,
+              color: AppColors.textSecondaryDark,
+            ),
+          ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceDark,
@@ -180,11 +181,23 @@ class AppTheme {
     );
   }
 
-  static void showCustomSnackBar(BuildContext context, String message, {bool isError = false}) {
+  static void showCustomSnackBar(
+    BuildContext context,
+    String message, {
+    bool isError = false,
+  }) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: isError ? Colors.red.shade600 : AppColors.primaryYellow,
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: isError
+            ? Colors.red.shade600
+            : AppColors.primaryYellow,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
@@ -199,17 +212,18 @@ class SkeletonLoader extends StatefulWidget {
   final double borderRadius;
 
   const SkeletonLoader({
-    super.key, 
-    this.width = double.infinity, 
-    this.height = 20, 
-    this.borderRadius = 8
+    super.key,
+    this.width = double.infinity,
+    this.height = 20,
+    this.borderRadius = 8,
   });
 
   @override
   State<SkeletonLoader> createState() => _SkeletonLoaderState();
 }
 
-class _SkeletonLoaderState extends State<SkeletonLoader> with SingleTickerProviderStateMixin {
+class _SkeletonLoaderState extends State<SkeletonLoader>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 

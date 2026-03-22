@@ -24,19 +24,42 @@ class Assignment {
   });
 
   factory Assignment.fromJson(Map<String, dynamic> json) => Assignment(
-    id: json['id']?.toString() ?? json['_id']?.toString() ?? json['Id']?.toString(),
-    title: json['title']?.toString() ?? json['Title']?.toString() ?? 'Sin Título',
-    description: json['description']?.toString() ?? json['Description']?.toString() ?? '',
-    teacherId: json['teacherId']?.toString() ?? json['TeacherId']?.toString() ?? '',
+    id:
+        json['id']?.toString() ??
+        json['_id']?.toString() ??
+        json['Id']?.toString(),
+    title:
+        json['title']?.toString() ?? json['Title']?.toString() ?? 'Sin Título',
+    description:
+        json['description']?.toString() ??
+        json['Description']?.toString() ??
+        '',
+    teacherId:
+        json['teacherId']?.toString() ?? json['TeacherId']?.toString() ?? '',
     rubricId: json['rubricId']?.toString() ?? json['RubricId']?.toString(),
-    dueDate: json['dueDate'] != null ? _parseDateSafe(json['dueDate'].toString()) : 
-             (json['DueDate'] != null ? _parseDateSafe(json['DueDate'].toString()) : null),
-    accessCode: json['accessCode']?.toString() ?? json['AccessCode']?.toString(),
-    classroomId: json['classroomId']?.toString() ?? json['ClassroomId']?.toString(),
-    assignedEvaluators: (json['assignedEvaluators'] as List?)?.map((e) => e.toString()).toList() ?? 
-                        (json['AssignedEvaluators'] as List?)?.map((e) => e.toString()).toList(),
-    jurors: (json['jurors'] as List?)?.map((e) => JurorAssignment.fromJson(e)).toList() ??
-            (json['Jurors'] as List?)?.map((e) => JurorAssignment.fromJson(e)).toList(),
+    dueDate: json['dueDate'] != null
+        ? _parseDateSafe(json['dueDate'].toString())
+        : (json['DueDate'] != null
+              ? _parseDateSafe(json['DueDate'].toString())
+              : null),
+    accessCode:
+        json['accessCode']?.toString() ?? json['AccessCode']?.toString(),
+    classroomId:
+        json['classroomId']?.toString() ?? json['ClassroomId']?.toString(),
+    assignedEvaluators:
+        (json['assignedEvaluators'] as List?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        (json['AssignedEvaluators'] as List?)
+            ?.map((e) => e.toString())
+            .toList(),
+    jurors:
+        (json['jurors'] as List?)
+            ?.map((e) => JurorAssignment.fromJson(e))
+            .toList() ??
+        (json['Jurors'] as List?)
+            ?.map((e) => JurorAssignment.fromJson(e))
+            .toList(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -72,12 +95,19 @@ class JurorAssignment {
     this.userId,
   });
 
-  factory JurorAssignment.fromJson(Map<String, dynamic> json) => JurorAssignment(
-    email: json['email']?.toString() ?? json['Email']?.toString() ?? '',
-    weightPercentage: json['weightPercentage'] as int? ?? json['WeightPercentage'] as int? ?? 0,
-    status: json['status']?.toString() ?? json['Status']?.toString() ?? 'Pending',
-    userId: json['userId']?.toString() ?? json['UserId']?.toString(),
-  );
+  factory JurorAssignment.fromJson(Map<String, dynamic> json) =>
+      JurorAssignment(
+        email: json['email']?.toString() ?? json['Email']?.toString() ?? '',
+        weightPercentage:
+            json['weightPercentage'] as int? ??
+            json['WeightPercentage'] as int? ??
+            0,
+        status:
+            json['status']?.toString() ??
+            json['Status']?.toString() ??
+            'Pending',
+        userId: json['userId']?.toString() ?? json['UserId']?.toString(),
+      );
 
   Map<String, dynamic> toJson() => {
     'Email': email,

@@ -36,12 +36,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _nameController = TextEditingController(text: widget.user.fullName);
     _phoneController = TextEditingController(text: widget.user.telefono);
     _bioController = TextEditingController(text: widget.user.bio);
-    
+
     _fotoPerfilUrl = widget.user.fotoPerfil;
     if (_fotoPerfilUrl != null && _fotoPerfilUrl!.startsWith('/')) {
       _fotoPerfilUrl = 'https://kritikfinal.onrender.com$_fotoPerfilUrl';
     }
-    
+
     _portadaUrl = widget.user.portadaUrl;
     if (_portadaUrl != null && _portadaUrl!.startsWith('/')) {
       _portadaUrl = 'https://kritikfinal.onrender.com$_portadaUrl';
@@ -50,7 +50,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _saveProfile() async {
     setState(() => _isLoading = true);
-    
+
     final updatedUser = User(
       id: widget.user.id,
       email: widget.user.email,
@@ -64,12 +64,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final success = await _apiService.updateUserProfile(updatedUser);
-      
+
       if (success) {
         // Update local storage
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_session', jsonEncode(updatedUser.toJson()));
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Perfil actualizado correctamente')),
@@ -89,7 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     }
-    
+
     if (mounted) setState(() => _isLoading = false);
   }
 
@@ -122,19 +122,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _uploadImage(bool isCover, ImageSource source) async {
-    final pickedFile = await _picker.pickImage(source: source, imageQuality: 70);
+    final pickedFile = await _picker.pickImage(
+      source: source,
+      imageQuality: 70,
+    );
     if (pickedFile != null) {
       setState(() => _isLoading = true);
       final url = await _apiService.uploadFile(File(pickedFile.path));
       if (url != null) {
-        // Fix relative URLs immediately from backend uploads 
+        // Fix relative URLs immediately from backend uploads
         String finalUrl = url;
         if (finalUrl.startsWith('/')) {
-            finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
+          finalUrl = 'https://kritikfinal.onrender.com$finalUrl';
         }
         setState(() {
-          if (isCover) _portadaUrl = finalUrl;
-          else _fotoPerfilUrl = finalUrl;
+          if (isCover)
+            _portadaUrl = finalUrl;
+          else
+            _fotoPerfilUrl = finalUrl;
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -180,14 +185,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         : Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.add_a_photo, color: Colors.blue.shade300, size: 40),
+                              Icon(
+                                Icons.add_a_photo,
+                                color: Colors.blue.shade300,
+                                size: 40,
+                              ),
                               const SizedBox(height: 8),
-                              Text('Añadir Portada', style: TextStyle(color: Colors.blue.shade400)),
+                              Text(
+                                'Añadir Portada',
+                                style: TextStyle(color: Colors.blue.shade400),
+                              ),
                             ],
                           ),
                   ),
                 ),
-                
+
                 // Profile Avatar Overlay
                 Positioned(
                   bottom: -50,
@@ -198,16 +210,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 4),
+                            border: Border.all(
+                              color: Theme.of(context).scaffoldBackgroundColor,
+                              width: 4,
+                            ),
                           ),
                           child: CircleAvatar(
                             radius: 50,
                             backgroundColor: Colors.grey.shade200,
-                            backgroundImage: (_fotoPerfilUrl != null && _fotoPerfilUrl!.isNotEmpty)
+                            backgroundImage:
+                                (_fotoPerfilUrl != null &&
+                                    _fotoPerfilUrl!.isNotEmpty)
                                 ? CachedNetworkImageProvider(_fotoPerfilUrl!)
                                 : null,
-                            child: (_fotoPerfilUrl == null || _fotoPerfilUrl!.isEmpty)
-                                ? const Icon(Icons.person, size: 50, color: Colors.grey)
+                            child:
+                                (_fotoPerfilUrl == null ||
+                                    _fotoPerfilUrl!.isEmpty)
+                                ? const Icon(
+                                    Icons.person,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  )
                                 : null,
                           ),
                         ),
@@ -220,7 +243,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               color: AppColors.primaryYellow,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.camera_alt, size: 20, color: Colors.black),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 20,
+                              color: Colors.black,
+                            ),
                           ),
                         ),
                       ],
@@ -229,9 +256,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 70), // Spacing for avatar overlap
-            
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
@@ -266,9 +293,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _saveProfile,
-                    child: _isLoading 
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Guardar Cambios'),
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('Guardar Cambios'),
                   ),
                   const SizedBox(height: 40),
                 ],
@@ -346,15 +373,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return ListTile(
       onTap: onTap,
-      leading: Icon(icon, color: isSelected ? AppColors.primaryYellow : (isDark ? Colors.white70 : Colors.black54)),
+      leading: Icon(
+        icon,
+        color: isSelected
+            ? AppColors.primaryYellow
+            : (isDark ? Colors.white70 : Colors.black54),
+      ),
       title: Text(
         title,
         style: TextStyle(
-          color: isSelected ? AppColors.primaryYellow : (isDark ? Colors.white : Colors.black),
+          color: isSelected
+              ? AppColors.primaryYellow
+              : (isDark ? Colors.white : Colors.black),
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
-      trailing: isSelected ? const Icon(Icons.check_circle, color: AppColors.primaryYellow) : null,
+      trailing: isSelected
+          ? const Icon(Icons.check_circle, color: AppColors.primaryYellow)
+          : null,
     );
   }
 }

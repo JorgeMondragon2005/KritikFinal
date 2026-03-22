@@ -44,7 +44,10 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 24.0,
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -76,101 +79,140 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ForgotPasswordScreen(),
+                        ),
+                      );
                     },
-                    child: const Text('¿Olvidaste tu contraseña?', style: TextStyle(color: AppColors.primaryYellow)),
+                    child: const Text(
+                      '¿Olvidaste tu contraseña?',
+                      style: TextStyle(color: AppColors.primaryYellow),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: _isLoading ? null : () async {
-                    if (_idController.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Por favor ingresa tu ID')),
-                      );
-                      return;
-                    }
-
-                    final navigator = Navigator.of(context);
-                    final messenger = ScaffoldMessenger.of(context);
-
-                    setState(() => _isLoading = true);
-
-                    try {
-                      User? user;
-                      final email = _idController.text.trim();
-                      final password = _passwordController.text;
-
-                      if (password.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Por favor ingresa tu contraseña')),
-                        );
-                        setState(() => _isLoading = false);
-                        return;
-                      }
-
-                      user = await _apiService.login(email, password);
-
-                      if (mounted) {
-                        // Save session
-                        if (user != null) {
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.setString('user_session', jsonEncode(user.toJson()));
-                        }
-
-                        navigator.pushReplacement(
-                          MaterialPageRoute(
-                            builder: (_) => ProjectListScreen(
-                              role: user?.role ?? 'student',
-                              userId: user?.id ?? _idController.text,
-                              userFullName: user?.fullName ?? _idController.text,
-                            ),
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      if (mounted) {
-                        String errorMessage = 'Error al iniciar sesión';
-                        if (e is DioException) {
-                          errorMessage = e.response?.data.toString() ?? errorMessage;
-                          
-                          if (errorMessage.contains('no verificado')) {
-                             // Option to go verify
-                             ScaffoldMessenger.of(context).showSnackBar(
-                               SnackBar(
-                                 content: Text(errorMessage),
-                                 action: SnackBarAction(
-                                   label: 'Verificar',
-                                   onPressed: () => Navigator.of(context).push(
-                                     MaterialPageRoute(builder: (_) => VerificationScreen(email: _idController.text.trim()))
-                                   ),
-                                 ),
-                               ),
-                             );
-                             return;
+                  onPressed: _isLoading
+                      ? null
+                      : () async {
+                          if (_idController.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Por favor ingresa tu ID'),
+                              ),
+                            );
+                            return;
                           }
-                        }
-                        
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(errorMessage),
-                            backgroundColor: Colors.red,
+
+                          final navigator = Navigator.of(context);
+                          final messenger = ScaffoldMessenger.of(context);
+
+                          setState(() => _isLoading = true);
+
+                          try {
+                            User? user;
+                            final email = _idController.text.trim();
+                            final password = _passwordController.text;
+
+                            if (password.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Por favor ingresa tu contraseña',
+                                  ),
+                                ),
+                              );
+                              setState(() => _isLoading = false);
+                              return;
+                            }
+
+                            user = await _apiService.login(email, password);
+
+                            if (mounted) {
+                              // Save session
+                              if (user != null) {
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+                                await prefs.setString(
+                                  'user_session',
+                                  jsonEncode(user.toJson()),
+                                );
+                              }
+
+                              navigator.pushReplacement(
+                                MaterialPageRoute(
+                                  builder: (_) => ProjectListScreen(
+                                    role: user?.role ?? 'student',
+                                    userId: user?.id ?? _idController.text,
+                                    userFullName:
+                                        user?.fullName ?? _idController.text,
+                                  ),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              String errorMessage = 'Error al iniciar sesión';
+                              if (e is DioException) {
+                                errorMessage =
+                                    e.response?.data.toString() ?? errorMessage;
+
+                                if (errorMessage.contains('no verificado')) {
+                                  // Option to go verify
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(errorMessage),
+                                      action: SnackBarAction(
+                                        label: 'Verificar',
+                                        onPressed: () =>
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    VerificationScreen(
+                                                      email: _idController.text
+                                                          .trim(),
+                                                    ),
+                                              ),
+                                            ),
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+                              }
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(errorMessage),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          } finally {
+                            if (mounted) setState(() => _isLoading = false);
+                          }
+                        },
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
                           ),
-                        );
-                      }
-                    } finally {
-                      if (mounted) setState(() => _isLoading = false);
-                    }
-                  },
-                  child: _isLoading 
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Entrar'),
+                        )
+                      : const Text('Entrar'),
                 ),
                 const SizedBox(height: 32),
                 Row(
                   children: [
                     const Expanded(
-                      child: Divider(color: AppColors.borderColor, thickness: 1),
+                      child: Divider(
+                        color: AppColors.borderColor,
+                        thickness: 1,
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -187,7 +229,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const Expanded(
-                      child: Divider(color: AppColors.borderColor, thickness: 1),
+                      child: Divider(
+                        color: AppColors.borderColor,
+                        thickness: 1,
+                      ),
                     ),
                   ],
                 ),
@@ -200,7 +245,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                   child: const Text('¿No tienes cuenta? Regístrate aquí'),
                 ),
-
               ],
             ),
           ),

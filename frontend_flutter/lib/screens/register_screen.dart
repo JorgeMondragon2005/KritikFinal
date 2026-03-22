@@ -17,7 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _fullNameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _apiService = ApiService();
-  
+
   String _selectedRole = 'Student';
   bool _isLoading = false;
 
@@ -25,7 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-    
+
     final user = User(
       email: _emailController.text,
       fullName: _fullNameController.text,
@@ -33,13 +33,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
 
     final result = await _apiService.register(user, _passwordController.text);
-    
+
     if (mounted) {
       setState(() => _isLoading = false);
       if (result != null && result.contains('Usuario registrado')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(result)));
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => VerificationScreen(email: _emailController.text),
@@ -107,16 +107,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 items: const [
                   DropdownMenuItem(value: 'Student', child: Text('Alumno')),
-                  DropdownMenuItem(value: 'Evaluator', child: Text('Docente / Evaluador')),
+                  DropdownMenuItem(
+                    value: 'Evaluator',
+                    child: Text('Docente / Evaluador'),
+                  ),
                 ],
                 onChanged: (v) => setState(() => _selectedRole = v!),
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleRegister,
-                child: _isLoading 
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text('Registrarse'),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Registrarse'),
               ),
             ],
           ),

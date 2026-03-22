@@ -27,10 +27,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     setState(() => _isLoading = true);
     try {
       final projects = await _apiService.getAllProjects();
-      
+
       // For each project, we need its evaluations to calculate total score
       List<Map<String, dynamic>> rankings = [];
-      
+
       for (var p in projects) {
         final evals = await _apiService.getProjectEvaluations(p.id ?? '');
         double totalScore = 0;
@@ -39,12 +39,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           double sum = 0;
           for (var e in evals) {
             if (e.scores != null) {
-              sum += e.scores!.values.fold(0.0, (prev, element) => prev + element);
+              sum += e.scores!.values.fold(
+                0.0,
+                (prev, element) => prev + element,
+              );
             }
           }
           totalScore = sum / evals.length;
         }
-        
+
         rankings.add({
           'project': p,
           'score': totalScore,
@@ -53,7 +56,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       }
 
       // Sort by score descending
-      rankings.sort((a, b) => (b['score'] as double).compareTo(a['score'] as double));
+      rankings.sort(
+        (a, b) => (b['score'] as double).compareTo(a['score'] as double),
+      );
 
       setState(() {
         _rankedProjects = rankings;
@@ -95,14 +100,26 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                         final score = item['score'] as double;
                         final rank = index + 1;
 
-                        return _buildRankItem(context, project, score, rank, isDark);
+                        return _buildRankItem(
+                          context,
+                          project,
+                          score,
+                          rank,
+                          isDark,
+                        );
                       },
                     ),
             ),
     );
   }
 
-  Widget _buildRankItem(BuildContext context, Project project, double score, int rank, bool isDark) {
+  Widget _buildRankItem(
+    BuildContext context,
+    Project project,
+    double score,
+    int rank,
+    bool isDark,
+  ) {
     Color medalColor = Colors.grey;
     if (rank == 1) medalColor = const Color(0xFFFFD700); // Gold
     if (rank == 2) medalColor = const Color(0xFFC0C0C0); // Silver
@@ -114,7 +131,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: rank <= 3 ? Border.all(color: medalColor.withOpacity(0.5), width: 2) : null,
+        border: rank <= 3
+            ? Border.all(color: medalColor.withOpacity(0.5), width: 2)
+            : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
@@ -129,7 +148,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: rank <= 3 ? medalColor.withOpacity(0.2) : Colors.transparent,
+              color: rank <= 3
+                  ? medalColor.withOpacity(0.2)
+                  : Colors.transparent,
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -138,7 +159,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: rank <= 3 ? medalColor : (isDark ? Colors.white70 : Colors.black54),
+                  color: rank <= 3
+                      ? medalColor
+                      : (isDark ? Colors.white70 : Colors.black54),
                 ),
               ),
             ),
@@ -151,13 +174,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               children: [
                 Text(
                   project.title ?? 'Sin título',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   project.teamName ?? 'Equipo S/N',
-                  style: TextStyle(color: isDark ? Colors.white60 : Colors.black54, fontSize: 13),
+                  style: TextStyle(
+                    color: isDark ? Colors.white60 : Colors.black54,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -179,7 +208,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     fontSize: 20,
                   ),
                 ),
-                const Text('PUNTOS', style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold)),
+                const Text(
+                  'PUNTOS',
+                  style: TextStyle(fontSize: 8, fontWeight: FontWeight.bold),
+                ),
               ],
             ),
           ),

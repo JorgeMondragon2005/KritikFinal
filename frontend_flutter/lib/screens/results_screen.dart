@@ -32,11 +32,15 @@ class _ResultsScreenState extends State<ResultsScreen> {
   }
 
   Future<void> _handleExport() async {
-    final csv = await _exportService.generateCsv(_rankings.cast<Map<String, dynamic>>());
+    final csv = await _exportService.generateCsv(
+      _rankings.cast<Map<String, dynamic>>(),
+    );
     await _exportService.exportToConsole(csv);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ranking exportado correctamente (+ ver consola)')),
+      const SnackBar(
+        content: Text('Ranking exportado correctamente (+ ver consola)'),
+      ),
     );
   }
 
@@ -44,25 +48,41 @@ class _ResultsScreenState extends State<ResultsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ranking Live', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Ranking Live',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : (_rankings.isEmpty)
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : (_rankings.isEmpty)
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.leaderboard_outlined, size: 64, color: Colors.grey),
+                  const Icon(
+                    Icons.leaderboard_outlined,
+                    size: 64,
+                    color: Colors.grey,
+                  ),
                   const SizedBox(height: 16),
-                  const Text('No hay resultados aún', style: TextStyle(color: Colors.grey, fontSize: 18)),
+                  const Text(
+                    'No hay resultados aún',
+                    style: TextStyle(color: Colors.grey, fontSize: 18),
+                  ),
                   const SizedBox(height: 8),
-                  const Text('Las evaluaciones aparecerán aquí en tiempo real.', style: TextStyle(color: Colors.grey)),
+                  const Text(
+                    'Las evaluaciones aparecerán aquí en tiempo real.',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   const SizedBox(height: 24),
-                  ElevatedButton(onPressed: _loadResults, child: const Text('Actualizar')),
+                  ElevatedButton(
+                    onPressed: _loadResults,
+                    child: const Text('Actualizar'),
+                  ),
                 ],
               ),
             )
@@ -72,7 +92,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
                   child: ListView.builder(
                     padding: const EdgeInsets.all(20),
                     itemCount: _rankings.length,
-                    itemBuilder: (context, index) => _buildRankingCard(_rankings[index], index),
+                    itemBuilder: (context, index) =>
+                        _buildRankingCard(_rankings[index], index),
                   ),
                 ),
                 _buildBottomAction(),
@@ -82,30 +103,58 @@ class _ResultsScreenState extends State<ResultsScreen> {
   }
 
   Widget _buildRankingCard(Map<String, dynamic> rank, int index) {
-    final color = index == 0 ? Colors.amber : index == 1 ? Colors.grey : index == 2 ? Colors.brown : Colors.blueGrey;
-    
+    final color = index == 0
+        ? Colors.amber
+        : index == 1
+        ? Colors.grey
+        : index == 2
+        ? Colors.brown
+        : Colors.blueGrey;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         leading: CircleAvatar(
           backgroundColor: color.withOpacity(0.1),
           foregroundColor: color,
-          child: Text('#${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
+          child: Text(
+            '#${index + 1}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
-        title: Text(rank['teamName'], style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          rank['teamName'],
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         subtitle: Text(rank['category']),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text('${rank['averageScore']}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.orange)),
-            Text('pts', style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+            Text(
+              '${rank['averageScore']}',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: Colors.orange,
+              ),
+            ),
+            Text(
+              'pts',
+              style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+            ),
           ],
         ),
       ),
@@ -123,7 +172,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(60),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
     );

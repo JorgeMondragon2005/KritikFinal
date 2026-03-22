@@ -18,20 +18,25 @@ class _VerificationScreenState extends State<VerificationScreen> {
     if (_codeController.text.length != 6) return;
 
     setState(() => _isLoading = true);
-    
-    final success = await _apiService.verifyEmail(widget.email, _codeController.text);
-    
+
+    final success = await _apiService.verifyEmail(
+      widget.email,
+      _codeController.text,
+    );
+
     if (mounted) {
       setState(() => _isLoading = false);
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Correo verificado! Ya puedes iniciar sesión.')),
+          const SnackBar(
+            content: Text('¡Correo verificado! Ya puedes iniciar sesión.'),
+          ),
         );
         Navigator.of(context).popUntil((route) => route.isFirst);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Código incorrecto')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Código incorrecto')));
       }
     }
   }
@@ -70,10 +75,12 @@ class _VerificationScreenState extends State<VerificationScreen> {
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: _isLoading ? null : _handleVerify,
-              style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
-              child: _isLoading 
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Text('Verificar'),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 50),
+              ),
+              child: _isLoading
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Verificar'),
             ),
           ],
         ),

@@ -9,8 +9,8 @@ class NativeMediaViewer extends StatefulWidget {
   final bool isImage;
 
   const NativeMediaViewer({
-    super.key, 
-    required this.url, 
+    super.key,
+    required this.url,
     this.isVideo = false,
     this.isImage = false,
   });
@@ -36,8 +36,10 @@ class _NativeMediaViewerState extends State<NativeMediaViewer> {
 
   Future<void> _initializePlayer() async {
     try {
-      _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(widget.url));
-      
+      _videoPlayerController = VideoPlayerController.networkUrl(
+        Uri.parse(widget.url),
+      );
+
       // Add timeout to prevent infinite loading on bad networks
       await _videoPlayerController!.initialize().timeout(
         const Duration(seconds: 15),
@@ -45,7 +47,7 @@ class _NativeMediaViewerState extends State<NativeMediaViewer> {
           throw Exception('Tiempo de espera agotado al cargar el video');
         },
       );
-      
+
       _chewieController = ChewieController(
         videoPlayerController: _videoPlayerController!,
         autoPlay: true,
@@ -71,15 +73,15 @@ class _NativeMediaViewerState extends State<NativeMediaViewer> {
           );
         },
       );
-      
+
       // Initialize volume and wait for it
       await _videoPlayerController!.setVolume(1.0);
     } catch (e) {
       if (mounted) {
         setState(() {
           _hasError = true;
-          _errorMessage = e.toString().contains('Exception:') 
-              ? e.toString().split('Exception: ')[1] 
+          _errorMessage = e.toString().contains('Exception:')
+              ? e.toString().split('Exception: ')[1]
               : 'El video no pudo ser reproducido o el enlace está dañado.';
         });
       }
@@ -104,7 +106,10 @@ class _NativeMediaViewerState extends State<NativeMediaViewer> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Visor Multimedia', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Visor Multimedia',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
       body: Center(
         child: widget.isVideo ? _buildVideoViewer() : _buildImageViewer(),
@@ -123,7 +128,9 @@ class _NativeMediaViewerState extends State<NativeMediaViewer> {
             const SizedBox(height: 16),
             Text(
               'Error al reproducir video',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(color: Colors.white),
             ),
             const SizedBox(height: 8),
             Text(
@@ -136,7 +143,8 @@ class _NativeMediaViewerState extends State<NativeMediaViewer> {
       );
     }
 
-    if (_chewieController != null && _chewieController!.videoPlayerController.value.isInitialized) {
+    if (_chewieController != null &&
+        _chewieController!.videoPlayerController.value.isInitialized) {
       return Chewie(controller: _chewieController!);
     } else {
       return const Column(
@@ -168,7 +176,10 @@ class _NativeMediaViewerState extends State<NativeMediaViewer> {
             children: [
               Icon(Icons.broken_image, color: Colors.white, size: 64),
               SizedBox(height: 16),
-              Text('Error al cargar la imagen', style: TextStyle(color: Colors.white)),
+              Text(
+                'Error al cargar la imagen',
+                style: TextStyle(color: Colors.white),
+              ),
             ],
           );
         },

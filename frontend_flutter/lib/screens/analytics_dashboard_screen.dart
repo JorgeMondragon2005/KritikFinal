@@ -13,19 +13,24 @@ class AnalyticsDashboardScreen extends StatefulWidget {
   final String userId;
   final String role; // 'Teacher' o 'Evaluator'
 
-  const AnalyticsDashboardScreen({super.key, required this.userId, required this.role});
+  const AnalyticsDashboardScreen({
+    super.key,
+    required this.userId,
+    required this.role,
+  });
 
   @override
-  State<AnalyticsDashboardScreen> createState() => _AnalyticsDashboardScreenState();
+  State<AnalyticsDashboardScreen> createState() =>
+      _AnalyticsDashboardScreenState();
 }
 
 class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
   final ApiService _apiService = ApiService();
   bool _isLoading = true;
-  
+
   List<Project> _projects = [];
   List<Evaluation> _evaluations = [];
-  
+
   // KPIs
   double _averageScore = 0.0;
   int _totalEvaluated = 0;
@@ -40,12 +45,13 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
 
   Future<void> _fetchData() async {
     setState(() => _isLoading = true);
-    
+
     try {
       // 1. Fetch raw data
       final projects = await _apiService.getProjects();
-      final List<Evaluation> evaluations = []; // We need a way to fetch all evaluations or fetch by project iteratively.
-      
+      final List<Evaluation> evaluations =
+          []; // We need a way to fetch all evaluations or fetch by project iteratively.
+
       // Let's grab evaluations for all projects (could be heavy in a real prod app without a direct endpoint, but ok for now)
       for (var p in projects) {
         if (p.id != null) {
@@ -57,24 +63,32 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       }
 
       // 2. Filter data depending on Role
-      if ((widget.role.toLowerCase() == 'teacher' || widget.role.toLowerCase() == 'profesor')) {
-        _projects = projects.where((p) => p.assignedTeacherId == widget.userId).toList();
-      } else if ((widget.role.toLowerCase() == 'evaluator' || widget.role.toLowerCase() == 'profesor')) {
+      if ((widget.role.toLowerCase() == 'teacher' ||
+          widget.role.toLowerCase() == 'profesor')) {
+        _projects = projects
+            .where((p) => p.assignedTeacherId == widget.userId)
+            .toList();
+      } else if ((widget.role.toLowerCase() == 'evaluator' ||
+          widget.role.toLowerCase() == 'profesor')) {
         // Evaluators ideally see all, or only ones assigned to them. Assuming they see all published ones for the event.
-        _projects = projects.where((p) => p.status?.toLowerCase() != 'pending').toList();
+        _projects = projects
+            .where((p) => p.status?.toLowerCase() != 'pending')
+            .toList();
       }
 
       // 3. Compute Metrics
       _totalEvaluated = 0;
       double sumScores = 0;
-      
+
       // Relate projects to evaluations
       final evaluatedProjectIds = evaluations.map((e) => e.projectId).toSet();
-      
-      for(var proj in _projects) {
-        if(evaluatedProjectIds.contains(proj.id)) {
+
+      for (var proj in _projects) {
+        if (evaluatedProjectIds.contains(proj.id)) {
           _totalEvaluated++;
-          final projEval = evaluations.firstWhere((e) => e.projectId == proj.id);
+          final projEval = evaluations.firstWhere(
+            (e) => e.projectId == proj.id,
+          );
           sumScores += projEval.generalScore ?? 0.0;
         } else {
           _totalPending++;
@@ -84,18 +98,24 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       if (_totalEvaluated > 0) {
         _averageScore = sumScores / _totalEvaluated;
       }
-      
-      // Top Projects (Sort by score DESC)
-      final allEvalsScored = evaluations.where((e) => _projects.any((p) => p.id == e.projectId)).toList();
-      allEvalsScored.sort((a, b) => (b.generalScore ?? 0).compareTo(a.generalScore ?? 0));
-      
-      _topProjects = allEvalsScored.take(3).map((e) => _projects.firstWhere((p) => p.id == e.projectId)).toList();
 
+      // Top Projects (Sort by score DESC)
+      final allEvalsScored = evaluations
+          .where((e) => _projects.any((p) => p.id == e.projectId))
+          .toList();
+      allEvalsScored.sort(
+        (a, b) => (b.generalScore ?? 0).compareTo(a.generalScore ?? 0),
+      );
+
+      _topProjects = allEvalsScored
+          .take(3)
+          .map((e) => _projects.firstWhere((p) => p.id == e.projectId))
+          .toList();
     } catch (e) {
       debugPrint('Error loading analytics: $e');
     }
 
-    if(mounted){
+    if (mounted) {
       setState(() => _isLoading = false);
     }
   }
@@ -116,45 +136,53 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       final buffer = StringBuffer();
       // Write BOM for Excel UTF-8 compatibility
       buffer.write('\uFEFF');
-      
+
       // Headers
       buffer.writeln('Proyecto,Equipo,Categoria,Puntaje_Promedio,Estado');
 
       for (var project in _projects) {
-        final eval = _evaluations.where((e) => e.projectId == project.id).toList();
+        final eval = _evaluations
+            .where((e) => e.projectId == project.id)
+            .toList();
         double _score = 0;
         if (eval.isNotEmpty) {
           _score = eval.first.generalScore ?? 0.0; // Simplification, get first
         }
-        
+
         // Escape CSV fields
-        final title = '"${(project.title ?? 'Sin Título').replaceAll('"', '""')}"';
+        final title =
+            '"${(project.title ?? 'Sin Título').replaceAll('"', '""')}"';
         final team = '"${(project.teamName ?? 'SN').replaceAll('"', '""')}"';
-        final category = '"${(project.category ?? 'N/A').replaceAll('"', '""')}"';
+        final category =
+            '"${(project.category ?? 'N/A').replaceAll('"', '""')}"';
         final state = eval.isNotEmpty ? '"Evaluado"' : '"Pendiente"';
-        
+
         buffer.writeln('$title,$team,$category,$_score,$state');
       }
 
       await file.writeAsString(buffer.toString(), encoding: utf8);
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Abriendo reporte...')),
-      );
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Abriendo reporte...')));
 
       final result = await OpenFilex.open(file.path);
       if (result.type != ResultType.done) {
         if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
-             SnackBar(content: Text('No hay app instalada para abrir CSV. ${result.message}')),
-           );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'No hay app instalada para abrir CSV. ${result.message}',
+              ),
+            ),
+          );
         }
       }
     } catch (e) {
       if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Error al generar Excel/CSV: $e')),
-         );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al generar Excel/CSV: $e')),
+        );
       }
     }
   }
@@ -165,45 +193,74 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       appBar: AppBar(
         title: const Text('Dashboard de Resultados'),
         actions: [
-          IconButton(icon: const Icon(Icons.download), onPressed: _exportReport),
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: _exportReport,
+          ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchData),
         ],
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : RefreshIndicator(
-            onRefresh: _fetchData,
-            color: AppColors.primaryYellow,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                   Text('Resumen General', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
-                   const SizedBox(height: 16),
-                   _buildKPIsRow(),
-                   const SizedBox(height: 32),
-                   Text('Progreso de Evaluaciones', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                   const SizedBox(height: 16),
-                   _buildChart(),
-                   const SizedBox(height: 32),
-                   Text('Top 3 Proyectos', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                   const SizedBox(height: 16),
-                   _buildTopProjects(),
-                ],
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _fetchData,
+              color: AppColors.primaryYellow,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Resumen General',
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildKPIsRow(),
+                    const SizedBox(height: 32),
+                    Text(
+                      'Progreso de Evaluaciones',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildChart(),
+                    const SizedBox(height: 32),
+                    Text(
+                      'Top 3 Proyectos',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTopProjects(),
+                  ],
+                ),
               ),
             ),
-        ),
     );
   }
 
   Widget _buildKPIsRow() {
     return Row(
       children: [
-        Expanded(child: _buildKPICard('Promedio Global', '${_averageScore.toStringAsFixed(1)} / 100', Icons.analytics)),
+        Expanded(
+          child: _buildKPICard(
+            'Promedio Global',
+            '${_averageScore.toStringAsFixed(1)} / 100',
+            Icons.analytics,
+          ),
+        ),
         const SizedBox(width: 16),
-        Expanded(child: _buildKPICard('Proyectos Evaluados', '$_totalEvaluated / ${_projects.length}', Icons.check_circle_outline)),
+        Expanded(
+          child: _buildKPICard(
+            'Proyectos Evaluados',
+            '$_totalEvaluated / ${_projects.length}',
+            Icons.check_circle_outline,
+          ),
+        ),
       ],
     );
   }
@@ -215,16 +272,31 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: AppColors.primaryYellow, size: 28),
           const SizedBox(height: 12),
-          Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 4),
-          Text(title, style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 13)),
+          Text(
+            title,
+            style: TextStyle(
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              fontSize: 13,
+            ),
+          ),
         ],
       ),
     );
@@ -242,7 +314,13 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: PieChart(
         PieChartData(
@@ -252,16 +330,26 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
             PieChartSectionData(
               color: Colors.green,
               value: _totalEvaluated.toDouble(),
-              title: '${((_totalEvaluated / _projects.length) * 100).toStringAsFixed(0)}%',
+              title:
+                  '${((_totalEvaluated / _projects.length) * 100).toStringAsFixed(0)}%',
               radius: 40,
-              titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+              titleStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
             PieChartSectionData(
               color: AppColors.primaryYellow,
               value: _totalPending.toDouble(),
-              title: '${((_totalPending / _projects.length) * 100).toStringAsFixed(0)}%',
+              title:
+                  '${((_totalPending / _projects.length) * 100).toStringAsFixed(0)}%',
               radius: 40,
-              titleStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+              titleStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ],
         ),
@@ -279,13 +367,20 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
         final index = entry.key;
         final project = entry.value;
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        
+
         Color medalColor;
-        switch(index) {
-          case 0: medalColor = const Color(0xFFFFD700); break; // Oro
-          case 1: medalColor = const Color(0xFFC0C0C0); break; // Plata
-          case 2: medalColor = const Color(0xFFCD7F32); break; // Bronce
-          default: medalColor = Colors.grey;
+        switch (index) {
+          case 0:
+            medalColor = const Color(0xFFFFD700);
+            break; // Oro
+          case 1:
+            medalColor = const Color(0xFFC0C0C0);
+            break; // Plata
+          case 2:
+            medalColor = const Color(0xFFCD7F32);
+            break; // Bronce
+          default:
+            medalColor = Colors.grey;
         }
 
         return Card(
@@ -296,11 +391,14 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen> {
               backgroundColor: medalColor.withOpacity(0.2),
               child: Icon(Icons.emoji_events, color: medalColor),
             ),
-            title: Text(project.title ?? 'Sin título', style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              project.title ?? 'Sin título',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text(project.teamName ?? 'Equipo'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 14),
             onTap: () {
-               // Navigator.push to details if desired. Keep simple for now.
+              // Navigator.push to details if desired. Keep simple for now.
             },
           ),
         );

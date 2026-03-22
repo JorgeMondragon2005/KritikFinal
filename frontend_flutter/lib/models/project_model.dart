@@ -6,16 +6,19 @@ class Video {
   Video({required this.title, required this.url, required this.description});
 
   factory Video.fromJson(Map<String, dynamic> json) => Video(
-        title: json['title']?.toString() ?? json['Title']?.toString() ?? '',
-        url: json['url']?.toString() ?? json['Url']?.toString() ?? '',
-        description: json['description']?.toString() ?? json['Description']?.toString() ?? '',
-      );
+    title: json['title']?.toString() ?? json['Title']?.toString() ?? '',
+    url: json['url']?.toString() ?? json['Url']?.toString() ?? '',
+    description:
+        json['description']?.toString() ??
+        json['Description']?.toString() ??
+        '',
+  );
 
   Map<String, dynamic> toJson() => {
-        'title': title,
-        'url': url,
-        'description': description,
-      };
+    'title': title,
+    'url': url,
+    'description': description,
+  };
 }
 
 class Document {
@@ -26,16 +29,12 @@ class Document {
   Document({required this.title, required this.url, required this.type});
 
   factory Document.fromJson(Map<String, dynamic> json) => Document(
-        title: json['title']?.toString() ?? json['Title']?.toString() ?? '',
-        url: json['url']?.toString() ?? json['Url']?.toString() ?? '',
-        type: json['type']?.toString() ?? json['Type']?.toString() ?? 'PDF',
-      );
+    title: json['title']?.toString() ?? json['Title']?.toString() ?? '',
+    url: json['url']?.toString() ?? json['Url']?.toString() ?? '',
+    type: json['type']?.toString() ?? json['Type']?.toString() ?? 'PDF',
+  );
 
-  Map<String, dynamic> toJson() => {
-        'title': title,
-        'url': url,
-        'type': type,
-      };
+  Map<String, dynamic> toJson() => {'title': title, 'url': url, 'type': type};
 }
 
 class Project {
@@ -57,12 +56,12 @@ class Project {
   final List<Document> documents;
 
   Project({
-    this.id, 
+    this.id,
     this.teamName,
-    this.title, 
+    this.title,
     this.category,
     this.description,
-    this.status, 
+    this.status,
     this.technologies = const [],
     this.studentId,
     this.assignedTeacherId,
@@ -76,23 +75,49 @@ class Project {
   });
 
   factory Project.fromJson(Map<String, dynamic> json) => Project(
-        id: json['id']?.toString() ?? json['Id']?.toString() ?? json['_id']?.toString(),
-        teamName: json['teamName']?.toString() ?? json['TeamName']?.toString(),
-        title: json['title']?.toString() ?? json['Title']?.toString() ?? (json['teamName']?.toString() ?? json['TeamName']?.toString()),
-        category: json['category']?.toString() ?? json['Category']?.toString(),
-        description: json['description']?.toString() ?? json['Description']?.toString(),
-        status: json['status']?.toString() ?? json['Status']?.toString(),
-        technologies: (json['technologies'] as List?)?.cast<String>().toList() ?? (json['Technologies'] as List?)?.cast<String>().toList() ?? [],
-        studentId: json['studentId']?.toString() ?? json['StudentId']?.toString(),
-        assignedTeacherId: json['assignedTeacherId']?.toString() ?? json['AssignedTeacherId']?.toString(),
-        coverImageUrl: json['coverImageUrl']?.toString() ?? json['CoverImageUrl']?.toString(),
-        iconUrl: json['iconUrl']?.toString() ?? json['IconUrl']?.toString(),
-        assignmentId: json['assignmentId']?.toString() ?? json['AssignmentId']?.toString(),
-        promoVideoUrl: json['promoVideoUrl']?.toString() ?? json['PromoVideoUrl']?.toString(),
-        pitchVideoUrl: json['pitchVideoUrl']?.toString() ?? json['PitchVideoUrl']?.toString(),
-        videos: (json['videos'] as List?)?.map((x) => Video.fromJson(x)).toList() ?? (json['Videos'] as List?)?.map((x) => Video.fromJson(x)).toList() ?? [],
-        documents: (json['documents'] as List?)?.map((x) => Document.fromJson(x)).toList() ?? (json['Documents'] as List?)?.map((x) => Document.fromJson(x)).toList() ?? [],
-      );
+    id:
+        json['id']?.toString() ??
+        json['Id']?.toString() ??
+        json['_id']?.toString(),
+    teamName: json['teamName']?.toString() ?? json['TeamName']?.toString(),
+    title:
+        json['title']?.toString() ??
+        json['Title']?.toString() ??
+        (json['teamName']?.toString() ?? json['TeamName']?.toString()),
+    category: json['category']?.toString() ?? json['Category']?.toString(),
+    description:
+        json['description']?.toString() ?? json['Description']?.toString(),
+    status: json['status']?.toString() ?? json['Status']?.toString(),
+    technologies:
+        (json['technologies'] as List?)?.cast<String>().toList() ??
+        (json['Technologies'] as List?)?.cast<String>().toList() ??
+        [],
+    studentId: json['studentId']?.toString() ?? json['StudentId']?.toString(),
+    assignedTeacherId:
+        json['assignedTeacherId']?.toString() ??
+        json['AssignedTeacherId']?.toString(),
+    coverImageUrl:
+        json['coverImageUrl']?.toString() ?? json['CoverImageUrl']?.toString(),
+    iconUrl: json['iconUrl']?.toString() ?? json['IconUrl']?.toString(),
+    assignmentId:
+        json['assignmentId']?.toString() ?? json['AssignmentId']?.toString(),
+    promoVideoUrl:
+        json['promoVideoUrl']?.toString() ?? json['PromoVideoUrl']?.toString(),
+    pitchVideoUrl:
+        json['pitchVideoUrl']?.toString() ?? json['PitchVideoUrl']?.toString(),
+    videos:
+        (json['videos'] as List?)?.map((x) => Video.fromJson(x)).toList() ??
+        (json['Videos'] as List?)?.map((x) => Video.fromJson(x)).toList() ??
+        [],
+    documents:
+        (json['documents'] as List?)
+            ?.map((x) => Document.fromJson(x))
+            .toList() ??
+        (json['Documents'] as List?)
+            ?.map((x) => Document.fromJson(x))
+            .toList() ??
+        [],
+  );
 
   Map<String, dynamic> toJson() => {
     'id': id,

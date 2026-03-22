@@ -23,7 +23,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     if (token.isEmpty || newPassword.length < 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor llena los campos. La contraseña debe tener al menos 6 caracteres.')),
+        const SnackBar(
+          content: Text(
+            'Por favor llena los campos. La contraseña debe tener al menos 6 caracteres.',
+          ),
+        ),
       );
       return;
     }
@@ -31,22 +35,38 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final success = await _apiService.resetPassword(widget.email, token, newPassword);
+      final success = await _apiService.resetPassword(
+        widget.email,
+        token,
+        newPassword,
+      );
       if (mounted) {
         if (success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('¡Contraseña actualizada con éxito! Ya puedes iniciar sesión.')),
+            const SnackBar(
+              content: Text(
+                '¡Contraseña actualizada con éxito! Ya puedes iniciar sesión.',
+              ),
+            ),
           );
-          Navigator.of(context).popUntil((route) => route.isFirst); // Go to login
+          Navigator.of(
+            context,
+          ).popUntil((route) => route.isFirst); // Go to login
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('El token es inválido o ha expirado. Inténtalo de nuevo.')),
+            const SnackBar(
+              content: Text(
+                'El token es inválido o ha expirado. Inténtalo de nuevo.',
+              ),
+            ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -61,11 +81,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            const Icon(Icons.password, size: 80, color: AppColors.primaryYellow),
+            const Icon(
+              Icons.password,
+              size: 80,
+              color: AppColors.primaryYellow,
+            ),
             const SizedBox(height: 24),
             Text(
               'Ingresa tu Nuevo Acceso',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
@@ -90,9 +116,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 labelText: 'Nueva Contraseña',
                 prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
-                  icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
+                  icon: Icon(
+                    _obscureText ? Icons.visibility : Icons.visibility_off,
+                  ),
                   onPressed: () => setState(() => _obscureText = !_obscureText),
-                )
+                ),
               ),
             ),
             const SizedBox(height: 32),
@@ -101,10 +129,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 : ElevatedButton(
                     onPressed: _submit,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 80),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 80,
+                      ),
                       backgroundColor: AppColors.primaryYellow,
                     ),
-                    child: const Text('Cambiar Contraseña', style: TextStyle(fontSize: 16)),
+                    child: const Text(
+                      'Cambiar Contraseña',
+                      style: TextStyle(fontSize: 16),
+                    ),
                   ),
           ],
         ),

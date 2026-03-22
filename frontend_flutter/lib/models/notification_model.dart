@@ -17,14 +17,22 @@ class AppNotification {
     this.actionUrl,
   });
 
-  factory AppNotification.fromJson(Map<String, dynamic> json) => AppNotification(
-    id: json['id']?.toString() ?? json['_id']?.toString() ?? json['Id']?.toString(),
+  factory AppNotification.fromJson(
+    Map<String, dynamic> json,
+  ) => AppNotification(
+    id:
+        json['id']?.toString() ??
+        json['_id']?.toString() ??
+        json['Id']?.toString(),
     userId: json['userId']?.toString() ?? json['UserId']?.toString() ?? '',
     title: json['title']?.toString() ?? json['Title']?.toString() ?? '',
     message: json['message']?.toString() ?? json['Message']?.toString() ?? '',
     isRead: json['isRead'] ?? json['IsRead'] ?? false,
-    createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'].toString()) : 
-               (json['CreatedAt'] != null ? DateTime.parse(json['CreatedAt'].toString()) : DateTime.now()),
+    createdAt: json['createdAt'] != null
+        ? DateTime.parse(json['createdAt'].toString())
+        : (json['CreatedAt'] != null
+              ? DateTime.parse(json['CreatedAt'].toString())
+              : DateTime.now()),
     actionUrl: json['actionUrl']?.toString() ?? json['ActionUrl']?.toString(),
   );
 

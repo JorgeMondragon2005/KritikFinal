@@ -39,7 +39,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   void _filterUsers(String query) {
     _searchQuery = query;
     if (_users == null) return;
-    
+
     setState(() {
       _filteredUsers = _users!.where((user) {
         final name = (user.fullName ?? '').toLowerCase();
@@ -62,7 +62,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
 
     final success = await _apiService.updateUserRole(user.id!, newRole);
     if (!mounted) return;
-    
+
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Rol actualizado exitosamente')),
@@ -72,9 +72,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       setState(() {
         user.role = oldRole;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al actualizar rol')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Error al actualizar rol')));
     }
   }
 
@@ -84,10 +84,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       appBar: AppBar(
         title: const Text('Gestión de Usuarios'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadUsers,
-          )
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadUsers),
         ],
       ),
       body: Column(
@@ -111,40 +108,58 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredUsers == null || _filteredUsers!.isEmpty
-                    ? const Center(child: Text('No se encontraron usuarios'))
-                    : ListView.builder(
-                        itemCount: _filteredUsers!.length,
-                        itemBuilder: (context, index) {
-                          final user = _filteredUsers![index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: AppColors.primaryYellow.withOpacity(0.2),
-                                child: const Icon(Icons.person, color: AppColors.primaryYellow),
-                              ),
-                              title: Text(user.fullName ?? 'Sin Nombre', style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text(user.email ?? 'Sin correo'),
-                              trailing: DropdownButton<String>(
-                                value: _roles.contains(user.role) ? user.role : 'Student',
-                                underline: const SizedBox(),
-                                icon: const Icon(Icons.arrow_drop_down, color: AppColors.primaryYellow),
-                                items: _roles.map((String value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value, style: const TextStyle(fontSize: 14)),
-                                  );
-                                }).toList(),
-                                onChanged: (String? newValue) {
-                                  if (newValue != null) {
-                                    _changeRole(user, newValue);
-                                  }
-                                },
-                              ),
+                ? const Center(child: Text('No se encontraron usuarios'))
+                : ListView.builder(
+                    itemCount: _filteredUsers!.length,
+                    itemBuilder: (context, index) {
+                      final user = _filteredUsers![index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 6,
+                        ),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: AppColors.primaryYellow
+                                .withOpacity(0.2),
+                            child: const Icon(
+                              Icons.person,
+                              color: AppColors.primaryYellow,
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                          title: Text(
+                            user.fullName ?? 'Sin Nombre',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(user.email ?? 'Sin correo'),
+                          trailing: DropdownButton<String>(
+                            value: _roles.contains(user.role)
+                                ? user.role
+                                : 'Student',
+                            underline: const SizedBox(),
+                            icon: const Icon(
+                              Icons.arrow_drop_down,
+                              color: AppColors.primaryYellow,
+                            ),
+                            items: _roles.map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(
+                                  value,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                _changeRole(user, newValue);
+                              }
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

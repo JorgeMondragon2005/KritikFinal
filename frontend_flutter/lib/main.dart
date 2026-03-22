@@ -13,11 +13,15 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   final userData = prefs.getString('user_session');
-  
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeNotifier(),
-      child: KritikApp(savedUser: userData != null ? User.fromJson(jsonDecode(userData)) : null),
+      child: KritikApp(
+        savedUser: userData != null
+            ? User.fromJson(jsonDecode(userData))
+            : null,
+      ),
     ),
   );
 }
@@ -29,19 +33,19 @@ class KritikApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
-    
+
     return MaterialApp(
       title: 'Kritik App',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeNotifier.themeMode,
-      home: savedUser != null 
-        ? ProjectListScreen(
-            role: savedUser!.role ?? 'student',
-            userId: savedUser!.id ?? '',
-            userFullName: savedUser!.fullName ?? '',
-          )
-        : const LoginScreen(),
+      home: savedUser != null
+          ? ProjectListScreen(
+              role: savedUser!.role ?? 'student',
+              userId: savedUser!.id ?? '',
+              userFullName: savedUser!.fullName ?? '',
+            )
+          : const LoginScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
