@@ -35,10 +35,17 @@ public class UploadController : ControllerBase
         var fileName = $"{Guid.NewGuid()}{ext}";
 
         var options = new GridFSUploadOptions { Metadata = new BsonDocument("contentType", file.ContentType) };
-        ObjectId fileId;
-        using (var stream = file.OpenReadStream())
+        var fileId = ObjectId.GenerateNewId();
+        try
         {
-            fileId = await _gridFS.UploadFromStreamAsync(fileName, stream, options);
+            using (var stream = file.OpenReadStream())
+            {
+                await _gridFS.UploadFromStreamAsync(fileId, fileName, stream, options);
+            }
+        }
+        catch (Exception ex)
+        {
+            return Ok(new { url = "ERROR", details = ex.ToString() });
         }
 
         var url = $"/api/upload/{fileId}";
