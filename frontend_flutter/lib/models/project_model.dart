@@ -86,8 +86,7 @@ class Project {
   final String? assignmentId;
   final String? promoVideoUrl;
   final String? pitchVideoUrl;
-  final List<Video> videos;
-  final List<Video> videos;
+  final List<String>? members;
   final List<Document> documents;
   final List<String> upvotedBy;
   final List<ProjectComment> comments;
@@ -109,6 +108,7 @@ class Project {
     this.pitchVideoUrl,
     this.videos = const [],
     this.documents = const [],
+    this.members = const [],
     this.upvotedBy = const [],
     this.comments = const [],
   });
@@ -156,6 +156,10 @@ class Project {
             ?.map((x) => Document.fromJson(x))
             .toList() ??
         [],
+    members:
+        (json['members'] as List?)?.cast<String>().toList() ??
+        (json['Members'] as List?)?.cast<String>().toList() ??
+        [],
     upvotedBy:
         (json['upvotedBy'] as List?)?.cast<String>().toList() ??
         (json['UpvotedBy'] as List?)?.cast<String>().toList() ??
@@ -187,6 +191,7 @@ class Project {
     'pitchVideoUrl': pitchVideoUrl,
     'videos': videos.map((v) => v.toJson()).toList(),
     'documents': documents.map((d) => d.toJson()).toList(),
+    'members': members,
     'upvotedBy': upvotedBy,
     'comments': comments.map((c) => c.toJson()).toList(),
   };
