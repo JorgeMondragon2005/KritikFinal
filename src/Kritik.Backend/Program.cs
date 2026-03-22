@@ -72,14 +72,6 @@ var app = builder.Build();
 var userService = app.Services.GetRequiredService<UserService>();
 await userService.EnsureAdminExistsAsync("jorgemoondragon595@gmail.com");
 
-Console.WriteLine("EMERGENCY 512MB M0 QUOTA WIPE INITIATED DURING BOOT...");
-var emergencyDb = app.Services.GetRequiredService<MongoDB.Driver.IMongoDatabase>();
-await emergencyDb.DropCollectionAsync("fs.files");
-await emergencyDb.DropCollectionAsync("fs.chunks");
-await emergencyDb.CreateCollectionAsync("fs.files");
-await emergencyDb.CreateCollectionAsync("fs.chunks");
-Console.WriteLine("GRIDFS TRUNCATED. ALL VIDEO UPLOADS UNBLOCKED.");
-
 // Configure Kestrel to allow large requests
 app.Use(async (context, next) =>
 {
