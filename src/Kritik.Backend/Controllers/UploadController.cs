@@ -86,23 +86,5 @@ public class UploadController : ControllerBase
             var readStream = new FileStream(tempPath, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.DeleteOnClose);
             return File(readStream, contentType ?? "application/octet-stream", enableRangeProcessing: true);
         }
-        catch(GridFSFileNotFoundException) { return NotFound(); }
-    }
-
-    [HttpGet("destroy-database")]
-    public async Task<IActionResult> WipeGridFS([FromServices] IMongoDatabase db)
-    {
-        try
-        {
-            await db.DropCollectionAsync("fs.files");
-            await db.DropCollectionAsync("fs.chunks");
-            await db.CreateCollectionAsync("fs.files");
-            await db.CreateCollectionAsync("fs.chunks");
-            return Ok("Wiped GridFS completely, recovered 512MB quota.");
-        }
-        catch (Exception e)
-        {
-            return StatusCode(500, e.ToString());
-        }
     }
 }
