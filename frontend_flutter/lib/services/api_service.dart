@@ -135,6 +135,26 @@ class ApiService {
     }
   }
 
+  Future<bool> deleteProject(String projectId) async {
+    try {
+      final response = await _dio.delete('projects/$projectId');
+      return response.statusCode == 204 || response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error deleteProject: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteEvaluation(String evaluationId) async {
+    try {
+      final response = await _dio.delete('evaluations/$evaluationId');
+      return response.statusCode == 204 || response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error deleteEvaluation: $e');
+      return false;
+    }
+  }
+
   // --- RECOVERY SECTION ---
   Future<bool> forgotPassword(String email) async {
     try {

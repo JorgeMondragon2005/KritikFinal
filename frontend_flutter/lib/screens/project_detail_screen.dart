@@ -47,7 +47,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
   Future<void> _submitComment() async {
     final text = _commentController.text.trim();
     if (text.isEmpty || widget.userId == null) return;
-    
+
     final newComment = ProjectComment(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       userId: widget.userId,
@@ -62,6 +62,106 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     });
 
     await _apiService.addProjectComment(widget.project.id!, newComment);
+  }
+
+  bool _isDeleting = false;
+
+  Future<void> _undoEvaluation() async {
+    if (_existingEvaluation == null || _existingEvaluation!.id == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Deshacer Evaluación'),
+        content: const Text(
+          '¿Estás seguro de que quieres eliminar esta evaluación? El proyecto regresará a estado PENDIENTE para ti y podrás volver a evaluarlo desde cero.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Sí, Eliminar',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isDeleting = true);
+    final success = await _apiService.deleteEvaluation(
+      _existingEvaluation!.id!,
+    );
+    setState(() => _isDeleting = false);
+
+    if (success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Evaluación borrada. Puedes volver a evaluar.'),
+          ),
+        );
+        setState(() => _existingEvaluation = null);
+      }
+    } else {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al borrar evaluación.')),
+        );
+    }
+  }
+
+  Future<void> _undoProject() async {
+    if (widget.project.id == null) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Deshacer Entrega de Proyecto'),
+        content: const Text(
+          '¿Estás SEGURO de que quieres borrar tu proyecto? Esto eliminará todos los archivos, videos, upvotes y comentarios de forma PERMANENTE. Tendrás que volver a crearlo si la fecha límite no ha pasado.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Sí, Borrar Proyecto',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _isDeleting = true);
+    final success = await _apiService.deleteProject(widget.project.id!);
+    setState(() => _isDeleting = false);
+
+    if (success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Proyecto borrado con éxito.')),
+        );
+        Navigator.pop(context, true);
+      }
+    } else {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al borrar proyecto.')),
+        );
+    }
   }
 
   @override
@@ -149,8 +249,12 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             actions: [
               IconButton(
                 icon: Icon(
-                  widget.project.upvotedBy.contains(widget.userId) ? Icons.favorite : Icons.favorite_border,
-                  color: widget.project.upvotedBy.contains(widget.userId) ? Colors.red : null,
+                  widget.project.upvotedBy.contains(widget.userId)
+                      ? Icons.favorite
+                      : Icons.favorite_border,
+                  color: widget.project.upvotedBy.contains(widget.userId)
+                      ? Colors.red
+                      : null,
                 ),
                 onPressed: widget.userId != null ? _toggleUpvote : null,
               ),
@@ -159,10 +263,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 child: Center(
                   child: Text(
                     '${widget.project.upvotedBy.length}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
-              )
+              ),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Hero(
@@ -436,28 +543,102 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                         ),
                       ),
                     ),
+                  ],
+
+                  if (widget.userId != null &&
+                      widget.userRole != null &&
+                      widget.userId == widget.project.studentId) ...[
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isDeleting ? null : _undoProject,
+                        icon: const Icon(Icons.warning, color: Colors.white),
+                        label: const Text(
+                          'DESHACER ENTREGA (BORRAR PROYECTO)',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade700,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  if (isEvaluated && canEvaluate) ...[
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _isDeleting ? null : _undoEvaluation,
+                        icon: const Icon(
+                          Icons.delete_forever,
+                          color: Colors.red,
+                        ),
+                        label: const Text(
+                          'DESHACER EVALUACIÓN',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Colors.red),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+
                   // Comentarios
                   const SizedBox(height: 32),
                   const Divider(),
                   const SizedBox(height: 16),
-                  const Text('Foro de Comentarios', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  const Text(
+                    'Foro de Comentarios',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
                   const SizedBox(height: 12),
-                  ...widget.project.comments.map((c) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.blueAccent.withOpacity(0.2),
-                      child: const Icon(Icons.person, color: Colors.blueAccent),
+                  ...widget.project.comments.map(
+                    (c) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.blueAccent.withOpacity(0.2),
+                        child: const Icon(
+                          Icons.person,
+                          color: Colors.blueAccent,
+                        ),
+                      ),
+                      title: Text(
+                        c.userName ?? 'Anónimo',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      subtitle: Text(c.text ?? ''),
+                      trailing: Text(
+                        '${c.createdAt.day}/${c.createdAt.month}/${c.createdAt.year}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey,
+                        ),
+                      ),
                     ),
-                    title: Text(c.userName ?? 'Anónimo', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    subtitle: Text(c.text ?? ''),
-                    trailing: Text(
-                      '${c.createdAt.day}/${c.createdAt.month}/${c.createdAt.year}', 
-                      style: const TextStyle(fontSize: 10, color: Colors.grey)
-                    ),
-                  )),
+                  ),
                   if (widget.project.comments.isEmpty)
-                    const Text('Sé el primero en felicitar a este equipo.', style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
-                  
+                    const Text(
+                      'Sé el primero en felicitar a este equipo.',
+                      style: TextStyle(
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey,
+                      ),
+                    ),
+
                   const SizedBox(height: 16),
                   if (widget.userId != null)
                     Row(
@@ -468,13 +649,19 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                             decoration: const InputDecoration(
                               hintText: 'Añadir un comentario...',
                               border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         IconButton(
-                          icon: const Icon(Icons.send, color: AppColors.primaryYellow),
+                          icon: const Icon(
+                            Icons.send,
+                            color: AppColors.primaryYellow,
+                          ),
                           onPressed: _submitComment,
                         ),
                       ],
