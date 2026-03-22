@@ -20,6 +20,31 @@ public class ProjectsController : ControllerBase
         _assignmentService = assignmentService;
     }
 
+    [HttpGet("storage-stats")]
+    public async Task<IActionResult> GetStorageStats([FromServices] MongoDB.Driver.IMongoDatabase db)
+    {
+        try
+        {
+            var collections = await db.ListCollectionNamesAsync();
+            var names = await collections.ToListAsync();
+            var stats = new System.Collections.Generic.List<object>();
+            
+            foreach (var name in names)
+            {
+                var command = new MongoDB.Bson.BsonDocument { { "collStats", name } };
+                var statInfo = await db.RunCommandAsync<MongoDB.Bson.BsonDocument>(command);
+                var size = statInfo.Contains("storageSize") ? statInfo["storageSize"].AsInt32 : 0;
+                var count = statInfo.Contains("count") ? statInfo["count"].AsInt32 : 0;
+                stats.Add(new { name, sizeBytes = size, count });
+            }
+            return Ok(new { Total = stats.Sum(s => (int)((dynamic)s).sizeBytes), Collections = stats });
+        }
+        catch (System.Exception ex)
+        {
+            return StatusCode(500, ex.ToString());
+        }
+    }
+
     [HttpGet("rankings")]
     public async Task<List<ProjectRankingDTO>> GetRanking()
     {
